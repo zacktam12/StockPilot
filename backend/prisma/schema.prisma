@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String
+  firstName  String?
+  lastName   String?
+  phone      String?
+  isAdmin    Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  roleId     Int
+
+  // Relations
+  sales      Sale[]   @relation("SaleUser")
+  customers  Sale[]   @relation("SaleCustomer")
+  purchases  Purchase[] @relation("PurchaseUser")
+  suppliers  Purchase[] @relation("PurchaseSupplier")
+  role       Role     @relation(fields: [roleId], references: [role_id])
+}
+
+model Role {
+  role_id   Int     @id @default(autoincrement())
+  role_type String  @unique
+  createdAt DateTime
+  deletedAt DateTime?
+  createdBy String?
+  deletedBy String?
+  isDeleted Boolean
+
+  // Relations
+  users     User[]
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  isDeleted   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  products    Product[]
+}
+
+model Product {
+  id             Int               @id @default(autoincrement())
+  name           String
+  description    String?
+  sku            String?           @unique
+  barcode        String?           @unique
+  price          Float
+  cost           Float?
+  quantity       Int               @default(0)
+  minStock       Int?
+  maxStock       Int?
+  image          String?
+  isDeleted      Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @default(now())
+  categoryId     Int
+
+  // Relations
+  category         Category         @relation(fields: [categoryId], references: [id])
+  productSales     ProductSale[]
+  productPurchases ProductPurchase[]
+}
+
+model Sale {
+  id                Int             @id @default(autoincrement())
+  userId            Int
+  customerId        Int?
+  totalPrice        Float
+  discount          Float?          @default(0)
+  tax               Float?          @default(0)
+  paymentMethod     String?
+  status            String?         @default("completed")
+  notes             String?
+  isDeleted         Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @default(now())
+
+  // Relations
+  user              User            @relation("SaleUser", fields: [userId], references: [id])
+  customer          User?           @relation("SaleCustomer", fields: [customerId], references: [id])
+  productSales      ProductSale[]
+}
+
+model Purchase {
+  id                Int              @id @default(autoincrement())
+  userId            Int
+  supplierId        Int
+  totalCost         Float
+  discount          Float?           @default(0)
+  tax               Float?           @default(0)
+  status            String?          @default("received")
+  notes             String?
+  isDeleted         Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @default(now())
+
+  // Relations
+  user              User             @relation("PurchaseUser", fields: [userId], references: [id])
+  supplier          User             @relation("PurchaseSupplier", fields: [supplierId], references: [id])
+  productPurchases  ProductPurchase[]
+}
+
+model ProductSale {
+  id             Int      @id @default(autoincrement())
+  productId      Int
+  saleId         Int
+  sale_quantity  Int
+  sale_price     Float
+  createdAt      DateTime
+  deletedAt      DateTime?
+  createdBy      String?
+  deletedBy      String?
+  isDeleted      Boolean
+
+  // Relations
+  product        Product  @relation(fields: [productId], references: [id])
+  sale           Sale     @relation(fields: [saleId], references: [id])
+}
+
+model ProductPurchase {
+  id                Int      @id @default(autoincrement())
+  productId         Int
+  purchaseId        Int
+  purchase_price    Float
+  purchase_quantity Int
+  createdAt         DateTime
+  deletedAt         DateTime?
+  createdBy         String?
+  deletedBy         String?
+  isDeleted         Boolean
+
+  // Relations
+  product           Product   @relation(fields: [productId], references: [id])
+  purchase          Purchase  @relation(fields: [purchaseId], references: [id])
+}
+
+model Settings {
+  id                Int       @id @default(1)
+  appName           String    @default("Inventory Management System")
+  theme             String?   @default("light")
+  lowStockThreshold Int       @default(5)
+  currency          String?   @default("USD")
+  taxRate           Float?    @default(0)
+  updatedAt         DateTime  @updatedAt
+}
+
+//npx prisma generate
+//npx prisma db push
+//npx prisma studio
