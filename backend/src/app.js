@@ -1,23 +1,17 @@
 // app.js
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
-const app = express();
-const PORT = process.env.PORT || 3000;
-app.use(express.json());
+const productRoutes = require("./routes/product.routes");
 
+const app = express();
 const prisma = new PrismaClient();
-// Error handling middleware
-app.listen(PORT, (err) => {
-  if (err) {
-    console.log(err.message);
-  } else {
-    console.log(`Server running at ${PORT}`);
-  }
+
+app.get("/", async (req, res) => {
+  res.json({ message: "API is working!" });
 });
 
-// Example route
+app.use(express.json());
+app.use("/api/products", productRoutes);
 
-// app.get("/products", async (req, res) => {
-//   const products = await prisma.product.findMany();
-//   res.json(products);
-// });
+// Export app for use in server.js
+module.exports = app;
