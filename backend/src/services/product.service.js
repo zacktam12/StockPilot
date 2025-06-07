@@ -23,10 +23,30 @@ const deleteProduct = (id) =>
     data: { isDeleted: true },
   });
 
+const getLowStockProducts = () => {
+  const LOW_STOCK_THRESHOLD = 5;
+  return prisma.product.findMany({
+    where: {
+      quantity: { lt: LOW_STOCK_THRESHOLD },
+      isDeleted: false,
+    },
+  });
+};
+
+const getOutOfStockProducts = () =>
+  prisma.product.findMany({
+    where: {
+      quantity: 0,
+      isDeleted: false,
+    },
+  });
+
 module.exports = {
   createProduct,
   getAllProducts,
   getProductById,
   updateProduct,
   deleteProduct,
+  getLowStockProducts,
+  getOutOfStockProducts,
 };
