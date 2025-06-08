@@ -21,9 +21,18 @@ exports.updateProduct = async (req, res) => {
   res.json(product);
 };
 
-exports.deleteProduct = async (req, res) => {
-  await productService.deleteProduct(req.params.id);
-  res.json({ message: "Product deleted (soft delete)" });
+exports.deleteProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await productService.deleteProduct(Number.parseInt(id));
+
+    res.json({
+      success: true,
+      message: "Product deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 exports.getOutOfStockProducts = async (req, res, next) => {
