@@ -9,6 +9,7 @@ const purchaseRoutes = require("./routes/purchase.routes");
 const roleRoutes = require("./routes/role.routes");
 const settingsRoutes = require("./routes/settings.routes");
 const productSaleRoutes = require("./routes/productSale.routes");
+const productPurchaseRoutes = require("./routes/productPurchase.routes");
 
 const app = express();
 const prisma = new PrismaClient();
@@ -26,6 +27,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/product-sales", productSaleRoutes);
+app.use("/api/product-purchases", productPurchaseRoutes);
 
 // Export app for use in server.js
 module.exports = app;
