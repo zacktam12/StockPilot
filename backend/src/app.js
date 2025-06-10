@@ -1,4 +1,5 @@
 // app.js
+require("dotenv").config();
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const productRoutes = require("./routes/product.routes");
@@ -10,6 +11,9 @@ const roleRoutes = require("./routes/role.routes");
 const settingsRoutes = require("./routes/settings.routes");
 const productSaleRoutes = require("./routes/productSale.routes");
 const productPurchaseRoutes = require("./routes/productPurchase.routes");
+const { authenticate } = require("./middlewares/auth");
+const authRoutes = require("./routes/auth.routes");
+const { errorHandler, notFound } = require("./middlewares/errorHandler");
 
 const app = express();
 const prisma = new PrismaClient();
@@ -18,7 +22,14 @@ app.get("/", async (req, res) => {
   res.json({ message: "API is working!" });
 });
 
+app.get("/protected", authenticate, (req, res) => {
+  res.json({ message: "You are authorized", user: req.user });
+});
+
+app.use(notFound); // Catch all unknown routes
+app.use(errorHandler); // Central error handler
 app.use(express.json());
+app.use("/api/auth", authRoutes);
 app.use("/api/purchases", purchaseRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/settings", settingsRoutes);
