@@ -8,7 +8,6 @@ const {
 
 router.post("/", validateCreateSale, saleController.createSale);
 router.put("/:id", validateUpdateSale, saleController.updateSale);
-// router.post("/", saleController.createSale);
 router.get("/", saleController.getAllSales);
 router.get("/:id", saleController.getSaleById);
 router.put("/:id", saleController.updateSale);

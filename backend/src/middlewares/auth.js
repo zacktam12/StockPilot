@@ -1,12 +1,16 @@
 const { verifyToken } = require("../config/jwt");
 const { prisma } = require("../config/db");
-
 const authenticate = async (req, res, next) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
+    const authHeader = req.header("Authorization");
+    console.log("🪪 Authorization Header:", authHeader);
+
+    const token = authHeader?.replace("Bearer ", "");
     if (!token) return res.status(401).json({ message: "No token provided" });
 
     const decoded = verifyToken(token);
+    console.log("✅ Token Decoded:", decoded);
+
     const user = await prisma.user.findUnique({
       where: { id: decoded.id, isDeleted: false },
       include: { role: true },
@@ -16,9 +20,11 @@ const authenticate = async (req, res, next) => {
     if (user.isDeleted) {
       return res.status(401).json({ message: "User account is deleted" });
     }
+
     req.user = user;
     next();
   } catch (err) {
+    console.error("❌ Token verification failed:", err);
     res.status(401).json({ message: "Invalid token" });
   }
 };

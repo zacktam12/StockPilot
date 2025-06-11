@@ -9,3 +9,4 @@ const {
 router.post("/register", validateRegister, userController.register);
 router.post("/login", validateLogin, userController.login);
 module.exports = router;
+//multer

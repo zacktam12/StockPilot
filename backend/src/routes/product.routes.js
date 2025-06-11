@@ -27,8 +27,13 @@ router.get(
   authorize("admin", "staff"),
   productController.getAllProducts
 );
-router.put("/:id", productController.updateProduct);
-router.delete("/:id",authenticate, authorize("admin"), productController.deleteProduct);
+// router.put("/:id", productController.updateProduct);
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("admin"),
+  productController.deleteProduct
+);
 router.get("/low-stock", productController.getLowStockProducts);
 router.get("/out-of-stock", productController.getOutOfStockProducts);
 router.get("/:id", productController.getProductById);
