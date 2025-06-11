@@ -16,6 +16,7 @@ const authRoutes = require("./routes/auth.routes");
 const { errorHandler, notFound } = require("./middlewares/errorHandler");
 
 const app = express();
+app.use(express.json());
 const prisma = new PrismaClient();
 
 app.get("/", async (req, res) => {
@@ -26,9 +27,10 @@ app.get("/protected", authenticate, (req, res) => {
   res.json({ message: "You are authorized", user: req.user });
 });
 
-app.use(notFound); // Catch all unknown routes
-app.use(errorHandler); // Central error handler
-app.use(express.json());
+app.get("/api/test-auth", authenticate, (req, res) => {
+  res.json({ message: "Authenticated!", user: req.user });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/purchases", purchaseRoutes);
 app.use("/api/roles", roleRoutes);
@@ -40,5 +42,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/product-sales", productSaleRoutes);
 app.use("/api/product-purchases", productPurchaseRoutes);
 
+app.use(notFound);
+app.use(errorHandler);
 // Export app for use in server.js
 module.exports = app;

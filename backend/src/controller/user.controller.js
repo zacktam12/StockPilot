@@ -28,11 +28,24 @@ exports.login = async (req, res) => {
 };
 
 // Register a user
+
 exports.register = async (req, res) => {
   try {
     const { email, password, firstName, lastName, phone, roleId } = req.body;
 
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: "Email already registered" });
+    }
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
     const user = await prisma.user.create({
       data: {
         email,
