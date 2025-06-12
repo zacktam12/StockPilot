@@ -1,50 +1,41 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const userRepository = require("../repositories/user.repository");
 
+// Create a new user
 const createUser = async (data) => {
   // Check if email already exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email: data.email },
-  });
+  const existingUser = await userRepository.findByEmail(data.email);
 
   if (existingUser) {
     throw new Error(`User with email ${data.email} already exists.`);
   }
 
-  // Create user if not exists
-  return prisma.user.create({ data });
+  return userRepository.createUser(data);
 };
 
-const getAllUsers = () =>
-  prisma.user.findMany({
-    where: { isDeleted: false },
-  });
+// Get all users with pagination and optional search
+const getAllUsers = async (page = 1, limit = 10, search = "") => {
+  return await userRepository.findActiveUsers(page, limit, search);
+};
 
-const getUserById = (id) =>
-  prisma.user.findUnique({
-    where: { id: parseInt(id) },
-  });
+// Get user by ID
+const getUserById = (id) => {
+  return userRepository.findUnique({ id: parseInt(id) });
+};
 
+// Update user
 const updateUser = async (id, data) => {
-  const user = await prisma.user.findUnique({
-    where: { id: parseInt(id) },
-  });
+  const existingUser = await userRepository.findUnique({ id: parseInt(id) });
 
-  if (!user) {
+  if (!existingUser) {
     throw new Error(`User with ID ${id} does not exist.`);
   }
 
-  return prisma.user.update({
-    where: { id: parseInt(id) },
-    data,
-  });
+  return userRepository.updateUser(parseInt(id), data);
 };
 
+// Soft delete user
 const deleteUser = (id) =>
-  prisma.user.update({
-    where: { id: parseInt(id) },
-    data: { isDeleted: true },
-  });
+  userRepository.updateUser(parseInt(id), { isDeleted: true });
 
 module.exports = {
   createUser,
