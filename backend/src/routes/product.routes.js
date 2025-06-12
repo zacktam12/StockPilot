@@ -6,7 +6,18 @@ const {
   validateUpdateProduct,
 } = require("../validators/product.validator");
 const { authenticate, authorize } = require("../middlewares/auth");
+const { getPagination } = require("../utils/pagination");
+const BaseRepository = require("../utils/BaseRepository");
+const { prisma } = require("../config/db");
 
+const productRepo = new BaseRepository(prisma.product);
+
+const getAllProducts = async (req) => {
+  const { skip, limit } = getPagination(req);
+  return productRepo.findMany({ skip, take: limit });
+};
+
+// Route definitions
 router.post(
   "/",
   authenticate,
@@ -27,7 +38,6 @@ router.get(
   authorize("admin", "staff"),
   productController.getAllProducts
 );
-// router.put("/:id", productController.updateProduct);
 router.delete(
   "/:id",
   authenticate,
@@ -38,4 +48,7 @@ router.get("/low-stock", productController.getLowStockProducts);
 router.get("/out-of-stock", productController.getOutOfStockProducts);
 router.get("/:id", productController.getProductById);
 
+// Export both the router and the helper function
 module.exports = router;
+
+module.exports.getAllProducts = getAllProducts;
