@@ -6,9 +6,16 @@ const {
   validateLogin,
   validateUpdateUser,
 } = require("../validators/user.validator");
+const { authenticate, authorize } = require("../middlewares/auth");
 
 // Register user
-router.post("/", validateRegister, userController.createUser);
+router.post(
+  "/",
+  authenticate,
+  authorize("admin"),
+  validateRegister,
+  userController.createUser
+);
 // Login route (if you implement auth)
 // router.post("/login", validateLogin, userController.loginUser);
 // Update user
