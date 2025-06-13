@@ -1,7 +1,8 @@
 const BaseRepository = require("../utils/BaseRepository");
+const { prisma } = require("../config/db");
 
 class CategoryRepository extends BaseRepository {
-  constructor(prisma) {
+  constructor() {
     super(prisma.category);
   }
 
@@ -10,39 +11,31 @@ class CategoryRepository extends BaseRepository {
       isDeleted: false,
       ...(search && {
         OR: [
-          { name: { contains: search } },
-          { description: { contains: search } },
+          { name: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
         ],
       }),
     };
 
-    return await this.findManyWithPagination(
-      where,
-      page,
-      limit,
-      {
-        products: {
-          where: { isDeleted: false },
-          select: { id: true, name: true, quantity: true },
-        },
+    return this.findManyWithPagination(where, page, limit, {
+      products: {
+        where: { isDeleted: false },
+        select: { id: true, name: true, quantity: true },
       },
-      { createdAt: "desc" }
-    );
+    });
   }
 
   async findByName(name) {
-    return await this.findUnique({ name, isDeleted: false });
+    return this.findUnique({ name, isDeleted: false });
   }
 
   async findCategoryWithProducts(categoryId) {
-    return await this.findUnique(
+    return this.findUnique(
       { id: categoryId, isDeleted: false },
       {
         products: {
           where: { isDeleted: false },
-          include: {
-            category: true,
-          },
+          include: { category: true },
         },
       }
     );
