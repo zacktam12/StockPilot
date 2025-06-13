@@ -1,40 +1,31 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const productRepository = require("../repositories/product.repository");
 
-const createProduct = (data) => prisma.product.create({ data });
+const createProduct = (data) => productRepository.create(data);
 
 const getAllProducts = () =>
-  prisma.product.findMany({
+  productRepository.findMany({
     where: { isDeleted: false },
   });
 
 const getProductById = (id) =>
-  prisma.product.findUnique({ where: { id: parseInt(id) } });
+  productRepository.findUnique({ id: Number(id), isDeleted: false });
 
 const updateProduct = (id, data) =>
-  prisma.product.update({
-    where: { id: parseInt(id) },
-    data,
-  });
+  productRepository.update({ id: Number(id) }, data);
 
 const deleteProduct = (id) =>
-  prisma.product.update({
-    where: { id: parseInt(id) },
-    data: { isDeleted: true },
-  });
+  productRepository.update({ id: Number(id) }, { isDeleted: true });
 
-const getLowStockProducts = () => {
-  const LOW_STOCK_THRESHOLD = 5;
-  return prisma.product.findMany({
+const getLowStockProducts = () =>
+  productRepository.findMany({
     where: {
-      quantity: { lt: LOW_STOCK_THRESHOLD },
+      quantity: { lt: 5 },
       isDeleted: false,
     },
   });
-};
 
 const getOutOfStockProducts = () =>
-  prisma.product.findMany({
+  productRepository.findMany({
     where: {
       quantity: 0,
       isDeleted: false,
