@@ -14,6 +14,7 @@ const productPurchaseRoutes = require("./routes/productPurchase.routes");
 const { authenticate } = require("./middlewares/auth");
 const authRoutes = require("./routes/auth.routes");
 const { errorHandler, notFound } = require("./middlewares/errorHandler");
+const uploadRoutes = require("./routes/upload.routes");
 
 const app = express();
 app.use(express.json());
@@ -30,7 +31,7 @@ app.get("/protected", authenticate, (req, res) => {
 app.get("/api/test-auth", authenticate, (req, res) => {
   res.json({ message: "Authenticated!", user: req.user });
 });
-
+app.use("/api", uploadRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/purchases", purchaseRoutes);
 app.use("/api/roles", roleRoutes);

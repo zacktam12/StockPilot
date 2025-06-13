@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const productPurchaseController = require("../controller/productPurchase.controller");
+
 const {
   validateCreateProductPurchase,
   validateUpdateProductPurchase,
@@ -16,7 +17,6 @@ router.put(
   validateUpdateProductPurchase,
   productPurchaseController.updateProductPurchase
 );
-// router.post("/", productPurchaseController.createProductPurchase);
 router.get("/", productPurchaseController.getAllProductPurchases);
 router.get("/:id", productPurchaseController.getProductPurchaseById);
 router.put("/:id", productPurchaseController.updateProductPurchase);

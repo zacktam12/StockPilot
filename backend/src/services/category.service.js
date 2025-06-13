@@ -1,37 +1,23 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const categoryRepo = require("../repositories/category.repository");
 
-const createCategory = (data) => prisma.category.create({ data });
+const createCategory = (data) => categoryRepo.create(data);
 
-const getAllCategories = () =>
-  prisma.category.findMany({
-    where: { isDeleted: false },
-  });
+const getAllCategories = (query) => {
+  const page = parseInt(query.page) || 1;
+  const limit = parseInt(query.limit) || 10;
+  const search = query.search || "";
+  return categoryRepo.findActiveCategories(page, limit, search);
+};
 
 const getCategoryById = (id) =>
-  prisma.category.findUnique({
-    where: { id: parseInt(id) },
-  });
+  categoryRepo.findCategoryWithProducts(Number(id));
 
 const updateCategory = (id, data) =>
-  prisma.category.update({
-    where: { id: parseInt(id) },
-    data,
-  });
+  categoryRepo.update({ id: Number(id) }, data);
 
-const deleteCategory = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    await categoryService.deleteCategory(Number.parseInt(id));
+const deleteCategory = (id) => categoryRepo.softDelete({ id: Number(id) });
 
-    res.json({
-      success: true,
-      message: "Category deleted successfully",
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+const getCategoryStats = () => categoryRepo.getCategoryStats();
 
 module.exports = {
   createCategory,
@@ -39,4 +25,5 @@ module.exports = {
   getCategoryById,
   updateCategory,
   deleteCategory,
+  getCategoryStats,
 };

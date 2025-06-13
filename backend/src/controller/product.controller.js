@@ -5,9 +5,13 @@ exports.createProduct = async (req, res) => {
   res.status(201).json(product);
 };
 
-exports.getAllProducts = async (req, res) => {
-  const products = await productService.getAllProducts();
-  res.json(products);
+exports.getAllProducts = async (req, res, next) => {
+  try {
+    const products = await productService.getAllProducts(req.query);
+    res.json({ success: true, data: products });
+  } catch (error) {
+    next(error);
+  }
 };
 
 exports.getProductById = async (req, res) => {

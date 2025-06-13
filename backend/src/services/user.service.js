@@ -14,7 +14,7 @@ const createUser = async (data) => {
 
 // Get all users with pagination and optional search
 const getAllUsers = async (page = 1, limit = 10, search = "") => {
-  return await userRepository.findActiveUsers(page, limit, search);
+  return await userRepository.findManyWithPagination(page, limit, search);
 };
 
 // Get user by ID

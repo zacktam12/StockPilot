@@ -138,11 +138,11 @@ model ProductPurchase {
   purchaseId        Int
   purchase_price    Float
   purchase_quantity Int
-  createdAt         DateTime
-  deletedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  deletedAt         DateTime @default(now())
   createdBy         String?
   deletedBy         String?
-  isDeleted         Boolean
+  isDeleted         Boolean  @default(false)
 
   // Relations
   product           Product   @relation(fields: [productId], references: [id])
