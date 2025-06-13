@@ -1,112 +1,157 @@
 const userService = require("../services/user.service");
 const bcrypt = require("bcrypt");
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
 const { generateToken } = require("../config/jwt");
 
-// Login a user
-exports.login = async (req, res) => {
+// 🔐 Login
+exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { role: true },
-    });
-
-    if (!user) return res.status(404).json({ error: "User not found" });
+    const user = await userService.getUserByEmail(email);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
+    if (!isMatch) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
+    }
 
-    // Use roleId from user or user.role.id if needed
-    const token = generateToken({
-      id: user.id,
-      roleId: user.roleId || user.role.id,
-    });
+    const token = generateToken({ id: user.id, roleId: user.roleId });
 
     res.json({
+      success: true,
       token,
-      user: { id: user.id, email: user.email, role: user.role.role_type },
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role?.role_type,
+      },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-// Register a user
-exports.register = async (req, res) => {
+// 🧾 Register
+exports.register = async (req, res, next) => {
   try {
     const { email, password, firstName, lastName, phone, roleId } = req.body;
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    const existingUser = await userService.getUserByEmail(email);
     if (existingUser) {
-      return res.status(400).json({ error: "Email already registered" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already registered" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        phone,
-        roleId,
-      },
-      include: { role: true },
+    const user = await userService.createUser({
+      email,
+      password: hashedPassword,
+      firstName,
+      lastName,
+      phone,
+      roleId,
     });
 
-    // Generate token for new user
-    const token = generateToken({
-      id: user.id,
-      roleId: user.roleId || user.role.id,
-    });
+    const token = generateToken({ id: user.id, roleId: user.roleId });
 
     res.status(201).json({
+      success: true,
       message: "User registered successfully",
       token,
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        role: user.role.role_type,
+        role: user.role?.role_type,
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.createUser = async (req, res) => {
-  const user = await userService.createUser(req.body);
-  res.status(201).json(user);
+// ➕ Create
+exports.createUser = async (req, res, next) => {
+  try {
+    const user = await userService.createUser(req.body);
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-exports.getAllUsers = async (req, res) => {
-  const users = await userService.getAllUsers();
-  res.json(users);
+// 📋 Get all (with pagination)
+exports.getAllUsers = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10, search = "" } = req.query;
+    const users = await userService.getAllUsers(
+      Number(page),
+      Number(limit),
+      search
+    );
+
+    res.json({
+      success: true,
+      data: users,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-exports.getUserById = async (req, res) => {
-  const user = await userService.getUserById(req.params.id);
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(user);
+// 📍 Get by ID
+exports.getUserById = async (req, res, next) => {
+  try {
+    const user = await userService.getUserById(req.params.id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-exports.updateUser = async (req, res) => {
-  const user = await userService.updateUser(req.params.id, req.body);
-  res.json(user);
+// 🔁 Update
+exports.updateUser = async (req, res, next) => {
+  try {
+    const user = await userService.updateUser(req.params.id, req.body);
+    res.json({
+      success: true,
+      message: "User updated successfully",
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-exports.deleteUser = async (req, res) => {
-  await userService.deleteUser(req.params.id);
-  res.json({ message: "User soft-deleted" });
+// 🗑️ Soft delete
+exports.deleteUser = async (req, res, next) => {
+  try {
+    await userService.deleteUser(req.params.id);
+    res.json({
+      success: true,
+      message: "User soft-deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
 };

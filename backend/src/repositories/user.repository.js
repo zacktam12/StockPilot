@@ -1,7 +1,8 @@
 const BaseRepository = require("../utils/BaseRepository");
+const { prisma } = require("../config/db");
 
 class UserRepository extends BaseRepository {
-  constructor(prisma) {
+  constructor() {
     super(prisma.user);
   }
 
