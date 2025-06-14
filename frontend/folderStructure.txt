@@ -1,0 +1,204 @@
+src
+    components
+        dashboard
+        header
+        modals
+        orders
+        scanner
+        shared
+        sidebar
+        ui
+    hooks
+    layouts
+    pages
+        categroy
+        customers
+        dashboard
+        products
+        purchase
+        report
+        sales
+        suppliers
+        users
+    routes
+    services
+    store
+    utils
+
+stock-management/
+│
+├── src/ # Everything inside /src
+│ │
+│ ├── app/ # App setup (entry points, providers)
+│ │ ├── App.jsx # Root component (routes, layout)
+│ │ └── main.jsx # ReactDOM render
+│ │
+│ ├── store/ # Redux store and slices
+│ │ ├── index.js # configureStore
+│ │ └── slices/
+│ │ ├── authSlice.js
+│ │ ├── inventorySlice.js
+│ │ ├── salesSlice.js
+│ │ └── uiSlice.js # For modals, loaders, etc.
+│ │
+│ ├── features/ # Feature-specific modules (Smart/Connected components)
+│ │ ├── authentication/
+│ │ │ ├── components/ # Dumb/presentational components
+│ │ │ ├── pages/ # Route views
+│ │ │ ├── authAPI.js # Feature-specific API service
+│ │ │ └── authSlice.js # Optional local slice (if decoupling store more)
+│ │ ├── inventory/
+│ │ │ ├── components/
+│ │ │ ├── pages/...
+│ │ │ └── inventoryAPI.js
+│ │ └── ... (same for customers, sales, suppliers, reports)
+│ │
+│ ├── layouts/ # Application layout elements
+│ │ ├── Navbar.jsx
+│ │ ├── Sidebar.jsx
+│ │ └── AppLayout.jsx
+│ │
+│ ├── routes/ # Central route definitions (React Router)
+│ │ └── index.jsx
+│ │
+│ ├── services/ # Shared API logic (axios instance, interceptors)
+│ │ └── http.js
+│ │
+│ ├── hooks/ # Reusable custom hooks
+│ │ └── useDebounce.js
+│ │
+│ ├── components/ # Reusable UI (buttons, inputs, modals)
+│ │ ├── ui/
+│ │ ├── modals/
+│ │ └── tables/
+│ │
+│ ├── utils/ # Utilities (helpers, formatters, validators)
+│ │ ├── formatters.js
+│ │ ├── validators.js
+│ │ └── constants.js
+│ │
+│ ├── styles/ # Tailwind/global CSS
+│ │ ├── tailwind.css
+│ │ └── globals.css
+│ │
+│ └── assets/ # Static files (images, icons)
+│ ├── images/
+│ └── logos/
+│
+├── public/ # Static files
+│ └── favicon.ico
+│
+├── .env # Environment variables
+├── package.json
+└── README.md
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+src/
+├── app/
+│   ├── App.jsx
+│   ├── main.jsx
+│   └── routes/
+│       └── AppRoutes.jsx
+│
+├── features/
+│   ├── dashboard/
+│   │   ├── pages/Dashboard.jsx
+│   │   └── components/
+│   │       ├── DashboardCharts.jsx
+│   │       ├── ProductAlertCard.jsx
+│   │       ├── RecentActivityCard.jsx
+│   │       └── StatCard.jsx
+│   │
+│   ├── products/
+│   │   ├── pages/Products.jsx
+│   │   ├── components/
+│   │   └── modals/NewProductModal.jsx
+│   │
+│   ├── category/
+│   │   ├── pages/Category.jsx
+│   │   └── modals/NewCategoryModal.jsx
+│   │
+│   ├── customers/
+│   │   ├── pages/Customers.jsx
+│   │   └── modals/NewCustomerModal.jsx
+│   │
+│   ├── suppliers/
+│   │   ├── pages/Suppliers.jsx
+│   │   └── modals/NewSupplierModal.jsx
+│   │
+│   ├── users/
+│   │   ├── pages/Users.jsx
+│   │   └── modals/NewUserModal.jsx
+│   │
+│   ├── purchase/
+│   │   ├── pages/Purchase.jsx
+│   │   └── components/
+│   │       ├── NewPurchaseModal.jsx
+│   │       └── OrderReceipt.jsx
+│   │
+│   ├── sales/
+│   │   ├── pages/Sales.jsx
+│   │   └── components/
+│   │       ├── NewSaleModal.jsx
+│   │       └── OrderReceipt.jsx
+│   │
+│   ├── report/
+│   │   └── pages/Report.jsx
+│
+├── layouts/
+│   └── ProtectedLayout.jsx
+│
+├── components/          # Global reusable components
+│   ├── shared/          # Consolidated shared+ui
+│   │   ├── Badge.jsx
+│   │   ├── Button.jsx
+│   │   ├── Card.jsx
+│   │   ├── ExportButton.jsx
+│   │   ├── Input.jsx
+│   │   └── Table.jsx
+|   |   |___spinner.jsx
+│   │   ├── LoadingContainer.jsx
+│   │   └── LoadingOverlay.jsx
+│   ├── header/Header.jsx
+│   ├── sidebar/Sidebar.jsx
+│   ├── scanner/QRScanner.jsx
+│   └── ThemeProvider.jsx
+│
+├── hooks/
+│   └── useDebounce.js
+│
+├── services/
+│   ├── api.js
+│   └── http.js
+│
+├── store/
+│   ├── index.js
+│   └── slices/
+│       └── (e.g., productSlice.js)
+│
+├── utils/
+│   ├── constants.js
+│   ├── formatters.js
+│   └── validators.js
+│
+├── styles/
+│   └── globals.css
+│
+├── assets/
+│   └── report-print.css
