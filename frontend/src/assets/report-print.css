@@ -1,0 +1,18 @@
+/* src/assets/report-print.css */
+@media print {
+     body * {
+          visibility: hidden;
+     }
+
+     .report-content,
+     .report-content * {
+          visibility: visible;
+     }
+
+     .report-content {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+     }
+}

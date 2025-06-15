@@ -25,7 +25,6 @@ exports.createProductPurchase = async (req, res, next) => {
         success: false,
         message:
           "Some required information is missing. Please fill in all required fields and try again.",
-        details: error.message,
       });
     }
     // Prisma validation error for not allowed fields
