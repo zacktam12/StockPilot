@@ -11,7 +11,9 @@ const createUser = async (data) => {
 
   return userRepository.createUser(data);
 };
-
+const getUserByEmail = async (email) => {
+  return userRepository.findByEmail(email);
+};
 // Get all users with pagination and optional search
 const getAllUsers = async (page = 1, limit = 10, search = "") => {
   return await userRepository.findManyWithPagination(page, limit, search);
@@ -43,4 +45,7 @@ module.exports = {
   getUserById,
   updateUser,
   deleteUser,
+  getUserByEmail,
 };
+
+// src/services/user.service.js
