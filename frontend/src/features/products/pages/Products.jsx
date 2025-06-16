@@ -38,7 +38,7 @@ const ProductsPage = () => {
     searchTerm,
     isProductModalOpen,
     editingProduct,
-  } = useSelector((state) => state.products);
+  } = useSelector((state) => state.product);
 
   useEffect(() => {
     dispatch(fetchProducts());
