@@ -143,6 +143,18 @@ exports.updateUser = async (req, res, next) => {
   }
 };
 
+// exports.getMe = async (req, res, next) => {
+//   try {
+//     const user = req.user; // populated by the middleware
+//     res.json({
+//       success: true,
+//       data: user,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 // 🗑️ Soft delete
 exports.deleteUser = async (req, res, next) => {
   try {

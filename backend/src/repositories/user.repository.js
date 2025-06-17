@@ -7,12 +7,10 @@ class UserRepository extends BaseRepository {
   }
 
   async findByEmail(email) {
-    return await this.findUnique(
-      { email, isDeleted: false },
-      {
-        role: true,
-      }
-    );
+    return await this.model.findFirst({
+      where: { email, isDeleted: false },
+      include: { role: true },
+    });
   }
 
   async findActiveUsers(page = 1, limit = 10, search = "") {
@@ -55,7 +53,7 @@ class UserRepository extends BaseRepository {
   }
 
   async updateUser(id, userData) {
-    return await this.update({ id }, userData, {
+    return await this.update({ id: String(id) }, userData, {
       role: true,
     });
   }

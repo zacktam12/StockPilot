@@ -45,6 +45,9 @@ class BaseRepository {
   }
 
   findUnique(where, include) {
+    if (where?.id) {
+      where.id = String(where.id); // convert id to string
+    }
     return this.model.findUnique({
       where: { isDeleted: false, ...where },
       include,

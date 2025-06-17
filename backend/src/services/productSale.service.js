@@ -11,19 +11,19 @@ const getAllProductSales = () =>
 
 const getProductSaleById = (id) =>
   prisma.productSale.findUnique({
-    where: { id: parseInt(id) },
+    where: { id: String(id) },
     include: { product: true, sale: true },
   });
 
 const updateProductSale = (id, data) =>
   prisma.productSale.update({
-    where: { id: parseInt(id) },
+    where: { id: String(id) },
     data,
   });
 
 const deleteProductSale = (id) =>
   prisma.productSale.update({
-    where: { id: parseInt(id) },
+    where: { id: String(id) },
     data: { isDeleted: true },
   });
 
