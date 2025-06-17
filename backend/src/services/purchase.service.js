@@ -11,19 +11,19 @@ const getAllPurchases = () =>
 
 const getPurchaseById = (id) =>
   prisma.purchase.findUnique({
-    where: { id: parseInt(id) },
+    where: { id: String(id) },
     include: { user: true, supplier: true, productPurchases: true },
   });
 
 const updatePurchase = (id, data) =>
   prisma.purchase.update({
-    where: { id: parseInt(id) },
+    where: { id: String(id) },
     data,
   });
 
 const deletePurchase = (id) =>
   prisma.purchase.update({
-    where: { id: parseInt(id) },
+    where: { id: String(id) },
     data: { isDeleted: true },
   });
 
