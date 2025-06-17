@@ -10,8 +10,8 @@ const createSale = (data) => prisma.sale.create({ data });
 //   });
 
 const getAllSales = async (query) => {
-  const page = parseInt(query.page) || 1;
-  const limit = parseInt(query.limit) || 10;
+  const page = String(query.page) || 1;
+  const limit = String(query.limit) || 10;
   const skip = (page - 1) * limit;
 
   const where = {
@@ -46,19 +46,19 @@ const getAllSales = async (query) => {
 
 const getSaleById = (id) =>
   prisma.sale.findUnique({
-    where: { id: parseInt(id) },
+    where: { id: String(id) },
     include: { user: true, customer: true, productSales: true },
   });
 
 const updateSale = (id, data) =>
   prisma.sale.update({
-    where: { id: parseInt(id) },
+    where: { id: String(id) },
     data,
   });
 
 const deleteSale = (id) =>
   prisma.sale.update({
-    where: { id: parseInt(id) },
+    where: { id: String(id) },
     data: { isDeleted: true },
   });
 

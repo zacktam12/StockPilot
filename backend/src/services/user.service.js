@@ -21,23 +21,23 @@ const getAllUsers = async (page = 1, limit = 10, search = "") => {
 
 // Get user by ID
 const getUserById = (id) => {
-  return userRepository.findUnique({ id: parseInt(id) });
+  return userRepository.findUnique({ id: String(id) });
 };
 
 // Update user
 const updateUser = async (id, data) => {
-  const existingUser = await userRepository.findUnique({ id: parseInt(id) });
+  const existingUser = await userRepository.findUnique({ id: String(id) });
 
   if (!existingUser) {
     throw new Error(`User with ID ${id} does not exist.`);
   }
 
-  return userRepository.updateUser(parseInt(id), data);
+  return userRepository.updateUser(String(id), data);
 };
 
 // Soft delete user
 const deleteUser = (id) =>
-  userRepository.updateUser(parseInt(id), { isDeleted: true });
+  userRepository.updateUser(String(id), { isDeleted: true });
 
 module.exports = {
   createUser,
