@@ -6,18 +6,8 @@ const {
   validateUpdateProduct,
 } = require("../validators/product.validator");
 const { authenticate, authorize } = require("../middlewares/auth");
-const { getPagination } = require("../utils/pagination");
-const BaseRepository = require("../utils/BaseRepository");
-const { prisma } = require("../config/db");
 
-const productRepo = new BaseRepository(prisma.product);
-
-const getAllProducts = async (req) => {
-  const { skip, limit } = getPagination(req);
-  return productRepo.findMany({ skip, take: limit });
-};
-
-// Route definitions
+// Create product (Admin-only)
 router.post(
   "/",
   authenticate,
@@ -25,6 +15,8 @@ router.post(
   validateCreateProduct,
   productController.createProduct
 );
+
+// Update product (Admin-only)
 router.put(
   "/:id",
   authenticate,
@@ -32,30 +24,40 @@ router.put(
   validateUpdateProduct,
   productController.updateProduct
 );
+
+// Get all products (Admin and Staff)
 router.get(
   "/",
   authenticate,
   authorize("admin", "staff"),
   productController.getAllProducts
 );
+
+// Delete product (Admin-only)
 router.delete(
   "/:id",
   authenticate,
   authorize("admin"),
   productController.deleteProduct
 );
+
+// Get low-stock products (Admin and Staff)
 router.get(
   "/low-stock",
   authenticate,
   authorize("admin", "staff"),
   productController.getLowStockProducts
 );
+
+// Get out-of-stock products (Admin and Staff)
 router.get(
   "/out-of-stock",
   authenticate,
   authorize("admin", "staff"),
   productController.getOutOfStockProducts
 );
+
+// Get product by ID (Admin and Staff)
 router.get(
   "/:id",
   authenticate,
@@ -63,7 +65,5 @@ router.get(
   productController.getProductById
 );
 
-// Export both the router and the helper function
 module.exports = router;
-
 module.exports.getAllProducts = getAllProducts;

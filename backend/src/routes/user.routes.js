@@ -3,12 +3,11 @@ const router = express.Router();
 const userController = require("../controller/user.controller");
 const {
   validateRegister,
-  validateLogin,
   validateUpdateUser,
 } = require("../validators/user.validator");
 const { authenticate, authorize } = require("../middlewares/auth");
 
-// Register user
+// Register user (Admin-only)
 router.post(
   "/",
   authenticate,
@@ -17,6 +16,7 @@ router.post(
   userController.createUser
 );
 
+// Update user (Admin-only)
 router.put(
   "/:id",
   authenticate,
@@ -24,13 +24,19 @@ router.put(
   validateUpdateUser,
   userController.updateUser
 );
+
+// Get all users (Admin-only)
 router.get("/", authenticate, authorize("admin"), userController.getAllUsers);
+
+// Get user by ID (Admin-only)
 router.get(
   "/:id",
   authenticate,
   authorize("admin"),
   userController.getUserById
 );
+
+// Soft delete user (Admin-only)
 router.delete(
   "/:id",
   authenticate,

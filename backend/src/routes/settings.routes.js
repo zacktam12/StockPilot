@@ -4,6 +4,7 @@ const settingsController = require("../controller/settings.controller");
 const { validateUpdateSettings } = require("../validators/settings.validator");
 const { authenticate, authorize } = require("../middlewares/auth");
 
+// Update settings (Admin-only)
 router.put(
   "/",
   authenticate,
@@ -11,6 +12,8 @@ router.put(
   validateUpdateSettings,
   settingsController.updateSettings
 );
+
+// Get settings (Admin-only)
 router.get(
   "/",
   authenticate,
