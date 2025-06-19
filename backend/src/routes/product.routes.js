@@ -44,9 +44,24 @@ router.delete(
   authorize("admin"),
   productController.deleteProduct
 );
-router.get("/low-stock", productController.getLowStockProducts);
-router.get("/out-of-stock", productController.getOutOfStockProducts);
-router.get("/:id", productController.getProductById);
+router.get(
+  "/low-stock",
+  authenticate,
+  authorize("admin", "staff"),
+  productController.getLowStockProducts
+);
+router.get(
+  "/out-of-stock",
+  authenticate,
+  authorize("admin", "staff"),
+  productController.getOutOfStockProducts
+);
+router.get(
+  "/:id",
+  authenticate,
+  authorize("admin", "staff"),
+  productController.getProductById
+);
 
 // Export both the router and the helper function
 module.exports = router;

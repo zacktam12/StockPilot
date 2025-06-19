@@ -5,13 +5,39 @@ const {
   validateCreateCategory,
   validateUpdateCategory,
 } = require("../validators/category.validator");
+const { authenticate, authorize } = require("../middlewares/auth");
 
-router.put("/:id", validateUpdateCategory, categoryController.updateCategory);
-router.post("/", validateCreateCategory, categoryController.createCategory);
-// router.post("/", categoryController.createCategory);
-router.get("/", categoryController.getAllCategories);
-router.get("/:id", categoryController.getCategoryById);
-router.put("/:id", categoryController.updateCategory);
-router.delete("/:id", categoryController.deleteCategory);
+router.post(
+  "/",
+  authenticate,
+  authorize("admin"),
+  validateCreateCategory,
+  categoryController.createCategory
+);
+router.put(
+  "/:id",
+  authenticate,
+  authorize("admin", "staff"),
+  validateUpdateCategory,
+  categoryController.updateCategory
+);
+router.get(
+  "/",
+  authenticate,
+  authorize("admin", "staff"),
+  categoryController.getAllCategories
+);
+router.get(
+  "/:id",
+  authenticate,
+  authorize("admin", "staff"),
+  categoryController.getCategoryById
+);
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("admin"),
+  categoryController.deleteCategory
+);
 
 module.exports = router;

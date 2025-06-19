@@ -8,7 +8,6 @@ const {
 
 router.post("/", validateCreatePurchase, purchaseController.createPurchase);
 router.put("/:id", validateUpdatePurchase, purchaseController.updatePurchase);
-// router.post("/", purchaseController.createPurchase);
 router.get("/", purchaseController.getAllPurchases);
 router.get("/:id", purchaseController.getPurchaseById);
 router.put("/:id", purchaseController.updatePurchase);

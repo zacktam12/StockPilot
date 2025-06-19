@@ -17,7 +17,6 @@ router.put(
   productSaleController.updateProductSale
 );
 
-// router.post("/", controller.createProductSale);
 router.get("/", productSaleController.getAllProductSales);
 router.get("/:id", productSaleController.getProductSaleById);
 router.put("/:id", productSaleController.updateProductSale);
