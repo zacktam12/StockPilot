@@ -5,13 +5,34 @@ const {
   validateCreateRole,
   validateUpdateRole,
 } = require("../validators/role.validator");
+const { authenticate, authorize } = require("../middlewares/auth");
 
-router.post("/", validateCreateRole, roleController.createRole);
-router.put("/:id", validateUpdateRole, roleController.updateRole);
-// router.post("/", roleController.createRole);
-router.get("/", roleController.getAllRoles);
-router.get("/:id", roleController.getRoleById);
-router.put("/:id", roleController.updateRole);
-router.delete("/:id", roleController.deleteRole);
+router.post(
+  "/",
+  authenticate,
+  authorize("admin"),
+  validateCreateRole,
+  roleController.createRole
+);
+router.put(
+  "/:id",
+  authenticate,
+  authorize("admin"),
+  validateUpdateRole,
+  roleController.updateRole
+);
+router.get("/", authenticate, authorize("admin"), roleController.getAllRoles);
+router.get(
+  "/:id",
+  authenticate,
+  authorize("admin"),
+  roleController.getRoleById
+);
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("admin"),
+  roleController.deleteRole
+);
 
 module.exports = router;

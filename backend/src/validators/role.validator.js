@@ -2,6 +2,7 @@ const Joi = require("joi");
 
 // Schema for creating a role
 const createRoleSchema = Joi.object({
+  
   role_type: Joi.string().min(2).max(50).required(),
   createdAt: Joi.date().optional(), // Can be auto-set in DB
   createdBy: Joi.string().optional(),
