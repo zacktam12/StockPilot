@@ -31,17 +31,19 @@ app.get("/protected", authenticate, (req, res) => {
 app.get("/api/test-auth", authenticate, (req, res) => {
   res.json({ message: "Authenticated!", user: req.user });
 });
-app.use("/api", authenticate, uploadRoutes);
-app.use("/api/auth", authenticate, authRoutes);
-app.use("/api/purchases", authenticate, purchaseRoutes);
-app.use("/api/roles", authenticaterole, Routes);
-app.use("/api/settings", authenticate, settingsRoutes);
-app.use("/api/sales", authenticate, saleRoutes);
-app.use("/api/categories", authenticate, categoryRoutes);
-app.use("/api/products", authenticate, productRoutes);
-app.use("/api/users", authenticate, userRoutes);
-app.use("/api/product-sales", authenticate, productSaleRoutes);
-app.use("/api/product-purchases", authenticate, productPurchaseRoutes);
+app.use("/api/auth",  authRoutes);
+// protect all routes after this point
+app.use(authenticate); // Uncomment if you want to protect all routes by default
+app.use("/api", uploadRoutes);
+app.use("/api/purchases", purchaseRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/sales", saleRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/product-sales", productSaleRoutes);
+app.use("/api/product-purchases", productPurchaseRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
