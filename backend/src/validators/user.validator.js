@@ -6,7 +6,7 @@ const registerSchema = Joi.object({
   firstName: Joi.string().min(2).max(50),
   lastName: Joi.string().min(2).max(50),
   phone: Joi.string().pattern(/^[+]?[1-9][\d]{0,15}$/),
-  roleId: Joi.number().integer().positive().required(),
+  roleId: Joi.string().required(), // Changed from number to string
 });
 
 const loginSchema = Joi.object({
@@ -18,7 +18,7 @@ const updateUserSchema = Joi.object({
   firstName: Joi.string().min(2).max(50),
   lastName: Joi.string().min(2).max(50),
   phone: Joi.string().pattern(/^[+]?[1-9][\d]{0,15}$/),
-  roleId: Joi.number().integer().positive(),
+  roleId: Joi.string(), // Changed from number to string
 });
 
 const validateRegister = (req, res, next) => {

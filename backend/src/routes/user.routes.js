@@ -16,13 +16,26 @@ router.post(
   validateRegister,
   userController.createUser
 );
-// Login route (if you implement auth)
-// router.post("/login", validateLogin, userController.loginUser);
-// Update user
-router.put("/:id", validateUpdateUser, userController.updateUser);
-router.get("/", userController.getAllUsers);
-router.get("/:id", userController.getUserById);
-router.put("/:id", userController.updateUser);
-router.delete("/:id", userController.deleteUser);
+
+router.put(
+  "/:id",
+  authenticate,
+  authorize("admin"),
+  validateUpdateUser,
+  userController.updateUser
+);
+router.get("/", authenticate, authorize("admin"), userController.getAllUsers);
+router.get(
+  "/:id",
+  authenticate,
+  authorize("admin"),
+  userController.getUserById
+);
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("admin"),
+  userController.deleteUser
+);
 
 module.exports = router;

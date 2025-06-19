@@ -8,14 +8,14 @@ class UserRepository extends BaseRepository {
 
   async findByEmail(email) {
     return await this.model.findFirst({
-      where: { email, isDeleted: false },
+      where: { email, status: "Active" },
       include: { role: true },
     });
   }
 
   async findActiveUsers(page = 1, limit = 10, search = "") {
     const where = {
-      isDeleted: false,
+      status: "Active",
       ...(search && {
         OR: [
           { firstName: { contains: search } },
@@ -38,7 +38,7 @@ class UserRepository extends BaseRepository {
     return await this.findMany({
       where: {
         roleId,
-        isDeleted: false,
+        status: "Active",
       },
       include: {
         role: true,
@@ -47,6 +47,8 @@ class UserRepository extends BaseRepository {
   }
 
   async createUser(userData) {
+    // Ensure status is set to Active if not provided
+    if (!userData.status) userData.status = "Active";
     return await this.create(userData, {
       role: true,
     });
@@ -61,7 +63,7 @@ class UserRepository extends BaseRepository {
   async findCustomers() {
     return await this.findMany({
       where: {
-        isDeleted: false,
+        status: "Active",
         role: {
           role_type: "customer",
         },
@@ -75,7 +77,7 @@ class UserRepository extends BaseRepository {
   async findSuppliers() {
     return await this.findMany({
       where: {
-        isDeleted: false,
+        status: "Active",
         role: {
           role_type: "supplier",
         },
@@ -84,6 +86,11 @@ class UserRepository extends BaseRepository {
         role: true,
       },
     });
+  }
+
+  // Soft delete: set status to Deactivated
+  async softDeleteUser(id) {
+    return await this.update({ id: String(id) }, { status: "Deactivated" });
   }
 }
 
