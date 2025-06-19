@@ -1,6 +1,6 @@
 const { verifyToken } = require("../config/jwt");
 const { prisma } = require("../config/db");
-const authenticate = async (req, res, next) => {
+async function authenticate(req, res, next) {
   try {
     const authHeader = req.header("Authorization");
     console.log("🪪 Authorization Header:", authHeader);
@@ -11,14 +11,15 @@ const authenticate = async (req, res, next) => {
     const decoded = verifyToken(token);
     console.log("✅ Token Decoded:", decoded);
 
+    // Convert id to string for Prisma
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id, isDeleted: false },
+      where: { id: String(decoded.id), status: "Active" }, 
       include: { role: true },
     });
 
     if (!user) return res.status(401).json({ message: "User not found" });
-    if (user.isDeleted) {
-      return res.status(401).json({ message: "User account is deleted" });
+    if (user.status !== "Active") {
+      return res.status(401).json({ message: "User account is not active" });
     }
 
     req.user = user;
