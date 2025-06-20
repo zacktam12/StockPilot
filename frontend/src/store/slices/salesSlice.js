@@ -13,7 +13,7 @@ export const fetchSales = createAsyncThunk(
       const response = await api.get(
         `/sales-orders?sortBy=${sortField}&order=${sortOrder}`
       );
-      return response.data;
+      return response.data; // Assuming this is an array or full object
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch sales"
@@ -100,7 +100,7 @@ const initialState = {
   customers: [],
   loading: false,
   error: null,
-  statusFilter: "all", // 'all', 'completed', 'pending', 'cancelled'
+  statusFilter: "all",
   sortField: "created_at",
   sortOrder: "desc",
   pagination: {
@@ -117,7 +117,7 @@ const salesSlice = createSlice({
   reducers: {
     setStatusFilter: (state, action) => {
       state.statusFilter = action.payload;
-      state.pagination.currentPage = 1; // Reset to first page when filter changes
+      state.pagination.currentPage = 1;
     },
     setSortField: (state, action) => {
       state.sortField = action.payload;
@@ -139,9 +139,9 @@ const salesSlice = createSlice({
       })
       .addCase(fetchSales.fulfilled, (state, action) => {
         state.loading = false;
-        state.sales = action.payload.data;
+        state.sales = action.payload; // ✅ FIXED
         state.pagination.totalItems =
-          action.payload.total || action.payload.length;
+          action.payload.total || action.payload.length || 0;
       })
       .addCase(fetchSales.rejected, (state, action) => {
         state.loading = false;
@@ -170,7 +170,7 @@ const salesSlice = createSlice({
       })
       .addCase(createSale.fulfilled, (state, action) => {
         state.loading = false;
-        state.sales.unshift(action.payload); // Add new sale to beginning of array
+        state.sales.unshift(action.payload);
       })
       .addCase(createSale.rejected, (state, action) => {
         state.loading = false;
@@ -232,11 +232,7 @@ export const {
 // Selectors
 export const selectAllSales = (state) => {
   const { sales, statusFilter } = state.sales;
-
-  if (statusFilter === "all") {
-    return sales;
-  }
-
+  if (statusFilter === "all") return sales;
   return sales.filter((sale) => sale.status === statusFilter);
 };
 
@@ -247,13 +243,8 @@ export const selectFilteredSales = (state) => {
   return [...sales].sort((a, b) => {
     const valueA = a[sortField];
     const valueB = b[sortField];
-
-    if (valueA < valueB) {
-      return sortOrder === "asc" ? -1 : 1;
-    }
-    if (valueA > valueB) {
-      return sortOrder === "asc" ? 1 : -1;
-    }
+    if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
+    if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
     return 0;
   });
 };
@@ -261,7 +252,6 @@ export const selectFilteredSales = (state) => {
 export const selectPaginatedSales = (state) => {
   const sales = selectFilteredSales(state);
   const { currentPage, itemsPerPage } = state.sales.pagination;
-
   const startIndex = (currentPage - 1) * itemsPerPage;
   return sales.slice(startIndex, startIndex + itemsPerPage);
 };

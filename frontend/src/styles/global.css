@@ -2,4 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes bar-loader {
+  0% {
+    margin-left: -40%;
+    width: 40%;
+  }
+  50% {
+    margin-left: 30%;
+    width: 60%;
+  }
+  100% {
+    margin-left: 100%;
+    width: 40%;
+  }
+}
+.animate-bar-loader {
+  animation: bar-loader 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Add this to your global CSS */
+@keyframes bar-fluctuate {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+  }
+  50% {
+    transform: scaleY(1.5);
+  }
+}
+
+.animate-bar-fluctuate {
+  animation: bar-fluctuate 1s infinite ease-in-out;
+}
+
 /* Add any global overrides here */
+html,
+body {
+  min-height: 100vh;
+  background-color: #fff;
+  color: #1f2937; /* text-gray-800 */
+}
+
+.dark html,
+.dark body {
+  background-color: #111827; /* gray-900 */
+  color: #f3f4f6; /* text-gray-200 */
+}
