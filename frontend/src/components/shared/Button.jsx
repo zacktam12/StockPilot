@@ -21,17 +21,17 @@ const Button = React.forwardRef(
 
     const variantStyles = {
       primary:
-        "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:ring-indigo-500",
+        "bg-[#3f51b5] hover:bg-[#303f9f] text-white font-bold rounded-xl px-4 py-2 transition",
       secondary:
-        "bg-teal-600 text-white hover:bg-teal-700 focus-visible:ring-teal-500",
+        "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500",
       outline:
-        "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500",
+        "border border-gray-300 bg-white text-gray-800 hover:bg-blue-50 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700",
       ghost:
-        "bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-500",
+        "bg-transparent text-gray-800 hover:bg-blue-50 focus-visible:ring-blue-500 dark:text-gray-200 dark:hover:bg-gray-700",
       danger:
-        "bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500",
+        "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
       success:
-        "bg-green-500 text-white hover:bg-green-600 focus-visible:ring-green-500",
+        "bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-500",
     };
 
     const sizeStyles = {
