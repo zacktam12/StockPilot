@@ -1,61 +1,48 @@
 // Table.jsx
 import React from "react";
 
-const Table = ({ children, className = "" }) => {
-  return (
-    <div className="overflow-x-auto">
-      <table className={`min-w-full divide-y divide-gray-200 ${className}`}>
-        {children}
-      </table>
-    </div>
-  );
-};
+export const Table = ({ children, className = "" }) => (
+  <table
+    className={`min-w-full divide-y divide-gray-200 bg-white text-gray-800 dark:divide-gray-700 dark:bg-gray-800 dark:text-gray-200 ${className}`}
+  >
+    {children}
+  </table>
+);
 
-const TableHeader = ({ children, className = "" }) => {
-  return <thead className={`bg-gray-50 ${className}`}>{children}</thead>;
-};
+export const TableHeader = ({ children, className = "" }) => (
+  <thead className={className}>{children}</thead>
+);
 
-const TableRow = ({ children, className = "", onClick }) => {
-  return (
-    <tr
-      className={`
-        ${onClick ? "cursor-pointer hover:bg-gray-50" : ""}
-        ${className}
-      `}
-      onClick={onClick}
-    >
-      {children}
-    </tr>
-  );
-};
+export const TableRow = ({ children, className = "" }) => (
+  <tr
+    className={`border-b border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700 ${className}`}
+  >
+    {children}
+  </tr>
+);
 
-const TableHead = ({ children, className = "" }) => {
-  return (
-    <th
-      scope="col"
-      className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${className}`}
-    >
-      {children}
-    </th>
-  );
-};
+export const TableHead = ({ children, className = "" }) => (
+  <th
+    className={`px-6 py-3 bg-white text-left text-xs font-medium text-[#3f51b5] uppercase tracking-wider dark:bg-gray-800 dark:text-blue-100 ${className}`}
+  >
+    {children}
+  </th>
+);
 
-const TableBody = ({ children, className = "" }) => {
-  return (
-    <tbody className={`bg-white divide-y divide-gray-200 ${className}`}>
-      {children}
-    </tbody>
-  );
-};
+export const TableBody = ({ children, className = "" }) => (
+  <tbody className={className}>{children}</tbody>
+);
 
-const TableCell = ({ children, className = "" }) => {
-  return (
-    <td
-      className={`px-6 py-4 whitespace-nowrap text-sm text-gray-500 ${className}`}
-    >
-      {children}
-    </td>
-  );
-};
+export const TableCell = ({ children, className = "" }) => (
+  <td className={`px-6 py-4 whitespace-nowrap text-sm ${className}`}>
+    {children}
+  </td>
+);
 
-export { Table, TableHeader, TableHead, TableRow, TableBody, TableCell };
+// export { TableHeader, TableHead, TableRow, TableBody, TableCell };
+export const TableFooter = ({ children, className = "" }) => (
+  <tfoot className={className}>{children}</tfoot>
+);
+export const TableFooterRow = ({ children, className = "" }) => (
+  <tr className={`border-t border-gray-700 ${className}`}>{children}</tr>
+);
