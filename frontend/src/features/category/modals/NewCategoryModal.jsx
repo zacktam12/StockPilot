@@ -67,9 +67,9 @@ const NewCategoryModal = () => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
+      <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-xl shadow-lg w-full max-w-md">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {mode === "edit" ? "Edit Category" : "Add New Category"}
           </h2>
         </div>
@@ -88,7 +88,7 @@ const NewCategoryModal = () => {
           <div>
             <label
               htmlFor="description"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1"
             >
               Description (optional)
             </label>
@@ -97,7 +97,7 @@ const NewCategoryModal = () => {
               id="description"
               value={formData.description}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 p-2 shadow-sm min-h-[100px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 p-2 shadow-sm min-h-[100px] focus:ring-2 focus:ring-[#3f51b5] focus:border-[#3f51b5]"
             />
           </div>
 

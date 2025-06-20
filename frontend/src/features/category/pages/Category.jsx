@@ -8,7 +8,7 @@ import {
   Edit,
   Trash,
   Tag,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import {
   fetchCategories,
@@ -16,7 +16,7 @@ import {
   setSearchTerm,
   setSortField,
   setFilterOptions,
-  openCategoryModal
+  openCategoryModal,
 } from "../../../store/slices/categorySlice";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
@@ -26,9 +26,10 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from "../../../components/shared/Table";
 import NewCategoryModal from "../modals/NewCategoryModal";
+import LoadingOverlay from "../../../components/shared/LoadingOverlay";
 
 const CategoryPage = () => {
   const dispatch = useDispatch();
@@ -40,7 +41,7 @@ const CategoryPage = () => {
     itemsPerPage,
     searchTerm,
     sortField,
-    filterOptions
+    filterOptions,
   } = useSelector((state) => state.category);
 
   const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -65,10 +66,16 @@ const CategoryPage = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
 
+  if (loading && filteredItems.length === 0 && !error) {
+    return <LoadingOverlay />;
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen bg-white text-gray-900 dark:bg-background dark:text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Categories
+        </h1>
         <Button
           variant="primary"
           size="md"
@@ -106,7 +113,7 @@ const CategoryPage = () => {
             Filter
           </Button>
           {showFilterMenu && (
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50">
+            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -118,9 +125,11 @@ const CategoryPage = () => {
                       })
                     )
                   }
-                  className="rounded border-gray-300"
+                  className="rounded border-gray-300 dark:border-gray-600"
                 />
-                <span className="text-sm">Has Description</span>
+                <span className="text-sm text-gray-700 dark:text-gray-200">
+                  Has Description
+                </span>
               </label>
             </div>
           )}
@@ -135,23 +144,29 @@ const CategoryPage = () => {
             Sort
           </Button>
           {showSortMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
               <button
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between text-gray-700 dark:text-gray-200"
                 onClick={() => handleSort("name")}
               >
                 <span>Name</span>
                 {sortField === "name" && (
-                  <Check size={16} className="text-indigo-600" />
+                  <Check
+                    size={16}
+                    className="text-indigo-600 dark:text-indigo-400"
+                  />
                 )}
               </button>
               <button
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between text-gray-700 dark:text-gray-200"
                 onClick={() => handleSort("created_at")}
               >
                 <span>Created Date</span>
                 {sortField === "created_at" && (
-                  <Check size={16} className="text-indigo-600" />
+                  <Check
+                    size={16}
+                    className="text-indigo-600 dark:text-indigo-400"
+                  />
                 )}
               </button>
             </div>
@@ -159,7 +174,7 @@ const CategoryPage = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden dark:bg-background-secondary dark:border-background-secondary">
         <Table>
           <TableHeader>
             <TableRow>
@@ -170,13 +185,7 @@ const CategoryPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
-                  Loading categories...
-                </TableCell>
-              </TableRow>
-            ) : currentItems.length > 0 ? (
+            {currentItems.length > 0 ? (
               currentItems.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell>
