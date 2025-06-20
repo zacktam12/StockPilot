@@ -1,21 +1,56 @@
-// src/components/shared/spinner.jsx
-import { useSelector } from "react-redux";
+// src/components/shared/Spinner.jsx
 
-export default function Spinner() {
-  const { isLoading, loadingMessage } = useSelector((state) => state.loading);
-
-  if (!isLoading) return null;
-
+export function BarsSpinner({ color = "#3f51b5" }) {
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex items-center justify-center">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl flex flex-col items-center min-w-[200px]">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary-500 mb-3"></div>
-        {loadingMessage && (
-          <p className="text-gray-700 dark:text-gray-300 text-sm">
-            {loadingMessage}
-          </p>
-        )}
+    <div className="flex items-center justify-center space-x-2">
+      <div
+        className="w-2 h-8 animate-bar-fluctuate"
+        style={{
+          animationDelay: "0s",
+          backgroundColor: color,
+        }}
+      ></div>
+      <div
+        className="w-2 h-8 animate-bar-fluctuate"
+        style={{
+          animationDelay: "0.1s",
+          backgroundColor: color,
+        }}
+      ></div>
+      <div
+        className="w-2 h-8 animate-bar-fluctuate"
+        style={{
+          animationDelay: "0.2s",
+          backgroundColor: color,
+        }}
+      ></div>
+      <div
+        className="w-2 h-8 animate-bar-fluctuate"
+        style={{
+          animationDelay: "0.3s",
+          backgroundColor: color,
+        }}
+      ></div>
+      <div
+        className="w-2 h-8 animate-bar-fluctuate"
+        style={{
+          animationDelay: "0.4s",
+          backgroundColor: color,
+        }}
+      ></div>
+    </div>
+  );
+}
+
+export function FullPageSpinner({ message = "Loading..." }) {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-white/80 dark:bg-black/60">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3f51b5] mb-4" />
+        <p className="text-[#3f51b5] text-sm">{message}</p>
       </div>
     </div>
   );
 }
+
+export default BarsSpinner;
