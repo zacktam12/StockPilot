@@ -10,12 +10,15 @@ import {
 } from "../../../components/shared/Card";
 import { TrendingUp, Package, ShoppingCart, Download } from "lucide-react";
 import Button from "../../../components/shared/Button";
+import LoadingOverlay from "../../../components/shared/LoadingOverlay";
 
 const ReportsPage = () => {
   const [loading, setLoading] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // new
   const [currentReport, setCurrentReport] = useState(null);
   const generateReport = async (reportType) => {
     setLoading(reportType);
+    setIsLoading(true); // show overlay
     try {
       let endpoint, columns, title;
 
@@ -109,6 +112,7 @@ const ReportsPage = () => {
       alert(`Failed to generate report: ${error.message}`);
     } finally {
       setLoading(null);
+      setIsLoading(false); // hide overlay
     }
   };
 
@@ -230,23 +234,37 @@ const ReportsPage = () => {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <LoadingOverlay title="Reports" description="Loading report data..." />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-200">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+          Reports
+        </h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {reports.map((report, index) => (
           <Card
             key={index}
-            className="hover:shadow-lg transition-shadow duration-200"
+            className="hover:shadow-lg transition-shadow duration-200 bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-200"
           >
-            <CardHeader className="flex flex-row items-center gap-4">
-              <div className="p-2 rounded-lg bg-gray-50">{report.icon}</div>
+            <CardHeader className="flex flex-row items-center gap-4 bg-white dark:bg-gray-800">
+              <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900">
+                {report.icon}
+              </div>
               <div>
-                <CardTitle className="text-lg">{report.title}</CardTitle>
-                <p className="text-sm text-gray-500 mt-1">
+                <CardTitle className="text-lg text-gray-800 dark:text-white">
+                  {report.title}
+                </CardTitle>
+                <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
                   {report.description}
                 </p>
               </div>
@@ -273,9 +291,11 @@ const ReportsPage = () => {
       </div>
 
       {currentReport && (
-        <Card className="mt-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>{currentReport.title}</CardTitle>
+        <Card className="mt-6 bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+          <CardHeader className="flex flex-row items-center justify-between bg-white dark:bg-gray-800">
+            <CardTitle className="text-gray-800 dark:text-white">
+              {currentReport.title}
+            </CardTitle>
             <Button
               variant="outline"
               size="sm"
@@ -287,13 +307,13 @@ const ReportsPage = () => {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
                     {currentReport.columns.map((column, index) => (
                       <th
                         key={index}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider"
                       >
                         {column}
                       </th>
@@ -301,7 +321,7 @@ const ReportsPage = () => {
                   </tr>
                 </thead>
 
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                   {currentReport.data.map((item, index) => (
                     <tr key={index}>
                       {currentReport.title === "Daily Sales Report" && (
