@@ -35,6 +35,8 @@ import {
   TableRow,
 } from "../../../components/shared/Table";
 import NewSupplierModal from "../modals/NewSupplierModal";
+import LoadingOverlay from "../../../components/shared/LoadingOverlay";
+import { BarsSpinner } from "../../../components/shared/Spinner";
 
 const SuppliersPage = () => {
   const dispatch = useDispatch();
@@ -64,10 +66,21 @@ const SuppliersPage = () => {
   const indexOfFirstItem = indexOfLastItem - pagination.itemsPerPage;
   const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
 
+  if (loading && filteredItems.length === 0 && !error) {
+    return (
+      <LoadingOverlay
+        title="Suppliers"
+        description="Loading supplier data..."
+      />
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-white text-gray-900 dark:bg-background dark:text-text min-h-screen">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Suppliers</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Suppliers
+        </h1>
         <Button
           variant="primary"
           size="md"
@@ -105,25 +118,29 @@ const SuppliersPage = () => {
             Filter
           </Button>
           {showFilterMenu && (
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50">
+            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50">
               <div className="space-y-4">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={filters.options.hasPhone}
                     onChange={() => dispatch(togglePhoneFilter())}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="rounded border-gray-300 dark:border-gray-600"
                   />
-                  <span className="text-sm">Has Phone Number</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-200">
+                    Has Phone Number
+                  </span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={filters.options.hasAddress}
                     onChange={() => dispatch(toggleAddressFilter())}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="rounded border-gray-300 dark:border-gray-600"
                   />
-                  <span className="text-sm">Has Address</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-200">
+                    Has Address
+                  </span>
                 </label>
               </div>
             </div>
@@ -139,32 +156,41 @@ const SuppliersPage = () => {
             Sort
           </Button>
           {showSortMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
               <button
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between text-gray-700 dark:text-gray-200"
                 onClick={() => dispatch(setSort({ field: "name" }))}
               >
                 <span>Name</span>
                 {filters.sortField === "name" && (
-                  <Check size={16} className="text-indigo-600" />
+                  <Check
+                    size={16}
+                    className="text-indigo-600 dark:text-indigo-400"
+                  />
                 )}
               </button>
               <button
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between text-gray-700 dark:text-gray-200"
                 onClick={() => dispatch(setSort({ field: "email" }))}
               >
                 <span>Email</span>
                 {filters.sortField === "email" && (
-                  <Check size={16} className="text-indigo-600" />
+                  <Check
+                    size={16}
+                    className="text-indigo-600 dark:text-indigo-400"
+                  />
                 )}
               </button>
               <button
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between text-gray-700 dark:text-gray-200"
                 onClick={() => dispatch(setSort({ field: "created_at" }))}
               >
                 <span>Created Date</span>
                 {filters.sortField === "created_at" && (
-                  <Check size={16} className="text-indigo-600" />
+                  <Check
+                    size={16}
+                    className="text-indigo-600 dark:text-indigo-400"
+                  />
                 )}
               </button>
             </div>
@@ -172,7 +198,12 @@ const SuppliersPage = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="relative bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden dark:bg-background-secondary dark:border-background-secondary">
+        {loading && filteredItems.length > 0 && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 dark:bg-white/10">
+            <BarsSpinner />
+          </div>
+        )}
         <Table>
           <TableHeader>
             <TableRow>
@@ -184,16 +215,7 @@ const SuppliersPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Loading suppliers...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : currentItems.length > 0 ? (
+            {currentItems.length > 0 ? (
               currentItems.map((supplier) => (
                 <TableRow key={supplier.id}>
                   <TableCell>
