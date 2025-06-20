@@ -85,14 +85,14 @@ const Header = ({ userName, userAvatar }) => {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16">
+    <header className="bg-white border-b border-gray-200 h-16 dark:bg-gray-900 dark:border-gray-800">
       <div className="h-full px-4 flex items-center justify-between">
         <div className="relative max-w-xs w-full hidden sm:block"></div>
 
         <div className="flex items-center gap-4">
           <button
             onClick={toggleTheme}
-            className="p-2 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+            className="p-2 text-[#3f51b5] rounded-full hover:bg-blue-50 dark:hover:bg-gray-800 focus:outline-none"
           >
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
           </button>
