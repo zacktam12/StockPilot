@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../components/shared/Card";
+import CardLoaderOverlay from "../../../components/shared/CardLoaderOverlay";
 
 const RecentActivityCard = () => {
   const { activities, loading } = useSelector((state) => state.dashboard);
@@ -29,7 +30,8 @@ const RecentActivityCard = () => {
   };
 
   return (
-    <Card className="h-full">
+    <Card className="h-full relative">
+      {loading && <CardLoaderOverlay />}
       <CardHeader>
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
