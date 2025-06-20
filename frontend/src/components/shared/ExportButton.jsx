@@ -171,7 +171,7 @@ const ExportButton = ({ reportType, reportData, reportTitle, isLoading }) => {
     <Button
       variant="outline"
       onClick={exportPDF}
-      className="flex items-center"
+      className="flex items-center bg-[#3f51b5] hover:bg-[#303f9f] text-white px-4 py-2 rounded-lg transition"
       disabled={isLoading}
     >
       <Download className="mr-2 h-4 w-4" />
