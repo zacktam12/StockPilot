@@ -14,28 +14,32 @@ import Users from "../features/users/pages/Users";
 import Report from "../features/report/pages/Report";
 import { ThemeProvider } from "../components/ThemeProvider";
 import ProfilePage from "../features/users/pages/Profile";
+import LoadingExamplePage from "../features/dashboard/pages/LoadingExamplePage";
+import SettingsPage from "../features/settings/pages/Settings";
 
 const AppRoutes = () => {
-	return (
-		<ThemeProvider>
-			<Routes>
-				<Route path="/login" element={<Login />} />
-				<Route element={<ProtectedLayout />}>
-					<Route index element={<Dashboard />} />
-					<Route path="/dashboard" element={<Dashboard />} />
-					<Route path="/products" element={<Products />} />
-					<Route path="/categories" element={<Category />} />
-					<Route path="/customers" element={<Customers />} />
-					<Route path="/suppliers" element={<Suppliers />} />
-					<Route path="/purchases" element={<Purchase />} />
-					<Route path="/sales" element={<Sales />} />
-					<Route path="/users" element={<Users />} />
-					<Route path="/reports" element={<Report />} />
-					<Route path="/profile" element={<ProfilePage />} />
-				</Route>
-			</Routes>
-		</ThemeProvider>
-	);
+  return (
+    <ThemeProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route element={<ProtectedLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/categories" element={<Category />} />
+          <Route path="/customers" element={<Customers />} />
+          <Route path="/suppliers" element={<Suppliers />} />
+          <Route path="/purchases" element={<Purchase />} />
+          <Route path="/sales" element={<Sales />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/reports" element={<Report />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/loading-example" element={<LoadingExamplePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </ThemeProvider>
+  );
 };
 
 export default AppRoutes;
