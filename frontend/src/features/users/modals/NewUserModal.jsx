@@ -38,8 +38,8 @@ const NewUserModal = ({ isOpen, onClose, onSuccess, editingUser }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold">
             {editingUser ? "Edit User" : "Add New User"}
           </h2>
@@ -80,7 +80,7 @@ const NewUserModal = ({ isOpen, onClose, onSuccess, editingUser }) => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Role
             </label>
             <select
@@ -88,7 +88,7 @@ const NewUserModal = ({ isOpen, onClose, onSuccess, editingUser }) => {
               onChange={(e) =>
                 setFormData({ ...formData, role: e.target.value })
               }
-              className="w-full rounded-md border border-gray-300 shadow-sm p-2"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white shadow-sm p-2"
             >
               <option value="staff">Staff</option>
               <option value="admin">Admin</option>
