@@ -5,9 +5,11 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true, // Add this line
+    port: 5000, // ← change this to your desired port
+    host: true, // optional: allows LAN access
   },
   build: {
+    sourcemap: true,
     commonjsOptions: {
       transformMixedEsModules: true,
     },
