@@ -23,7 +23,8 @@ import NewSaleModal from "../components/NewSaleModal";
 import QRScannerModal from "../components/QRScannerModal";
 import OrderReceipt from "../components/OrderReceipt";
 import { fetchSales, updateSaleStatus } from "../../../store/slices/salesSlice";
-import LoadingContainer from "../../../components/shared/LoadingContainer";
+import LoadingOverlay from "../../../components/shared/LoadingOverlay";
+import { BarsSpinner } from "../../../components/shared/Spinner";
 
 const SalesPage = () => {
   const dispatch = useDispatch();
@@ -37,6 +38,7 @@ const SalesPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  // ✅ Always fetch sales on mount
   useEffect(() => {
     dispatch(fetchSales());
   }, [dispatch]);
@@ -98,10 +100,27 @@ const SalesPage = () => {
     }
   };
 
+  // ✅ Full-page spinner on first load
+  if (loading && sales.length === 0) {
+    return <LoadingOverlay title="Sales" description="Loading sales data..." />;
+  }
+
+  // ✅ Error fallback
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 text-red-600">
+        <span className="text-2xl font-bold mb-2">Error</span>
+        <span>{error}</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen bg-white text-gray-900 dark:bg-background dark:text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Sales</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Sales
+        </h1>
         <div className="flex gap-2">
           <Button
             variant="primary"
@@ -143,9 +162,9 @@ const SalesPage = () => {
         </div>
       </div>
 
-      <LoadingContainer isLoading={loading && sales.length === 0}>
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-          <Table>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden dark:bg-background-secondary dark:border-background-secondary">
+        <Table>
+          <>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
@@ -157,7 +176,16 @@ const SalesPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentSales.length > 0 ? (
+              {loading && sales.length > 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-16 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <BarsSpinner />
+                      <span className="mt-2 text-gray-500">Loading...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : currentSales.length > 0 ? (
                 currentSales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell className="font-medium">#{sale.id}</TableCell>
@@ -225,9 +253,9 @@ const SalesPage = () => {
                 </TableRow>
               )}
             </TableBody>
-          </Table>
-        </div>
-      </LoadingContainer>
+          </>
+        </Table>
+      </div>
 
       {totalPages > 1 && (
         <div className="flex justify-between items-center">
