@@ -1,43 +1,39 @@
 // src/components/shared/LoadingContainer.jsx
+
 import PropTypes from "prop-types";
-import Spinner from "./Spinner";
+import LoadingOverlay from "./LoadingOverlay";
 
 const LoadingContainer = ({
   children,
   isLoading = false,
-  minHeight = "200px",
-  background = "bg-white/80",
-  zIndex = "z-10",
-  spinnerSize = "md",
-  className = "",
-}) => (
-  <div
-    className={`relative ${
-      minHeight ? `min-h-[${minHeight}]` : ""
-    } ${className}`}
-    data-testid="loading-container"
-  >
-    {isLoading && (
+  title = "Loading...",
+  description = "",
+}) => {
+  if (isLoading) {
+    return (
       <div
-        className={`absolute inset-0 flex items-center justify-center ${background} ${zIndex}`}
-        aria-live="polite"
-        aria-busy={isLoading}
+        className="fixed inset-0 z-[9999] flex flex-col items-center justify-center
+        bg-white/80 dark:bg-black/60 text-gray-900 dark:text-gray-200 transition-colors"
       >
-        <Spinner size={spinnerSize} />
+        <h1 className="text-2xl font-semibold mb-2">{title}</h1>
+        {description && (
+          <p className="text-sm mb-6 text-gray-500 dark:text-gray-300">
+            {description}
+          </p>
+        )}
+        <BarsSpinner />
       </div>
-    )}
-    {children}
-  </div>
-);
+    );
+  }
+
+  return <>{children}</>;
+};
 
 LoadingContainer.propTypes = {
   children: PropTypes.node.isRequired,
   isLoading: PropTypes.bool,
-  minHeight: PropTypes.string,
-  background: PropTypes.string,
-  zIndex: PropTypes.string,
-  spinnerSize: PropTypes.oneOf(["sm", "md", "lg"]),
-  className: PropTypes.string,
+  title: PropTypes.string,
+  description: PropTypes.string,
 };
 
 export default LoadingContainer;
