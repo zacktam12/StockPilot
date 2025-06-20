@@ -16,12 +16,14 @@ import {
   TableRow,
 } from "../../../components/shared/Table";
 import Badge from "../../../components/shared/Badge";
+import CardLoaderOverlay from "../../../components/shared/CardLoaderOverlay";
 
 const ProductAlertCard = () => {
   const { lowStockProducts, loading } = useSelector((state) => state.dashboard);
 
   return (
-    <Card className="h-full">
+    <Card className="h-full relative">
+      {loading && <CardLoaderOverlay />}
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Low Stock Alerts</CardTitle>
         <Badge variant="danger">
@@ -40,16 +42,7 @@ const ProductAlertCard = () => {
           </TableHeader>
 
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={3}
-                  className="text-center py-6 text-gray-500"
-                >
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : lowStockProducts.length > 0 ? (
+            {lowStockProducts.length > 0 ? (
               lowStockProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium text-gray-900">
