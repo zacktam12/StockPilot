@@ -70,8 +70,8 @@ const NewCustomerModal = () => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold">
             {mode === "edit" ? "Edit Customer" : "Add New Customer"}
           </h2>
@@ -108,7 +108,7 @@ const NewCustomerModal = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Address
             </label>
             <div className="relative">
@@ -120,7 +120,7 @@ const NewCustomerModal = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
                 }
-                className="w-full rounded-md border border-gray-300 pl-10 p-2 shadow-sm min-h-[80px]"
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 pl-10 p-2 shadow-sm min-h-[80px]"
               />
             </div>
           </div>
