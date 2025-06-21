@@ -41,16 +41,19 @@ const ProductsPage = () => {
     editingProduct,
   } = useSelector((state) => state.product);
 
+  // Fetch products on mount
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch]);
 
+  // Handle product deletion
   const handleDelete = (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       dispatch(deleteProduct(productId));
     }
   };
 
+  // Pagination logic
   const indexOfLastProduct = currentPage * itemsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
   const currentProducts = filteredItems.slice(
@@ -59,14 +62,17 @@ const ProductsPage = () => {
   );
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
 
+  // Calculate selling price
   const getSellingPrice = (purchasePrice) => purchasePrice * 1.5;
 
+  // Render status badge based on quantity
   const getStatusBadge = (quantity) => {
     if (quantity === 0) return <Badge variant="danger">Out of Stock</Badge>;
     if (quantity <= 10) return <Badge variant="warning">Low Stock</Badge>;
     return <Badge variant="success">In Stock</Badge>;
   };
 
+  // Show loader while fetching products
   if (loading && items.length === 0 && !error) {
     return <LoadingOverlay />;
   }
