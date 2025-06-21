@@ -3,6 +3,7 @@ import React from "react";
 import { Card, CardContent } from "../../../components/shared/Card";
 import CardLoaderOverlay from "../../../components/shared/CardLoaderOverlay";
 
+// StatCard: displays a single dashboard statistic with icon and optional change indicator
 const StatCard = ({
   title,
   value,
@@ -15,9 +16,11 @@ const StatCard = ({
     <Card
       className={`bg-white rounded-xl shadow-md dark:bg-[#1e293b] relative ${className}`}
     >
+      {/* Loader overlay when loading */}
       {isLoading && <CardLoaderOverlay />}
       <CardContent className="p-6">
         <div className="flex justify-between items-start">
+          {/* Stat label and value */}
           <div>
             <p className="text-sm font-medium text-gray-500 font-sans dark:text-gray-300">
               {title}
@@ -25,6 +28,7 @@ const StatCard = ({
             <h4 className="mt-2 text-2xl font-bold text-gray-900 font-sans dark:text-white">
               {value}
             </h4>
+            {/* Optional change indicator */}
             {change && (
               <p
                 className={`mt-1 text-sm ${
@@ -38,6 +42,7 @@ const StatCard = ({
               </p>
             )}
           </div>
+          {/* Icon */}
           <div className="flex items-center justify-center bg-blue-600 p-3 rounded-full shadow">
             {React.cloneElement(icon, { className: "text-white", size: 28 })}
           </div>
