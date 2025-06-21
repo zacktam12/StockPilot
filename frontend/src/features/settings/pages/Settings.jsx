@@ -21,23 +21,17 @@ import LoadingOverlay from "../../../components/shared/LoadingOverlay";
 import { BarsSpinner } from "../../../components/shared/Spinner";
 
 export default function SettingsPage() {
-  // Simulate initial page loading (like Products page)
+  // Page-level loading spinner (simulates async fetch)
   const [loading, setLoading] = useState(true);
-  // Per-tab saving spinner
+
+  // Per-tab saving spinner state
   const [saving, setSaving] = useState({
     company: false,
     notifications: false,
     security: false,
   });
 
-  useEffect(() => {
-    // Simulate async fetch
-    const timer = setTimeout(() => setLoading(false), 700);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const toast = ({ title, description }) => alert(`${title}\n${description}`);
-
+  // Company, notification, and security settings state
   const [companySettings, setCompanySettings] = useState({
     name: "StockPro Inc.",
     email: "contact@stockpro.com",
@@ -47,7 +41,6 @@ export default function SettingsPage() {
     currency: "USD",
     logo: "/placeholder.svg?height=100&width=200",
   });
-
   const [notificationSettings, setNotificationSettings] = useState({
     emailNotifications: true,
     lowStockAlerts: true,
@@ -56,7 +49,6 @@ export default function SettingsPage() {
     newCustomerAlerts: false,
     systemUpdates: true,
   });
-
   const [securitySettings, setSecuritySettings] = useState({
     twoFactorAuth: false,
     passwordExpiry: 90,
@@ -64,7 +56,16 @@ export default function SettingsPage() {
     loginAttempts: 5,
   });
 
-  // Simulate save with spinner for each tab
+  // Simulate initial data fetch
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 700);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Toast notification (replace with your own if needed)
+  const toast = ({ title, description }) => alert(`${title}\n${description}`);
+
+  // Save handlers for each tab (simulate async save)
   const saveCompanySettings = () => {
     setSaving((s) => ({ ...s, company: true }));
     setTimeout(() => {
@@ -75,7 +76,6 @@ export default function SettingsPage() {
       });
     }, 700);
   };
-
   const saveNotificationSettings = () => {
     setSaving((s) => ({ ...s, notifications: true }));
     setTimeout(() => {
@@ -86,7 +86,6 @@ export default function SettingsPage() {
       });
     }, 700);
   };
-
   const saveSecuritySettings = () => {
     setSaving((s) => ({ ...s, security: true }));
     setTimeout(() => {
@@ -98,18 +97,22 @@ export default function SettingsPage() {
     }, 700);
   };
 
+  // Show full-page spinner while loading
   if (loading) {
     return (
       <LoadingOverlay title="Settings" description="Loading settings..." />
     );
   }
 
+  // Main settings page structure
   return (
     <div className="space-y-6 min-h-screen bg-white text-gray-900 dark:bg-background dark:text-text">
+      {/* Page header */}
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
       </div>
 
+      {/* Tabs navigation */}
       <Tabs defaultValue="company" className="space-y-4">
         <TabsList>
           <TabsTrigger value="company">Company</TabsTrigger>
@@ -121,6 +124,7 @@ export default function SettingsPage() {
 
         {/* Company Tab */}
         <TabsContent value="company">
+          {/* Spinner overlay for saving */}
           <div className="relative">
             {saving.company && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 dark:bg-white/10 rounded-lg">
@@ -135,6 +139,7 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Company info form */}
                 <Input
                   label="Company Name"
                   value={companySettings.name}
@@ -200,9 +205,7 @@ export default function SettingsPage() {
                   <input
                     type="file"
                     className="block w-full text-sm"
-                    onChange={(e) => {
-                      // handle file upload if needed
-                    }}
+                    onChange={() => {}}
                   />
                   {companySettings.logo && (
                     <img
@@ -241,6 +244,7 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Notification toggles */}
                 {Object.entries(notificationSettings).map(([key, value]) => (
                   <div key={key} className="flex items-center justify-between">
                     <span className="capitalize">
@@ -286,6 +290,7 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Security settings form */}
                 <div className="flex items-center justify-between">
                   <span>Two-Factor Authentication</span>
                   <Switch
@@ -354,6 +359,7 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* User management info */}
               <div className="flex items-center gap-2 mb-4">
                 <Button variant="primary" size="sm">
                   <span className="mr-2">Add User</span>
