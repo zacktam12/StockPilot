@@ -1,14 +1,7 @@
 // src/features/dashboard/pages/Dashboard.jsx
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  LayoutDashboard,
-  Package,
-  ShoppingBag,
-  Users,
-  Truck,
-  DollarSign,
-} from "lucide-react";
+import { Package, ShoppingBag, Users, Truck, DollarSign } from "lucide-react";
 import { io } from "socket.io-client";
 
 // Components
@@ -30,26 +23,23 @@ import {
 
 const DashboardPage = () => {
   const dispatch = useDispatch();
-  const { stats, activities, lowStockProducts, loading, error } = useSelector(
-    (state) => state.dashboard
-  );
+  const { stats, /* activities, */ lowStockProducts, loading, error } =
+    useSelector((state) => state.dashboard);
 
+  // Fetch dashboard stats and activities, and set up WebSocket for live updates
   useEffect(() => {
-    // Initial data fetch
     dispatch(fetchDashboardStats());
     dispatch(fetchActivities());
-
-    // Set up WebSocket
     const socket = io("http://localhost:5000");
     socket.on("dashboard-update", (data) => {
       dispatch(setSocketUpdates(data));
     });
-
     return () => {
       socket.disconnect();
     };
   }, [dispatch]);
 
+  // Show loader while fetching dashboard data
   if (loading) {
     return (
       <LoadingOverlay
@@ -59,16 +49,19 @@ const DashboardPage = () => {
     );
   }
 
+  // Show error message if data fetch fails
   if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="space-y-6 min-h-screen font-sans bg-white text-gray-900 dark:bg-background dark:text-text">
+      {/* Page header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Dashboard
         </h1>
       </div>
 
+      {/* Stat cards grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="Total Products"
@@ -111,17 +104,23 @@ const DashboardPage = () => {
         />
       </div>
 
+      {/* Charts grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-md dark:bg-background-secondary">
+          {/* Revenue chart */}
           <RevenueChart />
         </div>
         <div className="bg-white p-6 rounded-xl shadow-md dark:bg-background-secondary">
+          {/* Product distribution chart */}
           <ProductDistributionChart />
         </div>
       </div>
 
+      {/* Alerts and recent activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Low stock product alerts */}
         <ProductAlertCard products={lowStockProducts} />
+        {/* Recent activity feed */}
         <RecentActivityCard />
       </div>
     </div>
