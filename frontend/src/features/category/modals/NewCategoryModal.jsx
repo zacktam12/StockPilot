@@ -9,6 +9,7 @@ import {
 } from "../../../store/slices/categorySlice";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
+import { useOutsideClick } from "../../../hooks/useOutsideClick";
 
 const NewCategoryModal = () => {
   const dispatch = useDispatch();
@@ -20,6 +21,13 @@ const NewCategoryModal = () => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+  });
+
+  // Add outside click functionality
+  const modalRef = useOutsideClick(() => {
+    if (isOpen) {
+      dispatch(closeModal());
+    }
   });
 
   // Initialize form when editing
@@ -67,7 +75,10 @@ const NewCategoryModal = () => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-xl shadow-lg w-full max-w-md">
+      <div
+        ref={modalRef}
+        className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-xl shadow-lg w-full max-w-md"
+      >
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {mode === "edit" ? "Edit Category" : "Add New Category"}
