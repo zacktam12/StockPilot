@@ -9,6 +9,7 @@ import {
 } from "../../../store/slices/customerSlice";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
+import { useOutsideClick } from "../../../hooks/useOutsideClick";
 
 const NewCustomerModal = () => {
   const dispatch = useDispatch();
@@ -44,6 +45,13 @@ const NewCustomerModal = () => {
     }
   }, [currentCustomer]);
 
+  // Add outside click functionality
+  const modalRef = useOutsideClick(() => {
+    if (isOpen) {
+      dispatch(closeModal());
+    }
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -70,7 +78,10 @@ const NewCustomerModal = () => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg shadow-xl max-w-md w-full">
+      <div
+        ref={modalRef}
+        className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg shadow-xl max-w-md w-full"
+      >
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold">
             {mode === "edit" ? "Edit Customer" : "Add New Customer"}
