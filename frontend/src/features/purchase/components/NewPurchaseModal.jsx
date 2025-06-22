@@ -4,11 +4,13 @@ import { Upload, Plus, X } from "lucide-react";
 import {
   createPurchase,
   createProduct,
+  closeModal,
 } from "../../../store/slices/purchaseSlice";
 import { fetchSuppliers } from "../../../store/slices/supplierSlice";
 import { fetchCategories } from "../../../store/slices/categorySlice";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
+import { useOutsideClick } from "../../../hooks/useOutsideClick";
 
 const NewPurchaseModal = ({ isOpen, onClose, onSuccess }) => {
   const dispatch = useDispatch();
@@ -40,6 +42,13 @@ const NewPurchaseModal = ({ isOpen, onClose, onSuccess }) => {
       },
     ]);
   };
+
+  // Add outside click functionality
+  const modalRef = useOutsideClick(() => {
+    if (isOpen) {
+      dispatch(closeModal());
+    }
+  });
 
   const handleRemoveProduct = (index) => {
     setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
@@ -120,7 +129,10 @@ const NewPurchaseModal = ({ isOpen, onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div
+        ref={modalRef}
+        className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+      >
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold">New Purchase Order</h2>
         </div>
