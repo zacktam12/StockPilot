@@ -110,10 +110,8 @@ stock-management/
 
 
 src/
-├── app/
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── routes/
+
+│--routes/
 │       └── AppRoutes.jsx
 │
 ├── features/
@@ -160,7 +158,8 @@ src/
 │   │
 │   ├── report/
 │   │   └── pages/Report.jsx
-│
+│   |---auth
+|         
 ├── layouts/
 │   └── ProtectedLayout.jsx
 │
@@ -202,3 +201,5 @@ src/
 │
 ├── assets/
 │   └── report-print.css
+│── App.jsx
+│── main.jsx
