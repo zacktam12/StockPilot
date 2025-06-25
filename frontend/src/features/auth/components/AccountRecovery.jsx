@@ -12,31 +12,7 @@ import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
 import Card from "../../../components/shared/Card";
 import Spinner from "../../../components/shared/spinner";
-
-// Mock user database for recovery
-const mockUsers = [
-  {
-    employeeId: "EMP001",
-    email: "admin@inventory.com",
-    name: "System Administrator",
-    phone: "+1234567890",
-    department: "IT",
-  },
-  {
-    employeeId: "EMP002",
-    email: "manager@inventory.com",
-    name: "Warehouse Manager",
-    phone: "+1234567891",
-    department: "Warehouse",
-  },
-  {
-    employeeId: "EMP003",
-    email: "staff@inventory.com",
-    name: "Inventory Staff",
-    phone: "+1234567892",
-    department: "Operations",
-  },
-];
+import api from "../../../services/api";
 
 export default function AccountRecovery() {
   const [activeTab, setActiveTab] = useState("employee-id");
@@ -65,24 +41,26 @@ export default function AccountRecovery() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-
+    setFoundUser(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const user = mockUsers.find(
-        (u) => u.employeeId.toLowerCase() === employeeId.toLowerCase()
-      );
-
-      if (user) {
-        setFoundUser(user);
+      console.log("Submitting employee ID recovery", employeeId);
+      // Call backend API to verify employee ID
+      const response = await api.get(`/auth/verify-employee-id/${employeeId}`);
+      if (response.data && response.data.success && response.data.user) {
+        setFoundUser(response.data.user);
         setIsSuccess(true);
       } else {
         setError(
-          "Employee ID not found. Please check your ID or contact your administrator."
+          response.data?.message ||
+            "Employee ID not found. Please check your ID or contact your administrator."
         );
       }
     } catch (error) {
-      setError("System error occurred. Please try again.");
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "System error occurred. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -92,22 +70,23 @@ export default function AccountRecovery() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const user = mockUsers.find((u) => u.phone === phoneNumber);
-
-      if (user) {
-        console.log("SMS would be sent to:", phoneNumber);
+      console.log("Submitting phone recovery", phoneNumber);
+      // Call backend API to send SMS for recovery
+      const response = await api.post("/auth/recover-by-phone", {
+        phone: phoneNumber,
+      });
+      if (response.data && response.data.success) {
         setIsSuccess(true);
       } else {
-        setError(
-          "Phone number not found in our system. Please contact your administrator."
-        );
+        setError(response.data?.message || "Phone number not found.");
       }
     } catch (error) {
-      setError("System error occurred. Please try again.");
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "System error occurred. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -117,13 +96,21 @@ export default function AccountRecovery() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log("Admin contact request:", contactForm);
-      setIsSuccess(true);
+      console.log("Submitting admin contact", contactForm);
+      // Call backend API to send admin contact request
+      const response = await api.post("/auth/contact-admin", contactForm);
+      if (response.data && response.data.success) {
+        setIsSuccess(true);
+      } else {
+        setError(response.data?.message || "Failed to send request.");
+      }
     } catch (error) {
-      setError("Failed to send request. Please try again.");
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to send request. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -281,7 +268,7 @@ export default function AccountRecovery() {
                           placeholder="e.g., EMP001"
                           value={employeeId}
                           onChange={(e) => {
-                            setEmployeeId(e.target.value.toUpperCase());
+                            setEmployeeId(e.target.value);
                             setError("");
                           }}
                           className="h-8 text-sm bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500"
