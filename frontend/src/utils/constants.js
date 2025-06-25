@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
     REGISTER: "/auth/register",
     PROFILE: "/auth/profile",
     REFRESH: "/auth/refresh",
+    LOGIN_FAILED: "/auth/login-failed",
   },
   USERS: "/users",
   PRODUCTS: {
