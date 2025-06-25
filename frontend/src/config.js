@@ -12,3 +12,5 @@ export const API_CONFIG = {
     UPLOAD: "/upload",
   },
 };
+
+export const API_URL = "http://localhost:5000/api";

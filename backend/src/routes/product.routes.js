@@ -6,6 +6,7 @@ const {
   validateUpdateProduct,
 } = require("../validators/product.validator");
 const { authenticate, authorize } = require("../middlewares/auth");
+const { getAllProducts } = require("../controller/product.controller");
 
 // Create product (Admin-only)
 router.post(
