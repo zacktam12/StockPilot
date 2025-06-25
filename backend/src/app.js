@@ -1,7 +1,22 @@
 // app.js
 require("dotenv").config();
 const express = require("express");
+const cors = require("cors");
 const { PrismaClient } = require("@prisma/client");
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || "http://localhost:5500", // Changed from 5173 to 5500
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Authorization"],
+  maxAge: 3600,
+};
+
+const app = express();
+app.use(cors(corsOptions));
+app.use(express.json());
 const productRoutes = require("./routes/product.routes");
 const userRoutes = require("./routes/user.routes");
 const categoryRoutes = require("./routes/category.routes");
@@ -16,8 +31,8 @@ const authRoutes = require("./routes/auth.routes");
 const { errorHandler, notFound } = require("./middlewares/errorHandler");
 const uploadRoutes = require("./routes/upload.routes");
 
-const app = express();
-app.use(express.json());
+// const app = express();
+// app.use(express.json());
 const prisma = new PrismaClient();
 
 app.get("/", async (req, res) => {
@@ -31,7 +46,7 @@ app.get("/protected", authenticate, (req, res) => {
 app.get("/api/test-auth", authenticate, (req, res) => {
   res.json({ message: "Authenticated!", user: req.user });
 });
-app.use("/api/auth",  authRoutes);
+app.use("/api/auth", authRoutes);
 // protect all routes after this point
 app.use(authenticate); // Uncomment if you want to protect all routes by default
 app.use("/api", uploadRoutes);
