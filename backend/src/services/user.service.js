@@ -12,7 +12,12 @@ const createUser = async (data) => {
   return userRepository.createUser(data);
 };
 const getUserByEmail = async (email) => {
-  return userRepository.findByEmail(email);
+  try {
+    return await userRepository.findByEmail(email);
+  } catch (error) {
+    console.error("Error fetching user by email:", error);
+    throw error;
+  }
 };
 // Get all users with pagination and optional search
 const getAllUsers = async (page = 1, limit = 10, search = "") => {
@@ -41,6 +46,47 @@ const updateUser = async (id, data) => {
 // Soft delete user: set status to Deactivated
 const deleteUser = (id) => userRepository.softDeleteUser(String(id));
 
+const updateFailedLoginAttempts = async (userId, attemptNumber) => {
+  return userRepository.update(
+    { id: userId },
+    { failedLoginAttempts: attemptNumber }
+  );
+};
+
+const lockUser = async (userId, lockDuration) => {
+  const lockUntil = new Date(Date.now() + lockDuration * 1000);
+  return userRepository.update(
+    { id: userId },
+    {
+      lockUntil: lockUntil,
+      status: "Locked",
+    }
+  );
+};
+
+const unlockUser = async (userId) => {
+  return userRepository.update(
+    { id: userId },
+    {
+      lockUntil: null,
+      failedLoginAttempts: 0,
+      status: "Active",
+    }
+  );
+};
+
+const isUserLocked = async (userId) => {
+  const user = await userRepository.findUnique({ id: userId });
+  if (!user) return false;
+
+  if (user.status === "Locked" && user.lockUntil) {
+    const now = new Date();
+    return now < user.lockUntil;
+  }
+
+  return false;
+};
+
 module.exports = {
   createUser,
   getAllUsers,
@@ -48,6 +94,10 @@ module.exports = {
   updateUser,
   deleteUser,
   getUserByEmail,
+  updateFailedLoginAttempts,
+  lockUser,
+  unlockUser,
+  isUserLocked,
 };
 
 // src/services/user.service.js
