@@ -4,8 +4,7 @@ const { generateToken } = require("../config/jwt");
 const crypto = require("crypto");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const { sendMail } = require("../utils/email");
-const { sendSMS } = require("../utils/sms");
+const { sendMail } = require("../utils/mail.js");
 
 function generateResetToken() {
   return crypto.randomBytes(32).toString("hex");
@@ -242,21 +241,20 @@ exports.forgotPassword = async (req, res, next) => {
 
     // Generate reset token and expiry (optional)
     const resetToken = generateResetToken();
-    const tokenExpiry = new Date(Date.now() + 1000 * 60 * 10); // 10 minutes from now// 10 minutes from now
+    const tokenExpiry = new Date(Date.now() + 1000 * 60 * 10); // 10 minutes from now
 
     // Save resetToken and expiry (optional: hash token for security)
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        resetToken, // optionally: hash with crypto.createHash('sha256').update(token).digest('hex')
+        resetToken,
         resetTokenExpiry: tokenExpiry,
       },
     });
 
-    // send real email
     try {
       await sendMail({
-        to: email,
+        to: normalizedEmail, // Always send to normalized email
         subject: "Password Reset Request",
         html: `<p>Click <a href=\"http://localhost:5000/reset-password?token=${resetToken}\">here</a> to reset your password. This link expires in 10 minutes.</p>`,
       });
@@ -287,9 +285,10 @@ exports.verifyEmployeeId = async (req, res, next) => {
         .status(400)
         .json({ success: false, message: "Employee ID is required" });
     }
-    // Find user by employeeId (case-insensitive)
+    const employeeId = id.trim();
+    console.log("Looking for employeeId:", employeeId);
     const user = await prisma.user.findFirst({
-      where: { employeeId: { equals: id, mode: "insensitive" } },
+      where: { employeeId: employeeId },
     });
     if (!user) {
       return res
@@ -305,53 +304,6 @@ exports.verifyEmployeeId = async (req, res, next) => {
         employeeId: user.employeeId,
         name: user.name,
         department: user.department,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// POST /auth/recover-by-phone
-exports.recoverByPhone = async (req, res, next) => {
-  try {
-    const { phone } = req.body;
-    if (!phone) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Phone number is required" });
-    }
-    // Find user by phone (normalize for comparison)
-    const normalizedPhone = phone.replace(/[^\d]/g, "");
-    const user = await prisma.user.findFirst({
-      where: { phone: { contains: normalizedPhone } },
-    });
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Phone number not found" });
-    }
-    // Send real SMS
-    try {
-      await sendSMS({
-        to: phone,
-        body: `Your account recovery link: http://localhost:5000/reset-password?phone=${phone}`,
-      });
-    } catch (smsErr) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send SMS. Please try again later.",
-        error: smsErr.message,
-      });
-    }
-    res.json({
-      success: true,
-      message: "Recovery SMS sent.",
-      user: {
-        id: user.id,
-        email: user.email,
-        phone: user.phone,
-        name: user.name,
       },
     });
   } catch (error) {
