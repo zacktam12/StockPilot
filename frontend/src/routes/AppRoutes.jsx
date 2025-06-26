@@ -17,12 +17,17 @@ import { ThemeProvider } from "../components/ThemeProvider";
 import ProfilePage from "../features/users/pages/Profile";
 import LoadingExamplePage from "../features/dashboard/pages/LoadingExamplePage";
 import SettingsPage from "../features/settings/pages/Settings";
+// In your AppRoutes.jsx or main router file
+import ForgotPassword from "../features/auth/components/ForgotPassword";
+import AccountRecovery from "../features/auth/components/AccountRecovery";
 
 const AppRoutes = () => {
   return (
     <ThemeProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/account-recovery" element={<AccountRecovery />} />
         <Route element={<ProtectedLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
