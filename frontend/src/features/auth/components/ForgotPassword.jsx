@@ -1,5 +1,6 @@
 // src/features/auth/components/ForgotPassword.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Mail, CheckCircle2, AlertCircle } from "lucide-react";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
@@ -7,11 +8,21 @@ import Card from "../../../components/shared/Card";
 import Spinner from "../../../components/shared/spinner";
 import api from "../../../services/api";
 
-export default function ForgotPassword({ onOpenAccountRecovery }) {
+export default function ForgotPassword() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  // Read email from URL query parameter on component mount
+  useEffect(() => {
+    const emailFromUrl = searchParams.get("email");
+    if (emailFromUrl) {
+      setEmail(emailFromUrl);
+    }
+  }, [searchParams]);
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -22,6 +33,7 @@ export default function ForgotPassword({ onOpenAccountRecovery }) {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setIsSuccess(false);
 
     if (!validateEmail(email)) {
       setError("Please enter a valid email address");
@@ -30,16 +42,25 @@ export default function ForgotPassword({ onOpenAccountRecovery }) {
     }
 
     try {
-      console.log("Submitting forgot password", email);
-      // Call backend API for forgot password
-      await api.post("/auth/forgot-password", { email });
-      setIsSuccess(true);
+      // Normalize email before sending to backend
+      const normalizedEmail = email.trim().toLowerCase();
+      const response = await api.post("/auth/forgot-password", {
+        email: normalizedEmail,
+      });
+      // Only show success if backend confirms success
+      if (response && response && response.success) {
+        setIsSuccess(true);
+      } else {
+        setError(response?.message || "No user found with this email.");
+        setIsSuccess(false);
+      }
     } catch (error) {
       setError(
-        error?.message ||
-          error?.response?.data?.message ||
+        error?.response?.message ||
+          error?.message ||
           "System error occurred. Please try again or contact your administrator."
       );
+      setIsSuccess(false);
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +187,7 @@ export default function ForgotPassword({ onOpenAccountRecovery }) {
                 Can't access your account?{" "}
                 <button
                   type="button"
-                  onClick={onOpenAccountRecovery}
+                  onClick={() => navigate("/account-recovery")}
                   className="text-orange-400 hover:text-orange-300 transition-colors bg-transparent border-none cursor-pointer"
                 >
                   Try account recovery
