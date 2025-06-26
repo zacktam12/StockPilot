@@ -1,12 +1,15 @@
 const express = require("express");
-const router = express.Router();
-const userController = require("../controller/user.controller");
+const userController = require("../controller/user.controller.js");
 const {
   validateRegister,
   validateLogin,
-} = require("../validators/user.validator");
-// Fix: Import only the authenticate function
-const { authenticate } = require("../middlewares/auth");
+} = require("../validators/user.validator.js");
+const { authenticate } = require("../middlewares/auth.js");
+
+// Fix: const  contactAdmin =require(user.controller.js (not auth.controller.js)
+const { contactAdmin } = userController;
+
+const router = express.Router();
 
 router.get("/profile", authenticate, async (req, res) => {
   // req.user was set by the authenticate middleware
@@ -28,9 +31,9 @@ router.post("/login-failed", userController.loginFailed);
 // Employee ID verification
 router.get("/verify-employee-id/:id", userController.verifyEmployeeId);
 // Phone recovery
-router.post("/recover-by-phone", userController.recoverByPhone);
+// router.post("/recover-by-phone", userController.recoverByPhone);
 // Admin contact (optional)
-router.post("/contact-admin", userController.contactAdmin);
+router.post("/contact-admin", contactAdmin);
 
 module.exports = router;
 //multer
