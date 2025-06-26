@@ -1,9 +1,9 @@
 // src/features/auth/components/AccountRecovery.jsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   User,
-  Phone,
   MessageSquare,
   CheckCircle2,
   AlertCircle,
@@ -24,9 +24,6 @@ export default function AccountRecovery() {
   const [employeeId, setEmployeeId] = useState("");
   const [foundUser, setFoundUser] = useState(null);
 
-  // Phone Recovery
-  const [phoneNumber, setPhoneNumber] = useState("");
-
   // Admin Contact
   const [contactForm, setContactForm] = useState({
     fullName: "",
@@ -37,6 +34,8 @@ export default function AccountRecovery() {
     additionalInfo: "",
   });
 
+  const navigate = useNavigate();
+
   const handleEmployeeIdRecovery = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -46,44 +45,18 @@ export default function AccountRecovery() {
       console.log("Submitting employee ID recovery", employeeId);
       // Call backend API to verify employee ID
       const response = await api.get(`/auth/verify-employee-id/${employeeId}`);
-      if (response.data && response.data.success && response.data.user) {
-        setFoundUser(response.data.user);
+      if (response && response.success && response.user) {
+        setFoundUser(response.user);
         setIsSuccess(true);
       } else {
         setError(
-          response.data?.message ||
+          response?.message ||
             "Employee ID not found. Please check your ID or contact your administrator."
         );
       }
     } catch (error) {
       setError(
-        error?.response?.data?.message ||
-          error?.message ||
-          "System error occurred. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePhoneRecovery = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
-    try {
-      console.log("Submitting phone recovery", phoneNumber);
-      // Call backend API to send SMS for recovery
-      const response = await api.post("/auth/recover-by-phone", {
-        phone: phoneNumber,
-      });
-      if (response.data && response.data.success) {
-        setIsSuccess(true);
-      } else {
-        setError(response.data?.message || "Phone number not found.");
-      }
-    } catch (error) {
-      setError(
-        error?.response?.data?.message ||
+        error?.response?.message ||
           error?.message ||
           "System error occurred. Please try again."
       );
@@ -100,14 +73,14 @@ export default function AccountRecovery() {
       console.log("Submitting admin contact", contactForm);
       // Call backend API to send admin contact request
       const response = await api.post("/auth/contact-admin", contactForm);
-      if (response.data && response.data.success) {
+      if (response && response.success) {
         setIsSuccess(true);
       } else {
-        setError(response.data?.message || "Failed to send request.");
+        setError(response?.message || "Failed to send request.");
       }
     } catch (error) {
       setError(
-        error?.response?.data?.message ||
+        error?.response?.message ||
           error?.message ||
           "Failed to send request. Please try again."
       );
@@ -121,6 +94,7 @@ export default function AccountRecovery() {
     setError("");
   };
 
+  // eslint-disable-next-line no-unused-vars
   const TabButton = ({ id, label, icon: Icon, isActive, onClick }) => (
     <button
       type="button"
@@ -169,14 +143,9 @@ export default function AccountRecovery() {
                           <br />
                           Email: {foundUser.email}
                           <br />
-                          Name: {foundUser.name}
+                          {/* Name: {foundUser.name}
                           <br />
-                          Department: {foundUser.department}
-                        </>
-                      ) : activeTab === "phone" ? (
-                        <>
-                          <strong>SMS sent!</strong> Check your phone for
-                          account recovery instructions.
+                          Department: {foundUser.department} */}
                         </>
                       ) : (
                         <>
@@ -192,7 +161,7 @@ export default function AccountRecovery() {
                   <div className="space-y-2">
                     <Button
                       onClick={() =>
-                        (window.location.href = `/forgot-password?email=${foundUser.email}`)
+                        navigate(`/forgot-password?email=${foundUser.email}`)
                       }
                       className="w-full bg-blue-600 hover:bg-blue-700 h-7 text-xs"
                     >
@@ -220,13 +189,6 @@ export default function AccountRecovery() {
                     label="ID"
                     icon={User}
                     isActive={activeTab === "employee-id"}
-                    onClick={setActiveTab}
-                  />
-                  <TabButton
-                    id="phone"
-                    label="Phone"
-                    icon={Phone}
-                    isActive={activeTab === "phone"}
                     onClick={setActiveTab}
                   />
                   <TabButton
@@ -300,70 +262,6 @@ export default function AccountRecovery() {
                           </div>
                         ) : (
                           "Find My Account"
-                        )}
-                      </Button>
-                    </form>
-                  </div>
-                )}
-
-                {activeTab === "phone" && (
-                  <div className="space-y-3">
-                    <div className="text-center space-y-1">
-                      <Phone className="h-6 w-6 text-green-400 mx-auto" />
-                      <h3 className="text-sm font-medium text-white">
-                        Phone Recovery
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Get recovery instructions via SMS
-                      </p>
-                    </div>
-
-                    <form onSubmit={handlePhoneRecovery} className="space-y-3">
-                      <div className="space-y-1">
-                        <label
-                          htmlFor="phone"
-                          className="text-slate-200 text-xs block"
-                        >
-                          Phone Number
-                        </label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="+1234567890"
-                          value={phoneNumber}
-                          onChange={(e) => {
-                            setPhoneNumber(e.target.value);
-                            setError("");
-                          }}
-                          className="h-8 text-sm bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500"
-                          required
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      {error && (
-                        <div className="border border-red-500 bg-red-500/10 rounded-md p-1">
-                          <div className="flex items-center gap-2">
-                            <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
-                            <span className="text-red-400 text-xs">
-                              {error}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      <Button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 h-8 text-xs"
-                        disabled={isLoading || !phoneNumber}
-                      >
-                        {isLoading ? (
-                          <div className="flex items-center justify-center gap-1">
-                            <Spinner size="sm" />
-                            Sending SMS...
-                          </div>
-                        ) : (
-                          "Send Recovery SMS"
                         )}
                       </Button>
                     </form>
