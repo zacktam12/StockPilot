@@ -96,7 +96,7 @@ export const reportsAPI = {
 };
 
 // MOCK API LAYER FOR FRONTEND-ONLY DEVELOPMENT
-if (import.meta.env.MODE === "development" || !import.meta.env.VITE_API_URL) {
+if (import.meta.env.VITE_USE_MOCK_API === "true") {
   console.log("✅ Mock API is active");
 
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
@@ -230,11 +230,13 @@ if (import.meta.env.MODE === "development" || !import.meta.env.VITE_API_URL) {
     }
     return { data: { success: true, ...data } };
   };
-  api.patch = async (url, data) => {
+  // eslint-disable-next-line no-unused-vars
+  api.patch = async (_url, data) => {
     await delay(200);
     return { data: { success: true, ...data } };
   };
-  api.delete = async (url) => {
+  // eslint-disable-next-line no-unused-vars
+  api.delete = async (_url) => {
     await delay(200);
     return { data: { success: true } };
   };
