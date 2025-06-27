@@ -98,14 +98,10 @@ const initialState = {
   },
   activities: [],
   lowStockProducts: [],
-  revenueData: [],
-  productDistribution: {},
   loading: false,
-  activitiesLoading: false,
-  revenueLoading: false,
-  distributionLoading: false,
   error: null,
-  isConnected: false,
+  revenue: { data: [] }, // <-- Ensure this is always an object with data array
+  distribution: { data: {} }, // <-- For ProductDistributionChart
   lastUpdated: {
     stats: null,
     activities: [],
