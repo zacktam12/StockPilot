@@ -1,9 +1,10 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { API_URL } from "../../config";
 
 export const fetchNotifications = createAsyncThunk(
   "notifications/fetchAll",
   async () => {
-    const res = await fetch("http://localhost:5000/api/notifications");
+    const res = await fetch(`${API_URL}/notifications`);
     const data = await res.json();
     return data;
   }
@@ -12,7 +13,7 @@ export const fetchNotifications = createAsyncThunk(
 export const markAsRead = createAsyncThunk(
   "notifications/markAsRead",
   async (id) => {
-    await fetch(`http://localhost:5000/api/notifications/mark-read/${id}`, {
+    await fetch(`${API_URL}/notifications/mark-read/${id}`, {
       method: "POST",
     });
     return id;
@@ -22,7 +23,7 @@ export const markAsRead = createAsyncThunk(
 export const markAllAsRead = createAsyncThunk(
   "notifications/markAllAsRead",
   async () => {
-    await fetch("http://localhost:5000/api/notifications/mark-all-read", {
+    await fetch(`${API_URL}/notifications/mark-all-read`, {
       method: "POST",
     });
     return;
