@@ -13,7 +13,7 @@ async function authenticate(req, res, next) {
 
     // Convert id to string for Prisma
     const user = await prisma.user.findUnique({
-      where: { id: String(decoded.id), status: "Active" }, 
+      where: { id: String(decoded.id), status: "Active" },
       include: { role: true },
     });
 
@@ -28,7 +28,7 @@ async function authenticate(req, res, next) {
     console.error("❌ Token verification failed:", err);
     res.status(401).json({ message: "Invalid token" });
   }
-};
+}
 
 const authorize = (...allowedRoles) => {
   return (req, res, next) => {

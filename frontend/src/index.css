@@ -1,0 +1,40 @@
+:root {
+  /* Light theme colors */
+  --primary-color: #3f51b5;
+  --text-color: #333;
+  --background-color: #fff;
+  --border-color: #e0e0e0;
+}
+
+.dark {
+  /* Dark theme colors */
+  --primary-color: #90caf9;
+  --text-color: #fff;
+  --background-color: #121212;
+  --border-color: #333;
+}
+
+/* Custom properties for spinner */
+:root {
+  /* Spinner uses theme's primary and text colors */
+  --spinner-color: var(--primary-color);
+  --spinner-text-color: var(--text-color);
+}
+
+.dark {
+  /* Spinner uses dark theme's primary and text colors */
+  --spinner-color: var(--primary-color);
+  --spinner-text-color: var(--text-color);
+}
+
+/* Apply theme variables to spinner */
+.animate-spin {
+  /* Spinner border uses spinner color for animation */
+  border-color: transparent var(--spinner-color) transparent
+    var(--spinner-color);
+}
+
+.text-primary {
+  /* Spinner text uses spinner text color */
+  color: var(--spinner-text-color);
+}
