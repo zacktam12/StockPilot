@@ -1,8 +1,12 @@
 // src/config.js
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000";
+export const API_URL = `${API_BASE_URL}/api`;
+export const UPLOAD_URL = `${API_URL}/upload`;
+
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
-  UPLOAD_URL:
-    import.meta.env.VITE_UPLOAD_URL || "http://localhost:5000/uploads",
+  BASE_URL: API_BASE_URL,
+  UPLOAD_URL: UPLOAD_URL,
   TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
   ENDPOINTS: {
     AUTH: {
@@ -12,5 +16,3 @@ export const API_CONFIG = {
     UPLOAD: "/upload",
   },
 };
-
-export const API_URL = "http://localhost:5000/api";

@@ -4,7 +4,7 @@ import store from "../store";
 import { setLoading, addError } from "../store/slices/appSlice";
 
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -90,7 +90,7 @@ export const uploadFile = (file, onProgress, endpoint = "/upload") => {
   formData.append("file", file);
 
   const uploadPromise = http.post(endpoint, formData, {
-    baseURL: import.meta.env.VITE_UPLOAD_URL || "http://localhost:5000/uploads",
+    baseURL: import.meta.env.VITE_UPLOAD_URL || "http://localhost:5000/api", // <-- use /api as base
     headers: {
       "Content-Type": "multipart/form-data",
     },
