@@ -5,7 +5,7 @@ import { ArrowLeft, User, MessageSquare, X } from "lucide-react";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
 import Card from "../../../components/shared/Card";
-import Spinner from "../../../components/shared/spinner";
+import Spinner from "../../../components/shared/Spinner";
 import { useTheme } from "../../../components/ThemeProvider";
 import LoginNotice from "../components/LoginNotice";
 import { authAPI } from "../../../services/api";
@@ -121,12 +121,12 @@ export default function AccountRecoveryModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-lg">
       <div className="w-full max-w-lg mx-4">
         <Card
           className={
             theme === "dark"
-              ? "bg-slate-800/50 border-slate-700 backdrop-blur-sm"
+              ? "bg-slate-800/50 border-slate-700 backdrop-blur-lg"
               : "bg-white border-gray-200"
           }
         >
