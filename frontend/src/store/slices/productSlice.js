@@ -5,9 +5,9 @@ import api from "../../services/api";
 // Async Thunks with loading messages
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const response = await api.get("/products");
+      const response = await api.get("/products", { params });
       return response.data;
     } catch (err) {
       return rejectWithValue(
@@ -45,8 +45,8 @@ export const deleteProduct = createAsyncThunk(
   "products/deleteProduct",
   async (productId, { rejectWithValue }) => {
     try {
-      await api.delete(`/products/${productId}`);
-      return productId;
+      const response = await api.delete(`/products/${productId}`);
+      return { id: productId, message: response.data.message };
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.error || "Failed to delete product"
@@ -73,33 +73,134 @@ export const saveProduct = createAsyncThunk(
         err.response?.data?.error || "Failed to save product"
       );
     }
+  },
+  {
+    meta: {
+      loadingMessage: "Saving product...",
+    },
   }
-  // Remove the meta property entirely, or make it static if you want:
-  // {
-  //   meta: { loadingMessage: "Saving product..." }
-  // }
 );
+
+export const importProducts = createAsyncThunk(
+  "products/importProducts",
+  async (products, { rejectWithValue }) => {
+    try {
+      const response = await api.post("/products/bulk", { products });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.error || "Failed to import products"
+      );
+    }
+  },
+  {
+    meta: {
+      loadingMessage: "Importing products...",
+    },
+  }
+);
+
+export const bulkDeleteProducts = createAsyncThunk(
+  "products/bulkDeleteProducts",
+  async (productIds, { rejectWithValue }) => {
+    try {
+      const response = await api.delete("/products/bulk", {
+        data: { productIds },
+      });
+      return { ids: productIds, message: response.data.message };
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.error || "Failed to delete products"
+      );
+    }
+  },
+  {
+    meta: {
+      loadingMessage: "Deleting products...",
+    },
+  }
+);
+
+export const updateStock = createAsyncThunk(
+  "products/updateStock",
+  async ({ id, quantity }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(`/products/${id}/stock`, { quantity });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.error || "Failed to update stock"
+      );
+    }
+  }
+);
+
+export const incrementStock = createAsyncThunk(
+  "products/incrementStock",
+  async ({ id, quantity }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(`/products/${id}/stock/increment`, {
+        quantity,
+      });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.error || "Failed to increment stock"
+      );
+    }
+  }
+);
+
+export const decrementStock = createAsyncThunk(
+  "products/decrementStock",
+  async ({ id, quantity }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(`/products/${id}/stock/decrement`, {
+        quantity,
+      });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.error || "Failed to decrement stock"
+      );
+    }
+  }
+);
+
 const initialState = {
   // Product List State
   items: [],
   filteredItems: [],
-  loading: false, // Keep for local loading states
+  loading: false,
   error: null,
 
   // Pagination/Sorting/Filtering
   currentPage: 1,
   itemsPerPage: 10,
+  totalPages: 1,
+  totalItems: 0,
   searchTerm: "",
   sortField: "name",
   sortOrder: "asc",
-  filterOptions: {
-    lowStock: false,
+
+  // Advanced Filters
+  filters: {
+    categoryId: null,
+    status: null,
+    priceRange: { min: null, max: null },
+    stockRange: { min: null, max: null },
     hasImage: false,
-    hasCategory: false,
+    hasBarcode: false,
+    hasSku: false,
   },
+
+  // Bulk Selection
+  selectedItems: [],
+  selectAll: false,
 
   // Modal State
   isProductModalOpen: false,
+  isCSVImportModalOpen: false,
   editingProduct: null,
 
   // Categories State
@@ -121,12 +222,17 @@ const productSlice = createSlice({
       state.isProductModalOpen = false;
       state.editingProduct = null;
     },
+    openCSVImportModal: (state) => {
+      state.isCSVImportModalOpen = true;
+    },
+    closeCSVImportModal: (state) => {
+      state.isCSVImportModalOpen = false;
+    },
 
     // Filter/Sort Management
     setSearchTerm: (state, action) => {
       state.searchTerm = action.payload;
       state.currentPage = 1;
-      applyFilters(state);
     },
     setSortField: (state, action) => {
       if (state.sortField === action.payload) {
@@ -135,15 +241,41 @@ const productSlice = createSlice({
         state.sortField = action.payload;
         state.sortOrder = "asc";
       }
-      applyFilters(state);
     },
     setFilterOptions: (state, action) => {
-      state.filterOptions = { ...state.filterOptions, ...action.payload };
+      state.filters = { ...state.filters, ...action.payload };
       state.currentPage = 1;
-      applyFilters(state);
+    },
+    clearFilters: (state) => {
+      state.filters = initialState.filters;
+      state.currentPage = 1;
     },
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload;
+    },
+
+    // Bulk Selection Management
+    toggleItemSelection: (state, action) => {
+      const itemId = action.payload;
+      const index = state.selectedItems.indexOf(itemId);
+      if (index > -1) {
+        state.selectedItems.splice(index, 1);
+      } else {
+        state.selectedItems.push(itemId);
+      }
+      state.selectAll = state.selectedItems.length === state.items.length;
+    },
+    toggleSelectAll: (state) => {
+      if (state.selectAll) {
+        state.selectedItems = [];
+      } else {
+        state.selectedItems = state.items.map((item) => item.id);
+      }
+      state.selectAll = !state.selectAll;
+    },
+    clearSelection: (state) => {
+      state.selectedItems = [];
+      state.selectAll = false;
     },
 
     // Reset State
@@ -158,8 +290,18 @@ const productSlice = createSlice({
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
-        applyFilters(state);
+        if (action.payload.success) {
+          state.items = action.payload.data || [];
+          state.filteredItems = action.payload.data || [];
+          if (action.payload.pagination) {
+            state.currentPage = action.payload.pagination.page;
+            state.totalPages = action.payload.pagination.pages;
+            state.totalItems = action.payload.pagination.total;
+            state.itemsPerPage = action.payload.pagination.limit;
+          }
+        } else {
+          state.error = "Failed to fetch products";
+        }
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;
@@ -173,7 +315,7 @@ const productSlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.categoriesLoading = false;
-        state.categories = action.payload;
+        state.categories = action.payload.data || action.payload || [];
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.categoriesLoading = false;
@@ -187,8 +329,12 @@ const productSlice = createSlice({
       })
       .addCase(deleteProduct.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = state.items.filter((item) => item.id !== action.payload);
-        applyFilters(state);
+        state.items = state.items.filter(
+          (item) => item.id !== action.payload.id
+        );
+        state.filteredItems = state.filteredItems.filter(
+          (item) => item.id !== action.payload.id
+        );
       })
       .addCase(deleteProduct.rejected, (state, action) => {
         state.loading = false;
@@ -202,72 +348,128 @@ const productSlice = createSlice({
       })
       .addCase(saveProduct.fulfilled, (state, action) => {
         state.loading = false;
-        const existingIndex = state.items.findIndex(
-          (item) => item.id === action.payload.id
-        );
-        if (existingIndex >= 0) {
-          state.items[existingIndex] = action.payload;
+        if (action.payload.success) {
+          const product = action.payload.data;
+          const existingIndex = state.items.findIndex(
+            (item) => item.id === product.id
+          );
+          if (existingIndex >= 0) {
+            state.items[existingIndex] = product;
+            state.filteredItems[existingIndex] = product;
+          } else {
+            state.items.unshift(product);
+            state.filteredItems.unshift(product);
+          }
+          state.isProductModalOpen = false;
         } else {
-          state.items.unshift(action.payload);
+          state.error = "Failed to save product";
         }
-        applyFilters(state);
-        state.isProductModalOpen = false;
       })
       .addCase(saveProduct.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Update Stock
+      .addCase(updateStock.fulfilled, (state, action) => {
+        if (action.payload.success) {
+          const updatedProduct = action.payload.data;
+          const index = state.items.findIndex(
+            (item) => item.id === updatedProduct.id
+          );
+          if (index !== -1) {
+            state.items[index] = updatedProduct;
+            state.filteredItems[index] = updatedProduct;
+          }
+        }
+      })
+
+      // Increment Stock
+      .addCase(incrementStock.fulfilled, (state, action) => {
+        if (action.payload.success) {
+          const updatedProduct = action.payload.data;
+          const index = state.items.findIndex(
+            (item) => item.id === updatedProduct.id
+          );
+          if (index !== -1) {
+            state.items[index] = updatedProduct;
+            state.filteredItems[index] = updatedProduct;
+          }
+        }
+      })
+
+      // Decrement Stock
+      .addCase(decrementStock.fulfilled, (state, action) => {
+        if (action.payload.success) {
+          const updatedProduct = action.payload.data;
+          const index = state.items.findIndex(
+            (item) => item.id === updatedProduct.id
+          );
+          if (index !== -1) {
+            state.items[index] = updatedProduct;
+            state.filteredItems[index] = updatedProduct;
+          }
+        }
+      })
+
+      // Import Products
+      .addCase(importProducts.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(importProducts.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.success) {
+          const newProducts = action.payload.data || [];
+          state.items.unshift(...newProducts);
+          state.filteredItems.unshift(...newProducts);
+          state.isCSVImportModalOpen = false;
+        } else {
+          state.error = "Failed to import products";
+        }
+      })
+      .addCase(importProducts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Bulk Delete Products
+      .addCase(bulkDeleteProducts.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(bulkDeleteProducts.fulfilled, (state, action) => {
+        state.loading = false;
+        const deletedIds = action.payload.ids;
+        state.items = state.items.filter(
+          (item) => !deletedIds.includes(item.id)
+        );
+        state.filteredItems = state.filteredItems.filter(
+          (item) => !deletedIds.includes(item.id)
+        );
+        state.selectedItems = [];
+        state.selectAll = false;
+      })
+      .addCase(bulkDeleteProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
   },
 });
 
-// Helper function to apply filters/sorting
-function applyFilters(state) {
-  let filtered = [...state.items];
-
-  // Apply search
-  if (state.searchTerm) {
-    filtered = filtered.filter(
-      (product) =>
-        product.name.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-        product.description
-          ?.toLowerCase()
-          .includes(state.searchTerm.toLowerCase()) ||
-        (product.category &&
-          product.category.name
-            .toLowerCase()
-            .includes(state.searchTerm.toLowerCase()))
-    );
-  }
-
-  // Apply filters
-  filtered = filtered.filter((product) => {
-    return (
-      (!state.filterOptions.lowStock || product.quantity <= 10) &&
-      (!state.filterOptions.hasImage || product.image_url) &&
-      (!state.filterOptions.hasCategory || product.category_id)
-    );
-  });
-
-  // Apply sorting
-  filtered.sort((a, b) => {
-    const aValue = a[state.sortField];
-    const bValue = b[state.sortField];
-
-    if (aValue < bValue) return state.sortOrder === "asc" ? -1 : 1;
-    if (aValue > bValue) return state.sortOrder === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  state.filteredItems = filtered;
-}
-
 export const {
   openProductModal,
   closeProductModal,
+  openCSVImportModal,
+  closeCSVImportModal,
   setSearchTerm,
   setSortField,
   setFilterOptions,
+  clearFilters,
   setCurrentPage,
+  toggleItemSelection,
+  toggleSelectAll,
+  clearSelection,
   resetProductState,
 } = productSlice.actions;
 
