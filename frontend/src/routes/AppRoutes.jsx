@@ -18,8 +18,8 @@ import ProfilePage from "../features/users/pages/Profile";
 import LoadingExamplePage from "../features/dashboard/pages/LoadingExamplePage";
 import SettingsPage from "../features/settings/pages/Settings";
 // In your AppRoutes.jsx or main router file
-import ForgotPassword from "../features/auth/components/ForgotPassword";
-import AccountRecovery from "../features/auth/components/AccountRecovery";
+import ForgotPassword from "../features/auth/modals/ForgotPasswordModal.jsx";
+import AccountRecovery from "../features/auth/modals/AccountRecoveryModal";
 
 const AppRoutes = () => {
   return (
