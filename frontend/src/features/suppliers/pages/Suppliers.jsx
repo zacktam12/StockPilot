@@ -36,7 +36,7 @@ import {
 } from "../../../components/shared/Table";
 import NewSupplierModal from "../modals/NewSupplierModal";
 import LoadingOverlay from "../../../components/shared/LoadingOverlay";
-import { BarsSpinner } from "../../../components/shared/Spinner";
+// import { BarsSpinner } from "../../../components/shared/Spinner";
 
 const SuppliersPage = () => {
   const dispatch = useDispatch();
