@@ -11,6 +11,7 @@ import {
 import { TrendingUp, Package, ShoppingCart, Download } from "lucide-react";
 import Button from "../../../components/shared/Button";
 import LoadingOverlay from "../../../components/shared/LoadingOverlay";
+import { API_URL } from "../../../config";
 
 const ReportsPage = () => {
   const [loading, setLoading] = useState(null);
@@ -24,43 +25,43 @@ const ReportsPage = () => {
 
       switch (reportType) {
         case "daily-sales":
-          endpoint = "http://localhost:5000/api/sales-orders";
+          endpoint = `${API_URL}/sales-orders`;
           columns = ["Date", "Order ID", "Customer", "Amount", "Status"];
           title = "Daily Sales Report";
           break;
 
         case "inventory":
-          endpoint = "http://localhost:5000/api/reports/inventory";
+          endpoint = `${API_URL}/reports/inventory`;
           columns = ["Product Name", "Category", "Quantity", "Price", "Status"];
           title = "Inventory Status Report";
           break;
 
         case "purchase-orders":
-          endpoint = "http://localhost:5000/api/reports/purchases";
+          endpoint = `${API_URL}/reports/purchases`;
           columns = ["Date", "Order ID", "Supplier", "Amount", "Status"];
           title = "Purchase Orders Report";
           break;
 
         case "monthly-revenue":
-          endpoint = "http://localhost:5000/api/reports/monthly-revenue";
+          endpoint = `${API_URL}/reports/monthly-revenue`;
           columns = ["Month", "Total Revenue"];
           title = "Monthly Revenue Report";
           break;
 
         case "top-products":
-          endpoint = "http://localhost:5000/api/reports/top-products";
+          endpoint = `${API_URL}/reports/top-products`;
           columns = ["Product Name", "Units Sold"];
           title = "Top Selling Products Report";
           break;
 
         case "low-stock":
-          endpoint = "http://localhost:5000/api/reports/low-stock";
+          endpoint = `${API_URL}/reports/low-stock`;
           columns = ["Product Name", "Category", "Quantity", "Status"];
           title = "Low Stock Items Report";
           break;
 
         case "inventory-value":
-          endpoint = "http://localhost:5000/api/reports/inventory-value";
+          endpoint = `${API_URL}/reports/inventory-value`;
           columns = [
             "Product Name",
             "Category",
@@ -72,13 +73,13 @@ const ReportsPage = () => {
           break;
 
         case "supplier-analysis":
-          endpoint = "http://localhost:5000/api/reports/supplier-analysis";
+          endpoint = `${API_URL}/reports/supplier-analysis`;
           columns = ["Supplier", "Total Orders", "Total Spent"];
           title = "Supplier Analysis Report";
           break;
 
         case "cost-analysis":
-          endpoint = "http://localhost:5000/api/reports/cost-analysis";
+          endpoint = `${API_URL}/reports/cost-analysis`;
           columns = ["Product Name", "Total Purchased", "Total Cost"];
           title = "Cost Analysis Report";
           break;
