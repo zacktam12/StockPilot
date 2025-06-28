@@ -32,8 +32,11 @@ model User {
   salesAsSeller    Sale[]     @relation("SalesToSeller")
   salesAsCustomer  Sale[]     @relation("SalesToCustomer")
   purchasesAsBuyer Purchase[] @relation("PurchasesToBuyer")
-  purchasesAsSupplier Purchase[] @relation("PurchasesToSupplier")
   role             Role       @relation(fields: [roleId], references: [id])
+
+ // Inverse relations for Supplier
+  createdSuppliers    Supplier[] @relation("CreatedSuppliers")
+  deletedSuppliers    Supplier[] @relation("DeletedSuppliers")
 
   // For conditional uniqueness, you'll need to handle this at application level
   // or use a database trigger
@@ -108,24 +111,24 @@ model Sale {
   customer      User?     @relation("SalesToCustomer", fields: [customerId], references: [id])
   productSales  ProductSale[]
 }
-
 model Purchase {
-  id            String    @id @default(uuid()) @db.VarChar(36)
-  userId        String    @db.VarChar(36)
-  supplierId    String    @db.VarChar(36)
-  totalCost     Float
-  discount      Float?    @default(0)
-  tax           Float?    @default(0)
-  status        String?   @default("received")
-  notes         String?
-  isDeleted     Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String    @id @default(uuid()) @db.VarChar(36)
+  userId            String    @db.VarChar(36)
+  supplierId        String    @db.VarChar(36)
+  totalCost         Float
+  discount          Float?    @default(0)
+  tax               Float?    @default(0)
+  status            String?   @default("received")
+  notes             String?
+  isDeleted         Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  user          User      @relation("PurchasesToBuyer", fields: [userId], references: [id])
-  supplier      User      @relation("PurchasesToSupplier", fields: [supplierId], references: [id])
-  productPurchases ProductPurchase[]
+  user              User      @relation("PurchasesToBuyer", fields: [userId], references: [id])
+  supplier          Supplier  @relation(fields: [supplierId], references: [id])
+  productPurchases  ProductPurchase[]
 }
+
 
 model ProductSale {
   id           String    @id @default(uuid()) @db.VarChar(36)
@@ -158,6 +161,28 @@ model ProductPurchase {
   product           Product   @relation(fields: [productId], references: [id])
   purchase          Purchase  @relation(fields: [purchaseId], references: [id])
 }
+model Supplier {
+  id          String    @id @default(uuid()) @db.VarChar(36)
+  name        String
+  contactName String?
+  email       String?   @unique
+  phone       String?
+  address     String?
+  companyName String?
+  isDeleted   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?   @db.VarChar(36)
+  deletedAt   DateTime?
+  deletedById String?   @db.VarChar(36)
+
+  // Relations
+  createdBy   User?     @relation("CreatedSuppliers", fields: [createdById], references: [id])
+  deletedBy   User?     @relation("DeletedSuppliers", fields: [deletedById], references: [id])
+  purchases   Purchase[]
+}
+
+
 
 model Settings {
   id                String    @id @default(uuid()) @db.VarChar(36)
