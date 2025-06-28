@@ -1,40 +1,63 @@
 import axios from "axios";
+import { API_URL } from "../config";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor
+// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
-// Response interceptor
+// Response interceptor to handle auth errors
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userEmail");
       window.location.href = "/login";
     }
-    return Promise.reject(error.response?.data || error.message);
+    return Promise.reject(error);
   }
 );
 
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),
   register: (userData) => api.post("/auth/register", userData),
-  getProfile: () => api.get("/auth/profile"),
+  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+  resetPassword: (token, password) =>
+    api.post("/auth/reset-password", { token, password }),
+  verifyEmployeeId: (employeeId) =>
+    api.get(`/auth/verify-employee-id/${employeeId}`),
+  contactAdmin: (data) => api.post("/auth/contact-admin", data),
+};
+
+export const usersAPI = {
+  getAll: (params) => api.get("/users", { params }),
+  getById: (id) => api.get(`/users/${id}`),
+  create: (data) => api.post("/users", data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+  getProfile: () => api.get("/users/profile"),
+  updateProfile: (data) => api.put("/users/profile", data),
 };
 
 export const productsAPI = {
@@ -43,7 +66,35 @@ export const productsAPI = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
-  getLowStock: () => api.get("/products/low-stock"),
+  uploadImage: (formData) => {
+    // Create a new axios instance for file uploads with proper headers
+    const uploadApi = axios.create({
+      baseURL: API_URL,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    // Add auth token to upload requests
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      uploadApi.defaults.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return uploadApi.post("/upload/upload", formData);
+  },
+
+  // Stock management
+  updateStock: (id, quantity) =>
+    api.patch(`/products/${id}/stock`, { quantity }),
+  incrementStock: (id, quantity) =>
+    api.patch(`/products/${id}/stock/increment`, { quantity }),
+  decrementStock: (id, quantity) =>
+    api.patch(`/products/${id}/stock/decrement`, { quantity }),
+
+  // Low stock products
+  getLowStock: (threshold) =>
+    api.get("/products/low-stock", { params: { threshold } }),
 };
 
 export const categoriesAPI = {
@@ -88,158 +139,10 @@ export const suppliersAPI = {
 
 export const reportsAPI = {
   getSales: (params) => api.get("/reports/sales", { params }),
-  return: typeof error === "string",
   getPurchases: (params) => api.get("/reports/purchases", { params }),
   getInventory: () => api.get("/reports/inventory"),
   getTopProducts: (params) => api.get("/reports/top-products", { params }),
   getDashboard: () => api.get("/reports/dashboard"),
 };
-
-// MOCK API LAYER FOR FRONTEND-ONLY DEVELOPMENT
-if (import.meta.env.VITE_USE_MOCK_API === "true") {
-  console.log("✅ Mock API is active");
-
-  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
-  const mockUsers = [
-    {
-      id: 1,
-      email: "admin@example.com",
-      role: "admin",
-      lastSignInAt: "2025-06-01T12:00:00Z",
-    },
-    { id: 2, email: "user@example.com", role: "user", lastSignInAt: null },
-  ];
-  const mockProducts = [
-    {
-      id: 1,
-      name: "Product A",
-      quantity: 20,
-      price: 10.5,
-      category: "Category 1",
-    },
-    {
-      id: 2,
-      name: "Product B",
-      quantity: 5,
-      price: 20,
-      category: "Category 2",
-    },
-  ];
-  const mockSales = [
-    {
-      id: 1,
-      created_at: "2025-06-01T10:00:00Z",
-      customer: { name: "John Doe" },
-      customer_id: 1,
-      total_amount: 100,
-      status: "completed",
-      items: mockProducts,
-    },
-    {
-      id: 2,
-      created_at: "2025-06-02T11:00:00Z",
-      customer: { name: "Jane Smith" },
-      customer_id: 2,
-      total_amount: 50,
-      status: "pending",
-      items: mockProducts,
-    },
-  ];
-  const mockPurchases = [
-    {
-      id: 1,
-      created_at: "2025-06-01T09:00:00Z",
-      supplier: { name: "Supplier A" },
-      supplier_id: 1,
-      total_amount: 200,
-      status: "completed",
-      items: mockProducts,
-    },
-  ];
-  const mockDashboard = {
-    stats: {
-      totalProducts: 2,
-      totalSales: 2,
-      totalRevenue: 150,
-      totalCustomers: 2,
-      totalSuppliers: 1,
-      lowStockItems: 1,
-      productChange: 0,
-      salesChange: 0,
-      revenueChange: 0,
-    },
-    activities: [],
-    lowStockProducts: [mockProducts[1]],
-    revenueData: [],
-    productDistribution: {},
-  };
-  const mockCategories = [
-    { id: 1, name: "Category 1" },
-    { id: 2, name: "Category 2" },
-  ];
-  const mockSuppliers = [{ id: 1, name: "Supplier A" }];
-  const mockCustomers = [
-    { id: 1, name: "John Doe" },
-    { id: 2, name: "Jane Smith" },
-  ];
-  const mockCompany = {
-    name: "Demo Company",
-    address: "123 Main St",
-    info: { name: "Demo Company", address: "123 Main St" },
-  };
-  const mockSettings = {
-    appName: "Inventory Management System",
-    currency: "USD",
-    lowStockThreshold: 5,
-    taxRate: 0,
-  };
-
-  api.get = async (url) => {
-    console.log(`[Mock API] GET: ${url}`);
-    await delay(300);
-    if (url.startsWith("/users")) return { data: mockUsers };
-    if (url.startsWith("/products")) return { data: mockProducts };
-    if (url.startsWith("/sales")) return { data: mockSales };
-    if (url.startsWith("/purchases")) return { data: mockPurchases };
-    if (url.startsWith("/dashboard/stats"))
-      return { data: mockDashboard.stats };
-    if (url.startsWith("/dashboard/activities"))
-      return { data: mockDashboard.activities };
-    if (url.startsWith("/dashboard")) return { data: mockDashboard };
-    if (url.startsWith("/categories")) return { data: mockCategories };
-    if (url.startsWith("/suppliers")) return { data: mockSuppliers };
-    if (url.startsWith("/customers")) return { data: mockCustomers };
-    if (url.startsWith("/company")) return { data: mockCompany };
-    if (url.startsWith("/reports")) return { data: [] };
-    if (url.startsWith("/settings")) {
-      console.log("[Mock API] Returning mock settings:", mockSettings);
-      return { data: mockSettings };
-    }
-    return { data: [] };
-  };
-  api.post = async (url, data) => {
-    await delay(200);
-    return { data: { success: true, ...data } };
-  };
-  api.put = async (_url, data) => {
-    console.log(`[Mock API] PUT: ${_url}`);
-    await delay(200);
-    if (_url.startsWith("/settings")) {
-      console.log("[Mock API] Updating mock settings:", data);
-      return { data: { ...mockSettings, ...data } };
-    }
-    return { data: { success: true, ...data } };
-  };
-  // eslint-disable-next-line no-unused-vars
-  api.patch = async (_url, data) => {
-    await delay(200);
-    return { data: { success: true, ...data } };
-  };
-  // eslint-disable-next-line no-unused-vars
-  api.delete = async (_url) => {
-    await delay(200);
-    return { data: { success: true } };
-  };
-}
 
 export default api;
