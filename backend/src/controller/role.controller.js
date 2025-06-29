@@ -15,11 +15,10 @@ exports.createRole = async (req, res, next) => {
 
 exports.getAllRoles = async (req, res, next) => {
   try {
-    const result = await roleService.getAllRoles(req.query); // ensure service handles pagination if needed
+    const roles = await roleService.getAllRoles();
     res.json({
       success: true,
-      data: result.data,
-      meta: result.meta,
+      data: roles,
     });
   } catch (error) {
     next(error);
