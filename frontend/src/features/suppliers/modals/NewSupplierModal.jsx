@@ -1,7 +1,7 @@
 // src/features/suppliers/modals/NewSupplierModal.jsx
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Building2, Mail, Phone, MapPin } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, User } from "lucide-react";
 import {
   createSupplier,
   updateSupplier,
@@ -31,13 +31,14 @@ const NewSupplierModal = () => {
       }
 
       dispatch(closeModal());
-    } catch (err) {
+    } catch {
       // Error is already handled by the slice
     }
   };
 
-  // Add outside click functionality
-  const modalRef = useOutsideClick(() => {
+  const modalRef = React.useRef(null);
+
+  useOutsideClick(modalRef, () => {
     if (isOpen) {
       dispatch(closeModal());
     }
@@ -49,7 +50,7 @@ const NewSupplierModal = () => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div
         ref={modalRef}
-        className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg shadow-xl max-w-md w-full"
+        className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
       >
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold">
@@ -59,14 +60,38 @@ const NewSupplierModal = () => {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <Input
-            label="Company Name"
+            label="Supplier Name *"
             icon={<Building2 size={18} />}
             value={formData.name}
             onChange={(e) =>
               dispatch(setFormField({ field: "name", value: e.target.value }))
             }
-            placeholder="Enter company name"
+            placeholder="Enter supplier name"
             required
+          />
+
+          <Input
+            label="Contact Name"
+            icon={<User size={18} />}
+            value={formData.contactName}
+            onChange={(e) =>
+              dispatch(
+                setFormField({ field: "contactName", value: e.target.value })
+              )
+            }
+            placeholder="Enter contact person name"
+          />
+
+          <Input
+            label="Company Name"
+            icon={<Building2 size={18} />}
+            value={formData.companyName}
+            onChange={(e) =>
+              dispatch(
+                setFormField({ field: "companyName", value: e.target.value })
+              )
+            }
+            placeholder="Enter company name"
           />
 
           <Input
@@ -78,11 +103,10 @@ const NewSupplierModal = () => {
               dispatch(setFormField({ field: "email", value: e.target.value }))
             }
             placeholder="Enter email address"
-            required
           />
 
           <Input
-            label="Phone (Optional)"
+            label="Phone"
             type="tel"
             icon={<Phone size={18} />}
             value={formData.phone}
@@ -94,7 +118,7 @@ const NewSupplierModal = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-              Address (Optional)
+              Address
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
