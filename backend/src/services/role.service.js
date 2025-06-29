@@ -10,18 +10,18 @@ const getAllRoles = () =>
 
 const getRoleById = (id) =>
   prisma.role.findUnique({
-    where: { role_id: String(id) },
+    where: { id: String(id) },
   });
 
 const updateRole = (id, data) =>
   prisma.role.update({
-    where: { role_id: String(id) },
+    where: { id: String(id) },
     data,
   });
 
 const deleteRole = (id) =>
   prisma.role.update({
-    where: { role_id: String(id) },
+    where: { id: String(id) },
     data: { isDeleted: true },
   });
 
