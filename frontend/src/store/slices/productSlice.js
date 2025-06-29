@@ -176,7 +176,7 @@ const initialState = {
 
   // Pagination/Sorting/Filtering
   currentPage: 1,
-  itemsPerPage: 10,
+  itemsPerPage: 5,
   totalPages: 1,
   totalItems: 0,
   searchTerm: "",
