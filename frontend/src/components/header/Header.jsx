@@ -11,6 +11,7 @@ import {
   addNotification,
 } from "../../store/slices/notificationSlice";
 import io from "socket.io-client";
+import { API_BASE_URL } from "../../config";
 
 const Header = ({ userName, userAvatar }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -24,7 +25,7 @@ const Header = ({ userName, userAvatar }) => {
 
   useEffect(() => {
     dispatch(fetchNotifications());
-    const socket = io("http://localhost:5000");
+    const socket = io(API_BASE_URL);
     socket.on("new-notification", (notification) => {
       dispatch(addNotification(notification));
     });
@@ -86,61 +87,76 @@ const Header = ({ userName, userAvatar }) => {
 
   return (
     <header className="bg-white border-b border-gray-200 h-16 dark:bg-gray-900 dark:border-gray-800">
-      <div className="h-full px-4 flex items-center justify-between">
-        <div className="relative max-w-xs w-full hidden sm:block"></div>
+      <div className="h-full px-2 sm:px-4 flex items-center justify-between">
+        {/* Left side - Logo/Brand area */}
+        <div className="flex-shrink-0 max-[770px]:flex-1 max-[770px]:flex max-[770px]:justify-center">
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+            StockPilot
+          </h1>
+        </div>
 
-        <div className="flex items-center gap-4">
+        {/* Right side - Action buttons */}
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+          {/* Theme Switcher - Always visible */}
           <button
             onClick={toggleTheme}
-            className="p-2 text-[#3f51b5] rounded-full hover:bg-blue-50 dark:hover:bg-gray-800 focus:outline-none"
+            className="p-1.5 sm:p-2 text-[#3f51b5] rounded-full hover:bg-blue-50 dark:hover:bg-gray-800 focus:outline-none transition-all duration-300 hover:scale-110 flex-shrink-0"
+            title={
+              theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"
+            }
           >
-            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            {theme === "dark" ? (
+              <Sun size={18} className="sm:w-5 sm:h-5" />
+            ) : (
+              <Moon size={18} className="sm:w-5 sm:h-5" />
+            )}
           </button>
 
-          <div className="relative">
+          {/* Notifications */}
+          <div className="relative flex-shrink-0">
             <button
               onClick={toggleNotifications}
-              className="relative p-2 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+              className="relative p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all duration-300 hover:scale-110"
             >
-              <Bell size={20} />
+              <Bell size={18} className="sm:w-5 sm:h-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-0 right-0 h-5 w-5 text-xs flex items-center justify-center bg-red-500 text-white rounded-full">
+                <span className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 text-xs flex items-center justify-center bg-red-500 text-white rounded-full">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
             {isNotificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
-                <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+              <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700 max-h-[calc(100vh-120px)] overflow-hidden">
+                <div className="px-3 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                     Notifications
                   </h3>
                   {unreadCount > 0 && (
                     <button
                       onClick={() => dispatch(markAllAsRead())}
-                      className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                      className="text-xs sm:text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
                     >
                       Mark all as read
                     </button>
                   )}
                 </div>
 
-                <div className="max-h-96 overflow-y-auto">
+                <div className="max-h-80 overflow-y-auto">
                   {notifications.length > 0 ? (
                     notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-start gap-3 ${
+                        className={`px-3 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-start gap-2 sm:gap-3 ${
                           !notification.read
                             ? "bg-blue-50 dark:bg-blue-900/20"
                             : ""
                         }`}
                       >
-                        <span className="text-xl flex-shrink-0">
+                        <span className="text-lg sm:text-xl flex-shrink-0">
                           {getNotificationIcon(notification.type)}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                          <p className="text-xs sm:text-sm text-gray-900 dark:text-gray-100">
                             {notification.message}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -152,15 +168,15 @@ const Header = ({ userName, userAvatar }) => {
                             onClick={() =>
                               dispatch(markAsRead(notification.id))
                             }
-                            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
                           >
-                            <X size={16} />
+                            <X size={14} className="sm:w-4 sm:h-4" />
                           </button>
                         )}
                       </div>
                     ))
                   ) : (
-                    <div className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                    <div className="px-3 sm:px-4 py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
                       No notifications
                     </div>
                   )}
@@ -169,12 +185,13 @@ const Header = ({ userName, userAvatar }) => {
             )}
           </div>
 
-          <div className="relative">
+          {/* Profile */}
+          <div className="relative flex-shrink-0">
             <button
               onClick={toggleProfile}
-              className="flex items-center gap-2 focus:outline-none"
+              className="flex items-center gap-1 sm:gap-2 focus:outline-none transition-all duration-300 hover:scale-105"
             >
-              <div className="h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-medium overflow-hidden">
+              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-medium overflow-hidden">
                 {userAvatar ? (
                   <img
                     src={userAvatar}
@@ -182,33 +199,33 @@ const Header = ({ userName, userAvatar }) => {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <User size={16} />
+                  <User size={14} className="sm:w-4 sm:h-4" />
                 )}
               </div>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200 hidden md:block">
+              <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 hidden sm:block">
                 {userName}
               </span>
             </button>
             {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10 border border-gray-200 dark:border-gray-700">
+              <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10 border border-gray-200 dark:border-gray-700">
                 <a
                   href="/profile"
-                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  className="block px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                 >
-                  <User size={16} />
+                  <User size={14} className="sm:w-4 sm:h-4" />
                   Your Profile
                 </a>
                 <a
                   href="/settings"
-                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  className="block px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                 >
-                  <Settings size={16} />
+                  <Settings size={14} className="sm:w-4 sm:h-4" />
                   Settings
                 </a>
                 <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                 <button
                   onClick={handleSignOut}
-                  className="block w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="block w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm text-red-700 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   Sign out
                 </button>

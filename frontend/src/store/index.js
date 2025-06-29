@@ -8,6 +8,7 @@ import categoryReducer from "./slices/categorySlice";
 import customerReducer from "./slices/customerSlice";
 import supplierReducer from "./slices/supplierSlice";
 import userReducer from "./slices/userSlice";
+import roleReducer from "./slices/roleSlice";
 import saleReducer from "./slices/salesSlice";
 import debounceReducer from "./slices/debounceSlice";
 import loadingReducer from "./slices/loadingSlice";
@@ -36,6 +37,7 @@ const store = configureStore({
     customer: customerReducer,
     supplier: supplierReducer,
     user: userReducer,
+    role: roleReducer,
     sales: saleReducer,
     debounce: debounceReducer,
     loading: loadingReducer,

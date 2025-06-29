@@ -58,6 +58,7 @@ export const usersAPI = {
   delete: (id) => api.delete(`/users/${id}`),
   getProfile: () => api.get("/users/profile"),
   updateProfile: (data) => api.put("/users/profile", data),
+  import: (data) => api.post("/users/import", data),
 };
 
 export const productsAPI = {
@@ -81,7 +82,7 @@ export const productsAPI = {
       uploadApi.defaults.headers.Authorization = `Bearer ${token}`;
     }
 
-    return uploadApi.post("/upload/upload", formData);
+    return uploadApi.post("/upload", formData);
   },
 
   // Stock management
@@ -117,8 +118,44 @@ export const purchasesAPI = {
   getAll: (params) => api.get("/purchases", { params }),
   getById: (id) => api.get(`/purchases/${id}`),
   create: (data) => api.post("/purchases", data),
-  updateStatus: (id, status) => api.put(`/purchases/${id}/status`, { status }),
+  update: (id, data) => api.put(`/purchases/${id}`, data),
+  updateStatus: (id, status) =>
+    api.patch(`/purchases/${id}/status`, { status }),
   delete: (id) => api.delete(`/purchases/${id}`),
+
+  // Bulk operations
+  bulkDelete: (ids) => api.post("/purchases/bulk-delete", { ids }),
+  bulkUpdate: (data) => api.post("/purchases/bulk-update", data),
+
+  // Statistics
+  getStats: () => api.get("/purchases/stats/overview"),
+
+  // Receipt generation
+  generateReceipt: (id) => api.get(`/purchases/${id}/receipt`),
+
+  // Export functionality
+  exportToCSV: (params) =>
+    api.get("/purchases/export", {
+      params,
+      responseType: "blob",
+    }),
+
+  // Import functionality
+  importFromCSV: (formData) => {
+    const uploadApi = axios.create({
+      baseURL: API_URL,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      uploadApi.defaults.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return uploadApi.post("/purchases/import", formData);
+  },
 };
 
 export const customersAPI = {
@@ -135,6 +172,39 @@ export const suppliersAPI = {
   create: (data) => api.post("/suppliers", data),
   update: (id, data) => api.put(`/suppliers/${id}`, data),
   delete: (id) => api.delete(`/suppliers/${id}`),
+
+  // Additional useful operations
+  search: (searchTerm) =>
+    api.get("/suppliers", { params: { search: searchTerm } }),
+  getActiveSuppliers: () => api.get("/suppliers", { params: { active: true } }),
+
+  // Bulk operations (if backend supports them)
+  bulkDelete: (ids) => api.post("/suppliers/bulk-delete", { ids }),
+  bulkUpdate: (data) => api.post("/suppliers/bulk-update", data),
+
+  // Export functionality
+  exportToCSV: (params) =>
+    api.get("/suppliers/export", {
+      params,
+      responseType: "blob",
+    }),
+
+  // Import functionality
+  importFromCSV: (formData) => {
+    const uploadApi = axios.create({
+      baseURL: API_URL,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      uploadApi.defaults.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return uploadApi.post("/suppliers/import", formData);
+  },
 };
 
 export const reportsAPI = {
