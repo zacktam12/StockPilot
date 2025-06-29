@@ -3,9 +3,42 @@ class BaseRepository {
     this.model = model;
   }
 
+  // Helper method to check if model has isDeleted field
+  hasIsDeletedField() {
+    // Check if the model has isDeleted field by looking at the schema
+    // For now, we'll check based on model name or add a flag
+    const modelsWithIsDeleted = [
+      "Product",
+      "Category",
+      "Supplier",
+      "Sale",
+      "Purchase",
+    ];
+    return modelsWithIsDeleted.includes(this.model.name);
+  }
+
+  // Helper method to build where clause
+  buildWhereClause(where = {}) {
+    if (this.hasIsDeletedField()) {
+      return { isDeleted: false, ...where };
+    }
+    return where;
+  }
+
+  // Helper to extract unique fields (e.g., id)
+  extractUniqueWhere(where) {
+    // Prisma's update/findUnique expects only unique fields (like id)
+    // Remove isDeleted and other non-unique fields
+    if (where && where.id !== undefined) {
+      return { id: String(where.id) };
+    }
+    // Add more unique fields if needed for other models
+    return where;
+  }
+
   async findMany({ where = {}, include, skip, take, ...rest } = {}) {
     return this.model.findMany({
-      where: { isDeleted: false, ...where },
+      where: this.buildWhereClause(where),
       include,
       skip,
       take,
@@ -16,16 +49,16 @@ class BaseRepository {
   async findManyWithPagination(
     where = {},
     page = 1,
-    limit = 10,
+    limit = 5,
     include = {},
     orderBy = {}
   ) {
     // Ensure page and limit are numbers
     page = Number(page) || 1;
-    limit = Number(limit) || 10;
+    limit = Number(limit) || 5;
 
     const skip = (page - 1) * limit;
-    const mergedWhere = { isDeleted: false, ...where };
+    const mergedWhere = this.buildWhereClause(where);
     const [data, total] = await Promise.all([
       this.model.findMany({
         where: mergedWhere,
@@ -36,20 +69,25 @@ class BaseRepository {
       }),
       this.model.count({ where: mergedWhere }),
     ]);
+
+    const totalPages = Math.ceil(total / limit);
+
     return {
       data,
-      total,
-      page,
-      pageCount: Math.ceil(total / limit),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: totalPages,
+      },
     };
   }
 
   findUnique(where, include) {
-    if (where?.id) {
-      where.id = String(where.id); // convert id to string
-    }
+    // Only pass unique fields to where
+    const uniqueWhere = this.extractUniqueWhere(where);
     return this.model.findUnique({
-      where: { isDeleted: false, ...where },
+      where: uniqueWhere,
       include,
     });
   }
@@ -59,12 +97,22 @@ class BaseRepository {
   }
 
   update(where, data) {
-    return this.model.update({ where, data });
+    // Only pass unique fields to where
+    const uniqueWhere = this.extractUniqueWhere(where);
+    return this.model.update({
+      where: uniqueWhere,
+      data,
+    });
   }
 
   softDelete(where) {
+    if (!this.hasIsDeletedField()) {
+      throw new Error(`Model ${this.model.name} does not support soft delete`);
+    }
+    // Only pass unique fields to where
+    const uniqueWhere = this.extractUniqueWhere(where);
     return this.model.update({
-      where,
+      where: uniqueWhere,
       data: { isDeleted: true },
     });
   }
@@ -81,7 +129,7 @@ class BaseRepository {
     pageSize = Number(pageSize) || 10;
 
     const skip = (page - 1) * pageSize;
-    const mergedWhere = { isDeleted: false, ...where };
+    const mergedWhere = this.buildWhereClause(where);
 
     const [data, total] = await Promise.all([
       this.model.findMany({
