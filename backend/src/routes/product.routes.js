@@ -6,7 +6,6 @@ const {
   validateUpdateProduct,
 } = require("../validators/product.validator");
 const { authenticate, authorize } = require("../middlewares/auth");
-const { getAllProducts } = require("../controller/product.controller");
 
 // Create product (Admin-only)
 router.post(
@@ -15,6 +14,30 @@ router.post(
   authorize("admin"),
   validateCreateProduct,
   productController.createProduct
+);
+
+// Get all products (Admin and Staff) - with pagination and filtering
+router.get(
+  "/",
+  authenticate,
+  authorize("admin", "staff"),
+  productController.getAllProducts
+);
+
+// Get low stock products (Admin and Staff)
+router.get(
+  "/low-stock",
+  authenticate,
+  authorize("admin", "staff"),
+  productController.getLowStockProducts
+);
+
+// Get product by ID (Admin and Staff)
+router.get(
+  "/:id",
+  authenticate,
+  authorize("admin", "staff"),
+  productController.getProductById
 );
 
 // Update product (Admin-only)
@@ -26,12 +49,28 @@ router.put(
   productController.updateProduct
 );
 
-// Get all products (Admin and Staff)
-router.get(
-  "/",
+// Update stock (Admin and Staff)
+router.patch(
+  "/:id/stock",
   authenticate,
   authorize("admin", "staff"),
-  productController.getAllProducts
+  productController.updateStock
+);
+
+// Increment stock (Admin and Staff)
+router.patch(
+  "/:id/stock/increment",
+  authenticate,
+  authorize("admin", "staff"),
+  productController.incrementStock
+);
+
+// Decrement stock (Admin and Staff)
+router.patch(
+  "/:id/stock/decrement",
+  authenticate,
+  authorize("admin", "staff"),
+  productController.decrementStock
 );
 
 // Delete product (Admin-only)
@@ -42,29 +81,4 @@ router.delete(
   productController.deleteProduct
 );
 
-// Get low-stock products (Admin and Staff)
-router.get(
-  "/low-stock",
-  authenticate,
-  authorize("admin", "staff"),
-  productController.getLowStockProducts
-);
-
-// Get out-of-stock products (Admin and Staff)
-router.get(
-  "/out-of-stock",
-  authenticate,
-  authorize("admin", "staff"),
-  productController.getOutOfStockProducts
-);
-
-// Get product by ID (Admin and Staff)
-router.get(
-  "/:id",
-  authenticate,
-  authorize("admin", "staff"),
-  productController.getProductById
-);
-
 module.exports = router;
-module.exports.getAllProducts = getAllProducts;

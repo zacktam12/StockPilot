@@ -6,8 +6,19 @@ class ProductRepository extends BaseRepository {
     super(prisma.product);
   }
 
-  async findActiveProducts(page = 1, limit = 10, filters = {}) {
-    const { search, categoryId, lowStock } = filters;
+  async findActiveProducts(page = 1, limit = 5, filters = {}) {
+    const {
+      search,
+      categoryId,
+      status,
+      priceRange,
+      stockRange,
+      hasImage,
+      hasBarcode,
+      hasSku,
+      sortField = "createdAt",
+      sortOrder = "desc",
+    } = filters;
 
     const where = {
       isDeleted: false,
@@ -19,40 +30,60 @@ class ProductRepository extends BaseRepository {
           { barcode: { contains: search } },
         ],
       }),
-      ...(categoryId && { categoryId: Number.parseInt(categoryId) }),
+      ...(categoryId && { categoryId: String(categoryId) }),
+      ...(hasImage === "true" && { image: { not: null } }),
+      ...(hasBarcode === "true" && { barcode: { not: null } }),
+      ...(hasSku === "true" && { sku: { not: null } }),
     };
 
-    // Handle low stock filter separately as it requires a raw query
-    if (lowStock === "true") {
-      const products = await this.prisma.product.findMany({
-        where: {
-          ...where,
-          quantity: {
-            lte: this.prisma.raw("minStock"),
-          },
-        },
-        include: {
-          category: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
+    // Handle status filter
+    if (status) {
+      switch (status) {
+        case "in_stock":
+          where.quantity = { gt: 0 };
+          break;
+        case "low_stock":
+          // Use a simpler approach for low stock - we'll handle this in the service
+          where.quantity = { lte: 5 }; // Default threshold
+          break;
+        case "out_of_stock":
+          where.quantity = { equals: 0 };
+          break;
+      }
+    }
 
-      const total = products.length;
-      const skip = (page - 1) * limit;
-      const paginatedProducts = products.slice(
-        skip,
-        skip + Number.parseInt(limit)
-      );
+    // Handle price range filter
+    if (priceRange) {
+      const priceConditions = {};
+      if (priceRange.min !== undefined && priceRange.min !== null) {
+        priceConditions.gte = parseFloat(priceRange.min);
+      }
+      if (priceRange.max !== undefined && priceRange.max !== null) {
+        priceConditions.lte = parseFloat(priceRange.max);
+      }
+      if (Object.keys(priceConditions).length > 0) {
+        where.price = priceConditions;
+      }
+    }
 
-      return {
-        data: paginatedProducts,
-        pagination: {
-          page: Number.parseInt(page),
-          limit: Number.parseInt(limit),
-          total,
-          pages: Math.ceil(total / limit),
-        },
-      };
+    // Handle stock range filter
+    if (stockRange) {
+      const stockConditions = {};
+      if (stockRange.min !== undefined && stockRange.min !== null) {
+        stockConditions.gte = parseInt(stockRange.min);
+      }
+      if (stockRange.max !== undefined && stockRange.max !== null) {
+        stockConditions.lte = parseInt(stockRange.max);
+      }
+      if (Object.keys(stockConditions).length > 0) {
+        where.quantity = { ...where.quantity, ...stockConditions };
+      }
+    }
+
+    // Handle sorting
+    const orderBy = {};
+    if (sortField) {
+      orderBy[sortField] = sortOrder || "desc";
     }
 
     return await this.findManyWithPagination(
@@ -60,7 +91,7 @@ class ProductRepository extends BaseRepository {
       page,
       limit,
       { category: true },
-      { createdAt: "desc" }
+      orderBy
     );
   }
 
@@ -110,12 +141,12 @@ class ProductRepository extends BaseRepository {
   }
 
   async updateStock(productId, quantity) {
-    return await this.update({ id: productId }, { quantity });
+    return await this.update({ id: String(productId) }, { quantity });
   }
 
   async incrementStock(productId, quantity) {
-    return await this.prisma.product.update({
-      where: { id: productId },
+    return await prisma.product.update({
+      where: { id: String(productId) },
       data: {
         quantity: {
           increment: quantity,
@@ -125,8 +156,8 @@ class ProductRepository extends BaseRepository {
   }
 
   async decrementStock(productId, quantity) {
-    return await this.prisma.product.update({
-      where: { id: productId },
+    return await prisma.product.update({
+      where: { id: String(productId) },
       data: {
         quantity: {
           decrement: quantity,
@@ -137,7 +168,7 @@ class ProductRepository extends BaseRepository {
 
   async findWithSalesHistory(productId) {
     return await this.findUnique(
-      { id: productId, isDeleted: false },
+      { id: String(productId), isDeleted: false },
       {
         category: true,
         productSales: {

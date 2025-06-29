@@ -10,7 +10,9 @@ const createProductSchema = Joi.object({
   quantity: Joi.number().integer().min(0).default(0),
   minStock: Joi.number().integer().min(0),
   maxStock: Joi.number().integer().min(0),
-  categoryId: Joi.number().integer().positive().required(),
+  categoryId: Joi.string().required(),
+  image: Joi.string().optional(),
+  image_url: Joi.string().optional(),
 });
 
 const updateProductSchema = Joi.object({
@@ -23,7 +25,9 @@ const updateProductSchema = Joi.object({
   quantity: Joi.number().integer().min(0),
   minStock: Joi.number().integer().min(0),
   maxStock: Joi.number().integer().min(0),
-  categoryId: Joi.number().integer().positive(),
+  categoryId: Joi.string(),
+  image: Joi.string().optional(),
+  image_url: Joi.string().optional(),
 });
 
 const validateCreateProduct = (req, res, next) => {
