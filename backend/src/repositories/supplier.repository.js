@@ -12,9 +12,11 @@ class SupplierRepository extends BaseRepository {
       ...(search && {
         OR: [
           { name: { contains: search, mode: "insensitive" } },
+          { contactName: { contains: search, mode: "insensitive" } },
           { email: { contains: search, mode: "insensitive" } },
           { phone: { contains: search, mode: "insensitive" } },
           { address: { contains: search, mode: "insensitive" } },
+          { companyName: { contains: search, mode: "insensitive" } },
         ],
       }),
     };

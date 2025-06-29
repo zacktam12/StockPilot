@@ -16,4 +16,12 @@ router.post("/", validateCreateSupplier, supplierController.createSupplier);
 router.put("/:id", validateUpdateSupplier, supplierController.updateSupplier);
 router.delete("/:id", supplierController.deleteSupplier);
 
+// Bulk operations
+router.post("/bulk-delete", supplierController.bulkDeleteSuppliers);
+router.post("/bulk-update", supplierController.bulkUpdateSuppliers);
+
+// Import/Export operations
+router.post("/import", supplierController.importSuppliers);
+router.get("/export", supplierController.exportSuppliers);
+
 module.exports = router;
