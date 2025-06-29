@@ -5,8 +5,13 @@ const registerSchema = Joi.object({
   password: Joi.string().min(6).required(),
   firstName: Joi.string().min(2).max(50),
   lastName: Joi.string().min(2).max(50),
-  phone: Joi.string().pattern(/^[+]?[1-9][\d]{0,15}$/),
+  phone: Joi.string()
+    .allow("", null)
+    .pattern(/^[+]?[\d\s\-\(\)]{0,20}$/),
   roleId: Joi.string().required(), // Changed from number to string
+  status: Joi.string()
+    .valid("Active", "Inactive", "Deactivated", "Banned")
+    .default("Active"),
 });
 
 const loginSchema = Joi.object({
@@ -17,8 +22,13 @@ const loginSchema = Joi.object({
 const updateUserSchema = Joi.object({
   firstName: Joi.string().min(2).max(50),
   lastName: Joi.string().min(2).max(50),
-  phone: Joi.string().pattern(/^[+]?[1-9][\d]{0,15}$/),
-  roleId: Joi.string(), // Changed from number to string
+  email: Joi.string().email(),
+  phone: Joi.string()
+    .allow("", null)
+    .pattern(/^[+]?[\d\s\-\(\)]{0,20}$/),
+  roleId: Joi.string().allow("", null), // Made optional
+  status: Joi.string().valid("Active", "Inactive", "Deactivated", "Banned"),
+  password: Joi.string().min(6).optional(),
 });
 
 const validateRegister = (req, res, next) => {
@@ -46,8 +56,10 @@ const validateLogin = (req, res, next) => {
 };
 
 const validateUpdateUser = (req, res, next) => {
+  console.log("Validating update user data:", req.body);
   const { error } = updateUserSchema.validate(req.body);
   if (error) {
+    console.log("Validation errors:", error.details);
     return res.status(400).json({
       success: false,
       message: "Validation error",

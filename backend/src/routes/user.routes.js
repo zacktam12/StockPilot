@@ -44,4 +44,12 @@ router.delete(
   userController.deleteUser
 );
 
+// Import users from CSV (Admin-only)
+router.post(
+  "/import",
+  authenticate,
+  authorize("admin"),
+  userController.importUsers
+);
+
 module.exports = router;

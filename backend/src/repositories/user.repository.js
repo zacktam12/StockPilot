@@ -13,9 +13,16 @@ class UserRepository extends BaseRepository {
     });
   }
 
-  async findActiveUsers(page = 1, limit = 10, search = "") {
+  async findActiveUsers(
+    page = 1,
+    limit = 5,
+    search = "",
+    status = "",
+    roleId = "",
+    sortField = "",
+    sortOrder = ""
+  ) {
     const where = {
-      status: "Active",
       ...(search && {
         OR: [
           { firstName: { contains: search } },
@@ -23,14 +30,22 @@ class UserRepository extends BaseRepository {
           { email: { contains: search } },
         ],
       }),
+      ...(status && { status }),
+      ...(roleId && { roleId }),
     };
+
+    // Build orderBy object
+    let orderBy = { createdAt: "desc" };
+    if (sortField && sortOrder) {
+      orderBy = { [sortField]: sortOrder };
+    }
 
     return await this.findManyWithPagination(
       where,
       page,
       limit,
       { role: true },
-      { createdAt: "desc" }
+      orderBy
     );
   }
 
@@ -49,15 +64,11 @@ class UserRepository extends BaseRepository {
   async createUser(userData) {
     // Ensure status is set to Active if not provided
     if (!userData.status) userData.status = "Active";
-    return await this.create(userData, {
-      role: true,
-    });
+    return await this.create(userData);
   }
 
   async updateUser(id, userData) {
-    return await this.update({ id: String(id) }, userData, {
-      role: true,
-    });
+    return await this.update({ id: String(id) }, userData);
   }
 
   async findCustomers() {
@@ -91,6 +102,18 @@ class UserRepository extends BaseRepository {
   // Soft delete: set status to Deactivated
   async softDeleteUser(id) {
     return await this.update({ id: String(id) }, { status: "Deactivated" });
+  }
+
+  // Find role by name
+  async findRoleByName(roleName) {
+    return await prisma.role.findFirst({
+      where: {
+        role_type: {
+          equals: roleName,
+          mode: "insensitive",
+        },
+      },
+    });
   }
 }
 

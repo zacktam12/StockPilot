@@ -140,12 +140,8 @@ exports.register = async (req, res, next) => {
 // ➕ Create
 exports.createUser = async (req, res, next) => {
   try {
-    const user = await userService.createUser(req.body);
-    res.status(201).json({
-      success: true,
-      message: "User created successfully",
-      data: user,
-    });
+    const result = await userService.createUser(req.body);
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }
@@ -154,17 +150,26 @@ exports.createUser = async (req, res, next) => {
 // 📋 Get all (with pagination)
 exports.getAllUsers = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, search = "" } = req.query;
-    const users = await userService.getAllUsers(
+    const {
+      page = 1,
+      limit = 5,
+      search = "",
+      status = "",
+      roleId = "",
+      sortField = "",
+      sortOrder = "",
+    } = req.query;
+    const result = await userService.getAllUsers(
       Number(page),
       Number(limit),
-      search
+      search,
+      status,
+      roleId,
+      sortField,
+      sortOrder
     );
 
-    res.json({
-      success: true,
-      data: users,
-    });
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -192,13 +197,12 @@ exports.getUserById = async (req, res, next) => {
 // 🔁 Update
 exports.updateUser = async (req, res, next) => {
   try {
-    const user = await userService.updateUser(req.params.id, req.body);
-    res.json({
-      success: true,
-      message: "User updated successfully",
-      data: user,
-    });
+    console.log("Update user request - ID:", req.params.id);
+    console.log("Update user request - Body:", req.body);
+    const result = await userService.updateUser(req.params.id, req.body);
+    res.json(result);
   } catch (error) {
+    console.error("Update user error:", error);
     next(error);
   }
 };
@@ -209,8 +213,27 @@ exports.deleteUser = async (req, res, next) => {
     await userService.deleteUser(req.params.id);
     res.json({
       success: true,
-      message: "User soft-deleted successfully",
+      message: "User deleted successfully",
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 📥 Import Users from CSV
+exports.importUsers = async (req, res, next) => {
+  try {
+    const { users } = req.body;
+
+    if (!users || !Array.isArray(users)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid data format. Expected an array of users.",
+      });
+    }
+
+    const result = await userService.importUsers(users);
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }
