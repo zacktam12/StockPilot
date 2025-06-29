@@ -28,12 +28,23 @@ exports.createCategory = async (req, res, next) => {
 
 exports.getAllCategories = async (req, res, next) => {
   try {
-    const result = await categoryService.getAllCategories(req.query);
-    res.json({
-      success: true,
-      data: result.data,
-      meta: result.meta,
-    });
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      sortField = "",
+      sortOrder = "",
+    } = req.query;
+
+    const result = await categoryService.getAllCategories(
+      Number(page),
+      Number(limit),
+      search,
+      sortField,
+      sortOrder
+    );
+
+    res.json(result);
   } catch (error) {
     next(error);
   }
