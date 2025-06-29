@@ -1,47 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 
-const applyFilters = (state) => {
-  let filtered = [...state.items];
-
-  if (state.filters.searchTerm) {
-    filtered = filtered.filter(
-      (category) =>
-        category.name
-          .toLowerCase()
-          .includes(state.filters.searchTerm.toLowerCase()) ||
-        category.description
-          ?.toLowerCase()
-          .includes(state.filters.searchTerm.toLowerCase())
-    );
-  }
-
-  if (state.filters.options.hasDescription) {
-    filtered = filtered.filter(
-      (category) => category.description && category.description.trim() !== ""
-    );
-  }
-
-  filtered.sort((a, b) => {
-    const aVal = a[state.filters.sortField];
-    const bVal = b[state.filters.sortField];
-    if (aVal < bVal) return state.filters.sortOrder === "asc" ? -1 : 1;
-    if (aVal > bVal) return state.filters.sortOrder === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  state.filteredItems = filtered;
-};
-
 // Async Thunks
 export const fetchCategories = createAsyncThunk(
   "category/fetchAll",
   async (params = {}, { rejectWithValue }) => {
     try {
-      const { sortBy = "name", order = "asc", ...filters } = params;
-      const response = await api.get("/categories", {
-        params: { sortBy, order, ...filters },
-      });
+      const response = await api.get("/categories", { params });
       return response.data;
     } catch (err) {
       return rejectWithValue(
@@ -69,7 +34,7 @@ export const updateCategory = createAsyncThunk(
   "category/update",
   async ({ id, ...data }, { rejectWithValue }) => {
     try {
-      const res = await api.patch(`/categories/${id}`, data);
+      const res = await api.put(`/categories/${id}`, data);
       return res.data;
     } catch (err) {
       return rejectWithValue(
@@ -95,19 +60,17 @@ export const deleteCategory = createAsyncThunk(
 
 const initialState = {
   items: [],
-  filteredItems: [],
   loading: false,
   error: null,
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  itemsPerPage: 10,
   modal: {
     isOpen: false,
     mode: "create",
     currentCategory: null,
     isLoading: false,
-  },
-  pagination: {
-    currentPage: 1,
-    itemsPerPage: 10,
-    totalItems: 0,
   },
   filters: {
     searchTerm: "",
@@ -152,8 +115,7 @@ const categorySlice = createSlice({
     },
     setSearchTerm: (state, action) => {
       state.filters.searchTerm = action.payload;
-      state.pagination.currentPage = 1;
-      applyFilters(state);
+      state.currentPage = 1;
     },
     setSort: (state, action) => {
       const { field } = action.payload;
@@ -164,23 +126,19 @@ const categorySlice = createSlice({
         state.filters.sortField = field;
         state.filters.sortOrder = "asc";
       }
-      applyFilters(state);
     },
     setSortField: (state, action) => {
       state.filters.sortField = action.payload;
-      applyFilters(state);
     },
     setFilterOptions: (state, action) => {
       state.filters.options = { ...state.filters.options, ...action.payload };
-      applyFilters(state);
     },
     toggleDescriptionFilter: (state) => {
       state.filters.options.hasDescription =
         !state.filters.options.hasDescription;
-      applyFilters(state);
     },
     setCurrentPage: (state, action) => {
-      state.pagination.currentPage = action.payload;
+      state.currentPage = action.payload;
     },
     resetCategoryState: () => initialState,
   },
@@ -192,10 +150,20 @@ const categorySlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.data || action.payload;
-        state.pagination.totalItems =
-          action.payload.total || action.payload.length;
-        applyFilters(state);
+        // Handle both paginated and non-paginated responses
+        if (action.payload && action.payload.data) {
+          // Server-side paginated response
+          state.items = action.payload.data;
+          state.totalItems = action.payload.pagination?.totalItems || 0;
+          state.totalPages = action.payload.pagination?.totalPages || 1;
+          state.currentPage = action.payload.pagination?.currentPage || 1;
+          state.itemsPerPage = action.payload.pagination?.itemsPerPage || 10;
+        } else {
+          // Non-paginated response or direct array
+          state.items = Array.isArray(action.payload) ? action.payload : [];
+          state.totalItems = state.items.length;
+          state.totalPages = Math.ceil(state.items.length / state.itemsPerPage);
+        }
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.loading = false;
@@ -206,9 +174,19 @@ const categorySlice = createSlice({
       })
       .addCase(createCategory.fulfilled, (state, action) => {
         state.modal.isLoading = false;
-        state.items.unshift(action.payload);
-        state.pagination.totalItems += 1;
-        applyFilters(state);
+        // Handle the response structure from backend
+        const categoryData = action.payload.data || action.payload;
+
+        // Add the new category to the beginning of the items array
+        state.items.unshift(categoryData);
+
+        // Update pagination info for client-side pagination
+        state.totalItems = state.items.length;
+        state.totalPages = Math.ceil(state.totalItems / state.itemsPerPage);
+
+        // Reset to first page to show the new category
+        state.currentPage = 1;
+
         state.modal.isOpen = false;
       })
       .addCase(createCategory.rejected, (state, action) => {
@@ -219,13 +197,14 @@ const categorySlice = createSlice({
         state.modal.isLoading = true;
       })
       .addCase(updateCategory.fulfilled, (state, action) => {
+        // Handle the response structure from backend
+        const categoryData = action.payload.data || action.payload;
         const index = state.items.findIndex(
-          (item) => item.id === action.payload.id
+          (item) => item.id === categoryData.id
         );
         if (index !== -1) {
-          state.items[index] = action.payload;
+          state.items[index] = categoryData;
         }
-        applyFilters(state);
         state.modal.isLoading = false;
         state.modal.isOpen = false;
       })
@@ -240,8 +219,15 @@ const categorySlice = createSlice({
       })
       .addCase(deleteCategory.fulfilled, (state, action) => {
         state.items = state.items.filter((item) => item.id !== action.payload);
-        state.pagination.totalItems -= 1;
-        applyFilters(state);
+
+        // Update pagination info for client-side pagination
+        state.totalItems = state.items.length;
+        state.totalPages = Math.ceil(state.totalItems / state.itemsPerPage);
+
+        // Adjust current page if needed
+        if (state.currentPage > state.totalPages && state.totalPages > 0) {
+          state.currentPage = state.totalPages;
+        }
       })
       .addCase(deleteCategory.rejected, (state, action) => {
         state.items = state.items.map((item) =>
