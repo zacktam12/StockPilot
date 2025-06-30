@@ -145,7 +145,7 @@ export default function Login() {
 
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("userRole", data.user.role);
-      localStorage.setItem("userName", data.user.name);
+      localStorage.setItem("userName", data.user.email);
       localStorage.setItem("userEmail", data.user.email);
 
       setShowSuccess(true);
@@ -155,11 +155,10 @@ export default function Login() {
           case "admin":
             navigate("/dashboard");
             break;
-
           default:
             navigate("/");
         }
-      }, 1000);
+      }, 200);
     } catch (error) {
       // Only increment attempts if credentials are actually invalid
       if (
