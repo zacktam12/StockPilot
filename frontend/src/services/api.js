@@ -48,6 +48,10 @@ export const authAPI = {
   verifyEmployeeId: (employeeId) =>
     api.get(`/auth/verify-employee-id/${employeeId}`),
   contactAdmin: (data) => api.post("/auth/contact-admin", data),
+  verifyResetCode: (email, code) =>
+    api.post("/auth/reset-code-login", { email, code }),
+  resetPasswordWithCode: (email, code, newPassword) =>
+    api.post("/auth/reset-password-with-code", { email, code, newPassword }),
 };
 
 export const usersAPI = {
@@ -59,6 +63,7 @@ export const usersAPI = {
   getProfile: () => api.get("/users/profile"),
   updateProfile: (data) => api.put("/users/profile", data),
   import: (data) => api.post("/users/import", data),
+  invite: (data) => api.post("/users/invite", data),
 };
 
 export const productsAPI = {
@@ -118,44 +123,8 @@ export const purchasesAPI = {
   getAll: (params) => api.get("/purchases", { params }),
   getById: (id) => api.get(`/purchases/${id}`),
   create: (data) => api.post("/purchases", data),
-  update: (id, data) => api.put(`/purchases/${id}`, data),
-  updateStatus: (id, status) =>
-    api.patch(`/purchases/${id}/status`, { status }),
+  updateStatus: (id, status) => api.put(`/purchases/${id}/status`, { status }),
   delete: (id) => api.delete(`/purchases/${id}`),
-
-  // Bulk operations
-  bulkDelete: (ids) => api.post("/purchases/bulk-delete", { ids }),
-  bulkUpdate: (data) => api.post("/purchases/bulk-update", data),
-
-  // Statistics
-  getStats: () => api.get("/purchases/stats/overview"),
-
-  // Receipt generation
-  generateReceipt: (id) => api.get(`/purchases/${id}/receipt`),
-
-  // Export functionality
-  exportToCSV: (params) =>
-    api.get("/purchases/export", {
-      params,
-      responseType: "blob",
-    }),
-
-  // Import functionality
-  importFromCSV: (formData) => {
-    const uploadApi = axios.create({
-      baseURL: API_URL,
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      uploadApi.defaults.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return uploadApi.post("/purchases/import", formData);
-  },
 };
 
 export const customersAPI = {
@@ -213,6 +182,27 @@ export const reportsAPI = {
   getInventory: () => api.get("/reports/inventory"),
   getTopProducts: (params) => api.get("/reports/top-products", { params }),
   getDashboard: () => api.get("/reports/dashboard"),
+};
+
+export const settingsAPI = {
+  getSettings: () => api.get("/settings"),
+  updateSettings: (data) => api.put("/settings", data),
+  uploadLogo: (formData) => {
+    const uploadApi = axios.create({
+      baseURL: API_URL,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      uploadApi.defaults.headers.Authorization = `Bearer ${token}`;
+    }
+    return uploadApi.post("/settings/logo", formData);
+  },
+};
+
+export const integrationsAPI = {
+  getIntegrations: () => api.get("/integrations"),
+  updateIntegration: (id, data) => api.put(`/integrations/${id}", data`),
 };
 
 export default api;
