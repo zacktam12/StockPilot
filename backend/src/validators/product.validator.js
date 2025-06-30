@@ -43,6 +43,10 @@ const validateCreateProduct = (req, res, next) => {
 };
 
 const validateUpdateProduct = (req, res, next) => {
+  // Remove id from body if present to avoid Joi validation error
+  if ("id" in req.body) {
+    delete req.body.id;
+  }
   const { error } = updateProductSchema.validate(req.body);
   if (error) {
     return res.status(400).json({
