@@ -74,7 +74,7 @@ exports.login = async (req, res, next) => {
       user: {
         id: user.id,
         email: user.email,
-        role: user.role?.role_type,
+        role: user.role?.role_type || "user",
       },
     });
   } catch (error) {
@@ -267,27 +267,26 @@ exports.forgotPassword = async (req, res, next) => {
     const tokenExpiry = new Date(Date.now() + 1000 * 60 * 10); // 10 minutes from now
 
     // Save resetToken and expiry (optional: hash token for security)
+    const resetCode = Math.floor(100000 + Math.random() * 900000); // 6-digit code
+
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        resetToken,
+        resetToken: resetCode.toString(),
         resetTokenExpiry: tokenExpiry,
       },
     });
 
-    try {
-      await sendMail({
-        to: normalizedEmail, // Always send to normalized email
-        subject: "Password Reset Request",
-        html: `<p>Click <a href=\"http://localhost:5000/reset-password?token=${resetToken}\">here</a> to reset your password. This link expires in 10 minutes.</p>`,
-      });
-    } catch (mailErr) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send reset email. Please try again later.",
-        error: mailErr.message,
-      });
-    }
+    await sendMail({
+      to: normalizedEmail,
+      subject: "Your Password Reset Code",
+      html: `
+    <p>Hello ${user.firstName || "User"},</p>
+    <p>Your password reset code is:</p>
+    <h2 style="color:#007bff">${resetCode}</h2>
+    <p>This code will expire in 10 minutes.</p>
+  `,
+    });
 
     return res.json({
       success: true,
@@ -353,6 +352,115 @@ exports.contactAdmin = async (req, res, next) => {
     // Simulate sending admin contact request
     console.log("Admin contact request:", req.body);
     res.json({ success: true, message: "Admin contact request submitted" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Login with reset code (6-digit)
+exports.resetCodeLogin = async (req, res, next) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and code are required",
+      });
+    }
+
+    // Normalize email
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await userService.getUserByEmail(normalizedEmail);
+
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired code",
+      });
+    }
+
+    // Check code and expiry
+    const now = new Date();
+    if (
+      user.resetToken !== code ||
+      !user.resetTokenExpiry ||
+      now > user.resetTokenExpiry
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired code",
+      });
+    }
+
+    // Optionally clear the reset token after successful login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
+
+    // Generate JWT token
+    const token = generateToken({ id: user.id, roleId: user.roleId });
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role?.role_type || "user",
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /auth/reset-password-with-code
+exports.resetPasswordWithCode = async (req, res, next) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, code, and new password are required",
+      });
+    }
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await userService.getUserByEmail(normalizedEmail);
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired code",
+      });
+    }
+    const now = new Date();
+    if (
+      user.resetToken !== code ||
+      !user.resetTokenExpiry ||
+      now > user.resetTokenExpiry
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired code",
+      });
+    }
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
+    res.json({
+      success: true,
+      message: "Password has been reset successfully.",
+    });
   } catch (error) {
     next(error);
   }
