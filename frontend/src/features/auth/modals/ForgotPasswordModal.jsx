@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Mail, X } from "lucide-react";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
@@ -9,6 +9,7 @@ import Spinner from "../../../components/shared/Spinner";
 import { useTheme } from "../../../components/ThemeProvider";
 import LoginNotice from "../components/LoginNotice";
 import { authAPI } from "../../../services/api";
+import { useOutsideClick } from "../../../hooks/useOutsideClick";
 
 export default function ForgotPasswordModal({
   onClose,
@@ -18,8 +19,12 @@ export default function ForgotPasswordModal({
   const { theme } = useTheme();
   const [email, setEmail] = useState(initialEmail);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [code, setCode] = useState("");
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isCodeVerified, setIsCodeVerified] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   // Set initial email if provided
   useEffect(() => {
@@ -39,41 +44,75 @@ export default function ForgotPasswordModal({
       setError("Please enter a valid email address.");
       return;
     }
-
     setIsLoading(true);
     setError("");
-
     try {
-      console.log("Submitting forgot password request", email);
-      // Call backend API to send password reset email
+      // Call backend API to send password reset code
       const response = await authAPI.forgotPassword(email);
       if (response && response.data && response.data.success) {
-        setIsSuccess(true);
+        setIsCodeSent(true);
       } else {
         setError(
           response?.data?.message ||
             response?.message ||
             "No user found with this email."
         );
-        setIsSuccess(false);
       }
     } catch (error) {
-      console.error("Forgot password error:", error);
       setError(
         error?.response?.data?.message ||
           error?.response?.message ||
           error?.message ||
           "System error occurred. Please try again or contact your administrator."
       );
-      setIsSuccess(false);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // 2. Handle code verification
+  const handleVerifyCode = (e) => {
+    e.preventDefault();
+    setError("");
+    if (code.length !== 6 || !/^[0-9]{6}$/.test(code)) {
+      setError("Please enter a valid 6-digit code.");
+      return;
+    }
+    setIsCodeVerified(true);
+  };
+
+  // 3. Handle new password submission
+  const handleSetNewPassword = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    try {
+      const response = await authAPI.resetPasswordWithCode(
+        email,
+        code,
+        newPassword
+      );
+      if (response && response.data && response.data.success) {
+        setResetSuccess(true);
+      } else {
+        setError(response?.data?.message || "Failed to reset password.");
+      }
+    } catch (error) {
+      setError(error?.response?.data?.message || "Failed to reset password.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add outside click functionality
+  const modalRef = useRef(null);
+  useOutsideClick(modalRef, () => {
+    if (onClose) onClose();
+  });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-lg">
-      <div className="w-full max-w-md mx-4">
+      <div ref={modalRef} className="w-full max-w-md mx-4">
         <Card
           className={
             theme === "dark"
@@ -102,13 +141,15 @@ export default function ForgotPasswordModal({
                   >
                     Reset Password
                   </h2>
-                  <p
-                    className={`text-sm text-center ${
-                      theme === "dark" ? "text-slate-400" : "text-gray-600"
-                    }`}
-                  >
-                    Enter your email to receive a secure reset link
-                  </p>
+                  {!isCodeSent && !isCodeVerified && !resetSuccess && (
+                    <p
+                      className={`text-sm text-center ${
+                        theme === "dark" ? "text-slate-400" : "text-gray-600"
+                      }`}
+                    >
+                      Enter your email to receive a secure reset link
+                    </p>
+                  )}
                 </div>
               </div>
               <button
@@ -120,56 +161,64 @@ export default function ForgotPasswordModal({
             </div>
 
             <div className="space-y-6">
-              {isSuccess ? (
-                <div className="space-y-4">
+              {resetSuccess ? (
+                <LoginNotice
+                  type="success"
+                  message="Password reset successfully! You can now log in with your new password."
+                  isVisible={true}
+                />
+              ) : isCodeVerified ? (
+                <form onSubmit={handleSetNewPassword} className="space-y-4">
+                  <LoginNotice
+                    type="error"
+                    message={error}
+                    isVisible={!!error}
+                  />
+                  <label className="text-sm font-medium">New Password</label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-blue-800 hover:bg-blue-600 text-white font-medium rounded-lg"
+                    disabled={isLoading || !newPassword}
+                  >
+                    {isLoading ? <Spinner size="sm" /> : "Set New Password"}
+                  </Button>
+                </form>
+              ) : isCodeSent ? (
+                <form onSubmit={handleVerifyCode} className="space-y-4">
                   <LoginNotice
                     type="success"
-                    message="Reset link sent! Check your email for the secure password reset link."
+                    message="Reset code sent! Check your email for the secure 6 digit password reset code."
                     isVisible={true}
                   />
-
-                  <div
-                    className={`${
-                      theme === "dark"
-                        ? "bg-slate-700/30 border-slate-600"
-                        : "bg-gray-50 border-gray-200"
-                    } p-4 rounded-lg border`}
+                  <LoginNotice
+                    type="error"
+                    message={error}
+                    isVisible={!!error}
+                  />
+                  <label className="text-sm font-medium">
+                    Enter 6-digit Code
+                  </label>
+                  <Input
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    maxLength={6}
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-blue-800 hover:bg-blue-600 text-white font-medium rounded-lg"
+                    disabled={isLoading || code.length !== 6}
                   >
-                    <h4
-                      className={`text-sm font-medium mb-2 ${
-                        theme === "dark" ? "text-slate-200" : "text-gray-800"
-                      }`}
-                    >
-                      Next Steps:
-                    </h4>
-                    <ul
-                      className={`text-sm space-y-1 ${
-                        theme === "dark" ? "text-slate-300" : "text-gray-600"
-                      }`}
-                    >
-                      <li>• Check your email inbox</li>
-                      <li>• Click the secure link</li>
-                      <li>• Create your new password</li>
-                      <li>• Link expires in 15 minutes</li>
-                    </ul>
-                  </div>
-
-                  <div className="text-center">
-                    <Button
-                      onClick={() => {
-                        setIsSuccess(false);
-                        setEmail("");
-                      }}
-                      className={`${
-                        theme === "dark"
-                          ? "bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600"
-                          : "bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300"
-                      } border`}
-                    >
-                      Send Another Link
-                    </Button>
-                  </div>
-                </div>
+                    {isLoading ? <Spinner size="sm" /> : "Verify"}
+                  </Button>
+                </form>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
