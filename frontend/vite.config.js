@@ -14,6 +14,13 @@ export default defineConfig({
   server: {
     port: 5500, // Changed from 3001 to 5500
     host: true, // optional: allows LAN access
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000", // or 5000, depending on your backend
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   build: {
     sourcemap: true,
