@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ArrowLeft, User, MessageSquare, X } from "lucide-react";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
@@ -9,6 +9,7 @@ import Spinner from "../../../components/shared/Spinner";
 import { useTheme } from "../../../components/ThemeProvider";
 import LoginNotice from "../components/LoginNotice";
 import { authAPI } from "../../../services/api";
+import { useOutsideClick } from "../../../hooks/useOutsideClick";
 
 export default function AccountRecoveryModal({
   onClose,
@@ -19,6 +20,12 @@ export default function AccountRecoveryModal({
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
   const { theme } = useTheme();
+
+  // Add outside click functionality
+  const modalRef = useRef(null);
+  useOutsideClick(modalRef, () => {
+    if (onClose) onClose();
+  });
 
   // Employee ID Recovery
   const [employeeId, setEmployeeId] = useState("");
@@ -122,7 +129,7 @@ export default function AccountRecoveryModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-lg">
-      <div className="w-full max-w-lg mx-4">
+      <div ref={modalRef} className="w-full max-w-lg mx-4">
         <Card
           className={
             theme === "dark"
