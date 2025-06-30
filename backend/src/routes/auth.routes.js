@@ -27,6 +27,8 @@ router.post("/register", validateRegister, userController.register);
 router.post("/login", validateLogin, userController.login);
 router.post("/forgot-password", userController.forgotPassword);
 router.post("/login-failed", userController.loginFailed);
+router.post("/reset-code-login", userController.resetCodeLogin);
+router.post("/reset-password-with-code", userController.resetPasswordWithCode);
 
 // Employee ID verification
 router.get("/verify-employee-id/:id", userController.verifyEmployeeId);

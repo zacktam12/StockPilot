@@ -1,7 +1,15 @@
-import nodemailer from "nodemailer";
+const nodemailer = require("nodemailer");
 
+// IMPORTANT: Use a Gmail App Password, not your regular Gmail password.
+// See: https://support.google.com/accounts/answer/185833
 const adminEmail = process.env.ADMIN_EMAIL;
 const adminPass = process.env.ADMIN_EMAIL_PASS;
+
+if (!adminEmail || !adminPass) {
+  throw new Error(
+    "ADMIN_EMAIL and ADMIN_EMAIL_PASS must be set in environment variables. ADMIN_EMAIL_PASS must be a Gmail App Password."
+  );
+}
 
 // Transporter for user emails (password resets, etc.)
 const smtpTransporter = nodemailer.createTransport({
@@ -21,7 +29,7 @@ const adminTransporter = nodemailer.createTransport({
   },
 });
 
-export async function sendAdminNotification(subject, text) {
+async function sendAdminNotification(subject, text) {
   const mailOptions = {
     from: adminEmail,
     to: adminEmail,
@@ -36,7 +44,7 @@ export async function sendAdminNotification(subject, text) {
   }
 }
 
-export async function sendMail({ to, subject, html }) {
+async function sendMail({ to, subject, html }) {
   const mailOptions = {
     from: adminEmail,
     to,
@@ -45,3 +53,8 @@ export async function sendMail({ to, subject, html }) {
   };
   return smtpTransporter.sendMail(mailOptions);
 }
+
+module.exports = {
+  sendAdminNotification,
+  sendMail,
+};
