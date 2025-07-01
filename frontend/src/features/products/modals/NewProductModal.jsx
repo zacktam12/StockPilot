@@ -162,6 +162,14 @@ const NewProductModal = ({ product, onClose }) => {
       setError("Minimum stock cannot be greater than maximum stock");
       return false;
     }
+    if (formData.sku && formData.sku.trim().length === 0) {
+      setError("SKU cannot be empty if provided");
+      return false;
+    }
+    if (formData.barcode && formData.barcode.trim().length === 0) {
+      setError("Barcode cannot be empty if provided");
+      return false;
+    }
     return true;
   };
 
@@ -197,7 +205,7 @@ const NewProductModal = ({ product, onClose }) => {
         quantity: parseInt(formData.quantity) || 0,
         minStock: formData.minStock ? parseInt(formData.minStock) : null,
         maxStock: formData.maxStock ? parseInt(formData.maxStock) : null,
-        categoryId: parseInt(formData.categoryId),
+        categoryId: formData.categoryId, // Keep as string since it's a UUID
       };
 
       // Remove empty strings and convert to backend field names
@@ -220,6 +228,7 @@ const NewProductModal = ({ product, onClose }) => {
         maxStock: cleanData.maxStock,
         categoryId: cleanData.categoryId,
         image_url: cleanData.image_url,
+        ...(product && product.id ? { id: product.id } : {}),
       };
 
       await dispatch(saveProduct(backendData)).unwrap();
@@ -228,7 +237,12 @@ const NewProductModal = ({ product, onClose }) => {
         onClose();
       }
     } catch (err) {
-      setError(err.message || "Failed to save product");
+      const errorMessage =
+        err.message ||
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to save product";
+      setError(errorMessage);
       console.error("Error saving product:", err);
     } finally {
       setLoading(false);
