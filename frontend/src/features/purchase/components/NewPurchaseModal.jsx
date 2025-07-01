@@ -11,6 +11,7 @@ import { fetchCategories } from "../../../store/slices/categorySlice";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
 import { useOutsideClick } from "../../../hooks/useOutsideClick";
+import { productsAPI } from "../../../services/api";
 
 const NewPurchaseModal = ({ isOpen, onClose, onSuccess }) => {
   const dispatch = useDispatch();
@@ -66,8 +67,40 @@ const NewPurchaseModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const handleImageUpload = async (index, file) => {
-    handleProductChange(index, "imageFile", file);
-    handleProductChange(index, "imageUrl", URL.createObjectURL(file));
+    try {
+      // Validate file type
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error("Only JPEG, PNG, and GIF images are allowed");
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error("Image size must be less than 5MB");
+      }
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await productsAPI.uploadImage(formData);
+
+      if (response.data.success && response.data.imageUrl) {
+        handleProductChange(index, "imageUrl", response.data.imageUrl);
+        handleProductChange(index, "imageFile", null);
+      } else {
+        throw new Error("Invalid response from server");
+      }
+    } catch (err) {
+      console.error("Image upload error:", err);
+      alert(
+        "Error uploading image: " + (err.response?.data?.error || err.message)
+      );
+    }
   };
 
   const calculateTotal = () => {
