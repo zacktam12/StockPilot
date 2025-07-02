@@ -1,189 +1,108 @@
 // src/store/slices/customerSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import api from "../../services/api";
-
-// Helper function for filtering/sorting
-const applyFilters = (state) => {
-  let filtered = [...state.items];
-
-  // Apply search
-  if (state.filters.searchTerm) {
-    filtered = filtered.filter(
-      (customer) =>
-        customer.name
-          .toLowerCase()
-          .includes(state.filters.searchTerm.toLowerCase()) ||
-        customer.email
-          .toLowerCase()
-          .includes(state.filters.searchTerm.toLowerCase()) ||
-        (customer.phone &&
-          customer.phone
-            .toLowerCase()
-            .includes(state.filters.searchTerm.toLowerCase())) ||
-        (customer.address &&
-          customer.address
-            .toLowerCase()
-            .includes(state.filters.searchTerm.toLowerCase()))
-    );
-  }
-
-  // Apply filters
-  filtered = filtered.filter(
-    (customer) =>
-      (!state.filters.options.hasPhone ||
-        (customer.phone && customer.phone.trim() !== "")) &&
-      (!state.filters.options.hasAddress ||
-        (customer.address && customer.address.trim() !== ""))
-  );
-
-  // Apply sorting
-  filtered.sort((a, b) => {
-    const aValue = a[state.filters.sortField];
-    const bValue = b[state.filters.sortField];
-    if (aValue < bValue) return state.filters.sortOrder === "asc" ? -1 : 1;
-    if (aValue > bValue) return state.filters.sortOrder === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  state.filteredItems = filtered;
-};
+import { customersAPI } from "../../services/api";
 
 // Async Thunks
 export const fetchCustomers = createAsyncThunk(
-  "customer/fetchAll",
-  async (_, { rejectWithValue }) => {
+  "customer/fetchCustomers",
+  async (params, { rejectWithValue }) => {
     try {
-      const response = await api.get("/customers");
+      const response = await customersAPI.getAll(params);
       return response.data;
-    } catch (err) {
+    } catch (error) {
       return rejectWithValue(
-        err.response?.data?.message || "Failed to load customers"
+        error.response?.data?.message || "Failed to fetch customers"
       );
     }
   }
 );
 
 export const createCustomer = createAsyncThunk(
-  "customer/create",
+  "customer/createCustomer",
   async (customerData, { rejectWithValue }) => {
     try {
-      const response = await api.post("/customers", customerData);
+      const response = await customersAPI.create(customerData);
       return response.data;
-    } catch (err) {
+    } catch (error) {
       return rejectWithValue(
-        err.response?.data?.message || "Failed to create customer"
+        error.response?.data?.message || "Failed to create customer"
       );
     }
   }
 );
 
 export const updateCustomer = createAsyncThunk(
-  "customer/update",
-  async ({ id, ...customerData }, { rejectWithValue }) => {
+  "customer/updateCustomer",
+  async ({ id, ...data }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/customers/${id}`, customerData);
+      const response = await customersAPI.update(id, data);
       return response.data;
-    } catch (err) {
+    } catch (error) {
       return rejectWithValue(
-        err.response?.data?.message || "Failed to update customer"
+        error.response?.data?.message || "Failed to update customer"
       );
     }
   }
 );
 
 export const deleteCustomer = createAsyncThunk(
-  "customer/delete",
+  "customer/deleteCustomer",
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/customers/${id}`);
+      await customersAPI.delete(id);
       return id;
-    } catch (err) {
+    } catch (error) {
       return rejectWithValue(
-        err.response?.data?.message || "Failed to delete customer"
+        error.response?.data?.message || "Failed to delete customer"
       );
     }
   }
 );
 
-const initialState = {
-  // Data State
-  items: [],
-  filteredItems: [],
+export const importCustomers = createAsyncThunk(
+  "customer/importCustomers",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await customersAPI.importFromCSV(data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to import customers"
+      );
+    }
+  }
+);
 
-  // UI State
+// Initial State
+const initialState = {
+  items: [],
   loading: false,
   error: null,
-
-  // Modal & Form State
-  modal: {
-    isOpen: false,
-    mode: "create", // 'create' or 'edit'
-    formData: {
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-    },
-  },
-
-  // Pagination/Sorting/Filtering
+  isModalOpen: false,
+  editingCustomer: null,
   pagination: {
-    currentPage: 1,
-    itemsPerPage: 10,
+    page: 1,
+    limit: 5,
+    total: 0,
+    pages: 1,
   },
   filters: {
     searchTerm: "",
-    sortField: "name",
-    sortOrder: "asc",
-    options: {
-      hasPhone: false,
-      hasAddress: false,
-    },
+    sortField: "createdAt",
+    sortOrder: "desc",
+    hasPhone: false,
+    hasAddress: false,
   },
 };
 
+// Slice
 const customerSlice = createSlice({
   name: "customer",
   initialState,
   reducers: {
-    // Modal actions
-    openCreateModal: (state) => {
-      state.modal = {
-        isOpen: true,
-        mode: "create",
-        formData: initialState.modal.formData,
-      };
-      state.error = null;
-    },
-    openEditModal: (state, action) => {
-      state.modal = {
-        isOpen: true,
-        mode: "edit",
-        formData: action.payload,
-      };
-      state.error = null;
-    },
-    closeModal: (state) => {
-      state.modal.isOpen = false;
-    },
-
-    // Form actions
-    setFormField: (state, action) => {
-      const { field, value } = action.payload;
-      state.modal.formData = {
-        ...state.modal.formData,
-        [field]: value,
-      };
-    },
-    resetForm: (state) => {
-      state.modal.formData = initialState.modal.formData;
-    },
-
-    // Filter/sort actions
     setSearchTerm: (state, action) => {
       state.filters.searchTerm = action.payload;
-      state.pagination.currentPage = 1;
-      applyFilters(state);
+      state.pagination.page = 1;
     },
     setSort: (state, action) => {
       if (state.filters.sortField === action.payload.field) {
@@ -193,105 +112,73 @@ const customerSlice = createSlice({
         state.filters.sortField = action.payload.field;
         state.filters.sortOrder = "asc";
       }
-      applyFilters(state);
     },
-    togglePhoneFilter: (state) => {
-      state.filters.options.hasPhone = !state.filters.options.hasPhone;
-      state.pagination.currentPage = 1;
-      applyFilters(state);
-    },
-    toggleAddressFilter: (state) => {
-      state.filters.options.hasAddress = !state.filters.options.hasAddress;
-      state.pagination.currentPage = 1;
-      applyFilters(state);
+    setFilter: (state, action) => {
+      state.filters[action.payload.key] = action.payload.value;
+      state.pagination.page = 1;
     },
     setCurrentPage: (state, action) => {
-      state.pagination.currentPage = action.payload;
+      state.pagination.page = action.payload;
     },
-
-    // Reset state
-    resetCustomerState: () => initialState,
+    openCreateModal: (state) => {
+      state.isModalOpen = true;
+      state.editingCustomer = null;
+    },
+    openEditModal: (state, action) => {
+      state.isModalOpen = true;
+      state.editingCustomer = action.payload;
+    },
+    closeModal: (state) => {
+      state.isModalOpen = false;
+      state.editingCustomer = null;
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Customers
       .addCase(fetchCustomers.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchCustomers.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
-        applyFilters(state);
+        state.items = action.payload.data;
+        state.pagination = {
+          ...state.pagination,
+          total: action.payload.total,
+          pages: action.payload.pages,
+        };
       })
       .addCase(fetchCustomers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-
-      // Create Customer
-      .addCase(createCustomer.pending, (state) => {
-        state.loading = true;
-      })
       .addCase(createCustomer.fulfilled, (state, action) => {
-        state.loading = false;
         state.items.unshift(action.payload);
-        applyFilters(state);
-        state.modal.isOpen = false;
-      })
-      .addCase(createCustomer.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // Update Customer
-      .addCase(updateCustomer.pending, (state) => {
-        state.loading = true;
+        state.isModalOpen = false;
       })
       .addCase(updateCustomer.fulfilled, (state, action) => {
-        state.loading = false;
         const index = state.items.findIndex(
           (item) => item.id === action.payload.id
         );
         if (index !== -1) {
           state.items[index] = action.payload;
         }
-        applyFilters(state);
-        state.modal.isOpen = false;
-      })
-      .addCase(updateCustomer.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // Delete Customer
-      .addCase(deleteCustomer.pending, (state) => {
-        state.loading = true;
+        state.isModalOpen = false;
       })
       .addCase(deleteCustomer.fulfilled, (state, action) => {
-        state.loading = false;
         state.items = state.items.filter((item) => item.id !== action.payload);
-        applyFilters(state);
-      })
-      .addCase(deleteCustomer.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
       });
   },
 });
 
 export const {
+  setSearchTerm,
+  setSort,
+  setFilter,
+  setCurrentPage,
   openCreateModal,
   openEditModal,
   closeModal,
-  setFormField,
-  resetForm,
-  setSearchTerm,
-  setSort,
-  togglePhoneFilter,
-  toggleAddressFilter,
-  setCurrentPage,
-  resetCustomerState,
 } = customerSlice.actions;
 
 export default customerSlice.reducer;
