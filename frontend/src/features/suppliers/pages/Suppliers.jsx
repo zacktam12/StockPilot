@@ -87,6 +87,10 @@ const SuppliersPage = () => {
       search: searchTerm,
       sortField: filters.sortField,
       sortOrder: filters.sortOrder,
+      hasPhone: filters.options.hasPhone,
+      hasAddress: filters.options.hasAddress,
+      hasEmail: filters.options.hasEmail,
+      hasCompany: filters.options.hasCompany,
     };
     dispatch(fetchSuppliers(params));
   }, [
@@ -96,6 +100,10 @@ const SuppliersPage = () => {
     searchTerm,
     filters.sortField,
     filters.sortOrder,
+    filters.options.hasPhone,
+    filters.options.hasAddress,
+    filters.options.hasEmail,
+    filters.options.hasCompany,
   ]);
 
   // Add outside click functionality for filter menu
@@ -192,22 +200,6 @@ const SuppliersPage = () => {
     );
   };
 
-  const getActiveFiltersCount = () => {
-    let count = 0;
-    if (filters.options.hasPhone) count++;
-    if (filters.options.hasAddress) count++;
-    if (filters.options.hasEmail) count++;
-    if (filters.options.hasCompany) count++;
-    return count;
-  };
-
-  const clearFilters = () => {
-    dispatch(togglePhoneFilter());
-    dispatch(toggleAddressFilter());
-    dispatch(toggleEmailFilter());
-    dispatch(toggleCompanyFilter());
-  };
-
   const getActionMenu = (supplier) => [
     {
       label: "Edit",
@@ -291,135 +283,139 @@ const SuppliersPage = () => {
       )}
 
       {/* Search and Filters */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col sm:flex-row gap-4 items-center">
+        <div className="relative flex-1">
           <Input
             placeholder="Search suppliers..."
+            icon={<Search size={18} className="text-gray-400" />}
             value={searchTerm}
             onChange={handleSearch}
-            icon={<Search size={16} />}
+            className="w-full"
           />
         </div>
-
-        <div className="flex gap-2">
-          <div className="relative" ref={filterMenuRef}>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<Filter size={16} />}
-              onClick={() => setShowFilterMenu(!showFilterMenu)}
-              className={`${
-                getActiveFiltersCount() > 0
-                  ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300"
-                  : ""
-              }`}
-            >
-              Filters
-              {getActiveFiltersCount() > 0 && (
-                <Badge variant="primary" className="ml-1">
-                  {getActiveFiltersCount()}
-                </Badge>
-              )}
-            </Button>
-
-            {showFilterMenu && (
-              <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Filters</span>
-                    {getActiveFiltersCount() > 0 && (
-                      <button
-                        onClick={clearFilters}
-                        className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                      >
-                        Clear all
-                      </button>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={filters.options.hasPhone}
-                        onChange={() => dispatch(togglePhoneFilter())}
-                        className="rounded"
-                      />
-                      <span className="text-sm">Has Phone</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={filters.options.hasAddress}
-                        onChange={() => dispatch(toggleAddressFilter())}
-                        className="rounded"
-                      />
-                      <span className="text-sm">Has Address</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={filters.options.hasEmail}
-                        onChange={() => dispatch(toggleEmailFilter())}
-                        className="rounded"
-                      />
-                      <span className="text-sm">Has Email</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={filters.options.hasCompany}
-                        onChange={() => dispatch(toggleCompanyFilter())}
-                        className="rounded"
-                      />
-                      <span className="text-sm">Has Company</span>
-                    </label>
-                  </div>
-                </div>
+        <div className="relative" ref={filterMenuRef}>
+          <Button
+            variant="outline"
+            icon={<Filter size={16} />}
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+          >
+            Filter
+          </Button>
+          {showFilterMenu && (
+            <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50 flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={filters.options.hasPhone}
+                    onChange={() => dispatch(togglePhoneFilter())}
+                    className="rounded border-gray-300 dark:border-gray-600"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-200">
+                    Has Phone
+                  </span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={filters.options.hasAddress}
+                    onChange={() => dispatch(toggleAddressFilter())}
+                    className="rounded border-gray-300 dark:border-gray-600"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-200">
+                    Has Address
+                  </span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={filters.options.hasEmail}
+                    onChange={() => dispatch(toggleEmailFilter())}
+                    className="rounded border-gray-300 dark:border-gray-600"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-200">
+                    Has Email
+                  </span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={filters.options.hasCompany}
+                    onChange={() => dispatch(toggleCompanyFilter())}
+                    className="rounded border-gray-300 dark:border-gray-600"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-200">
+                    Has Company
+                  </span>
+                </label>
               </div>
-            )}
-          </div>
-
-          <div className="relative" ref={sortMenuRef}>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<ArrowUpDown size={16} />}
-              onClick={() => setShowSortMenu(!showSortMenu)}
-            >
-              Sort
-            </Button>
-
-            {showSortMenu && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
-                <div className="py-1">
-                  <button
-                    onClick={() => handleSort("name")}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between"
-                  >
-                    Name {getSortIcon("name")}
-                  </button>
-                  <button
-                    onClick={() => handleSort("contactName")}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between"
-                  >
-                    Contact Name {getSortIcon("contactName")}
-                  </button>
-                  <button
-                    onClick={() => handleSort("companyName")}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between"
-                  >
-                    Company {getSortIcon("companyName")}
-                  </button>
-                  <button
-                    onClick={() => handleSort("createdAt")}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between"
-                  >
-                    Date Added {getSortIcon("createdAt")}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+              <label className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={
+                    filters.sortField === "createdAt" &&
+                    filters.sortOrder === "desc"
+                  }
+                  onChange={(e) =>
+                    dispatch(
+                      setSort({
+                        field: "createdAt",
+                        order: e.target.checked ? "desc" : "asc",
+                      })
+                    )
+                  }
+                  className="rounded border-gray-300 dark:border-gray-600"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-200">
+                  Recently Added
+                </span>
+              </label>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => {
+                  if (filters.options.hasPhone) dispatch(togglePhoneFilter());
+                  if (filters.options.hasAddress)
+                    dispatch(toggleAddressFilter());
+                  if (filters.options.hasEmail) dispatch(toggleEmailFilter());
+                  if (filters.options.hasCompany)
+                    dispatch(toggleCompanyFilter());
+                  dispatch(setSort({ field: "name", order: "asc" }));
+                  setShowFilterMenu(false);
+                }}
+              >
+                Clear Filters
+              </Button>
+            </div>
+          )}
+        </div>
+        <div className="relative" ref={sortMenuRef}>
+          <Button
+            variant="outline"
+            icon={<ArrowUpDown size={16} />}
+            onClick={() => setShowSortMenu(!showSortMenu)}
+          >
+            Sort
+          </Button>
+          {showSortMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+              <button
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between text-gray-700 dark:text-gray-200"
+                onClick={() => handleSort("name")}
+              >
+                <span>Name</span>
+                {getSortIcon("name")}
+              </button>
+              <button
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between text-gray-700 dark:text-gray-200"
+                onClick={() => handleSort("createdAt")}
+              >
+                <span>Created Date</span>
+                {getSortIcon("createdAt")}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
