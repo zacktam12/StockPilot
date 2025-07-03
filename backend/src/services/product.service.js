@@ -2,6 +2,25 @@ const productRepository = require("../repositories/product.repository");
 
 const createProduct = async (data) => {
   try {
+    // Accept both JSON and multipart/form-data (req.body may be a string if multipart)
+    if (!data || typeof data !== "object") {
+      // Try to parse if it's a string (from multipart/form-data)
+      if (typeof data === "string") {
+        try {
+          data = JSON.parse(data);
+        } catch {
+          throw new Error("Product data is missing or invalid");
+        }
+      } else {
+        throw new Error("Product data is missing or invalid");
+      }
+    }
+
+    // Defensive: Always ensure SKU is at least an empty string
+    if (typeof data.sku === "undefined" || data.sku === null) {
+      data.sku = "";
+    }
+
     // Check if SKU already exists
     if (data.sku) {
       const existingProduct = await productRepository.findBySku(data.sku);
@@ -34,7 +53,7 @@ const createProduct = async (data) => {
       minStock: data.minStock ? parseInt(data.minStock) : null,
       maxStock: data.maxStock ? parseInt(data.maxStock) : null,
       categoryId: data.categoryId,
-      image: data.image_url, // Map from frontend image_url to backend image
+      image: data.image || data.image_url, // Handle both image and image_url from frontend
     };
 
     const product = await productRepository.create(productData);
@@ -185,7 +204,7 @@ const updateProduct = async (id, data) => {
       minStock: data.minStock ? parseInt(data.minStock) : null,
       maxStock: data.maxStock ? parseInt(data.maxStock) : null,
       categoryId: data.categoryId,
-      image: data.image_url, // Map from frontend image_url to backend image
+      image: data.image || data.image_url, // Handle both image and image_url from frontend
     };
 
     const product = await productRepository.update(

@@ -186,7 +186,6 @@ const ProductsPage = () => {
           Products
         </h1>
         <div className="flex flex-col sm:flex-row gap-2">
-          <ProductFilters />
           <Button
             variant="outline"
             size="sm"
@@ -239,8 +238,8 @@ const ProductsPage = () => {
         showDelete={true}
       />
 
-      {/* Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center">
         <div className="relative flex-1">
           <Input
             placeholder="Search products..."
@@ -250,6 +249,7 @@ const ProductsPage = () => {
             className="w-full"
           />
         </div>
+        <ProductFilters />
       </div>
 
       {/* Products Table */}
