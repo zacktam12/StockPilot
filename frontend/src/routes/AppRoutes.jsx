@@ -1,8 +1,6 @@
-import React from "react";
 import { Routes, Route } from "react-router-dom";
-
-import Login from "../features/auth/pages/Login"; // 👈 import Login
-
+import Login from "../features/auth/pages/Login";
+// import ProtectedRoute from "../components/ProtectedRoute"; // ✅ import this
 import ProtectedLayout from "../layouts/ProtectedLayout";
 import Dashboard from "../features/dashboard/pages/Dashboard";
 import Products from "../features/products/pages/Products";
@@ -13,21 +11,23 @@ import Purchase from "../features/purchase/pages/Purchase";
 import Sales from "../features/sales/pages/Sales";
 import Users from "../features/users/pages/Users";
 import Report from "../features/report/pages/Report";
-import { ThemeProvider } from "../components/ThemeProvider";
 import ProfilePage from "../features/users/pages/Profile";
 import LoadingExamplePage from "../features/dashboard/pages/LoadingExamplePage";
 import SettingsPage from "../features/settings/pages/Settings";
-// In your AppRoutes.jsx or main router file
 import ForgotPassword from "../features/auth/modals/ForgotPasswordModal.jsx";
 import AccountRecovery from "../features/auth/modals/AccountRecoveryModal";
+import { ThemeProvider } from "../components/ThemeProvider";
 
 const AppRoutes = () => {
   return (
     <ThemeProvider>
       <Routes>
+        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/account-recovery" element={<AccountRecovery />} />
+
+        {/* Protected Routes */}
         <Route element={<ProtectedLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />

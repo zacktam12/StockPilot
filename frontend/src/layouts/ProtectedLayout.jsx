@@ -1,6 +1,6 @@
 // src/layouts/ProtectedLayout.jsx
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Sidebar from "../components/sidebar/Sidebar";
 import Header from "../components/header/Header";
@@ -10,7 +10,7 @@ import useAuthCheck from "../hooks/useAuthCheck";
 
 const ProtectedLayout = () => {
   // Auth verification loading (highest priority)
-  const { isLoading: isAuthLoading } = useAuthCheck();
+  const { isLoading: isAuthLoading, isAuthenticated } = useAuthCheck();
 
   // Global loading state from Redux
   const { isLoading } = useSelector((state) => state.loading);
@@ -27,6 +27,11 @@ const ProtectedLayout = () => {
         </div>
       </div>
     );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
   return (
