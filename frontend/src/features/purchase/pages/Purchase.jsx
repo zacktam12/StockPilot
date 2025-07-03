@@ -9,11 +9,17 @@ import {
   Check,
   Clock,
   QrCode,
+  Download,
+  Upload,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchPurchases,
   updatePurchaseStatus,
+  toggleItemSelection,
+  toggleSelectAll,
+  clearSelection,
+  deletePurchase,
 } from "../../../store/slices/purchaseSlice";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
@@ -30,6 +36,13 @@ import NewPurchaseModal from "../components/NewPurchaseModal";
 import QRScannerModal from "../../sales/components/QRScannerModal";
 import LoadingOverlay from "../../../components/shared/LoadingOverlay";
 import { BarsSpinner } from "../../../components/shared/Spinner";
+import BulkActions from "../../../components/shared/BulkActions";
+import { exportPurchasesToCSV } from "../../../utils/csvUtils";
+import CSVImportModal from "../../../components/shared/CSVImportModal";
+import {
+  validatePurchaseCSV,
+  convertCSVToPurchases,
+} from "../../../utils/csvUtils";
 
 const PurchasesPage = () => {
   const dispatch = useDispatch();
@@ -37,6 +50,8 @@ const PurchasesPage = () => {
     purchases = [],
     loading = false,
     error,
+    selectedItems = [],
+    selectAll = false,
   } = useSelector((state) => state.purchases || {});
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,6 +65,7 @@ const PurchasesPage = () => {
     hasPhone: false,
     hasAddress: false,
   });
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     if (purchases.length === 0) {
@@ -72,27 +88,28 @@ const PurchasesPage = () => {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case "completed":
+      case "received":
         return (
           <Badge variant="success" className="flex items-center gap-1">
-            <Check size={12} /> {status}
+            <Check size={12} /> Completed
           </Badge>
         );
       case "pending":
         return (
           <Badge variant="warning" className="flex items-center gap-1">
-            <Clock size={12} /> {status}
+            <Clock size={12} /> Pending
           </Badge>
         );
       case "cancelled":
-        return <Badge variant="danger">{status}</Badge>;
+        return <Badge variant="danger">Cancelled</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
   };
 
   const handleUpdateStatus = (id, status) => {
-    dispatch(updatePurchaseStatus({ id, status }));
+    const mappedStatus = status === "completed" ? "received" : status;
+    dispatch(updatePurchaseStatus({ id, status: mappedStatus }));
   };
 
   const handleSort = (field) => {
@@ -103,6 +120,40 @@ const PurchasesPage = () => {
       setSortOrder("asc");
     }
     setShowSortMenu(false);
+  };
+
+  // Bulk Handlers
+  const handleBulkDelete = (items) => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${items.length} selected purchase(s)?`
+      )
+    ) {
+      items.forEach((id) => dispatch(deletePurchase(id)));
+      dispatch(clearSelection());
+    }
+  };
+  const handleBulkExport = (items) => {
+    const toExport =
+      items.length > 0
+        ? filteredPurchases.filter((purchase) => items.includes(purchase.id))
+        : filteredPurchases;
+    exportPurchasesToCSV(toExport);
+  };
+  const handleBulkImport = async (csvData) => {
+    // TODO: Implement importPurchases thunk and backend endpoint
+    const validation = validatePurchaseCSV(csvData);
+    if (!validation.isValid) {
+      alert(`Import failed: ${validation.errors.join(", ")}`);
+      return;
+    }
+    const purchases = convertCSVToPurchases(csvData);
+    alert(
+      "Purchase import is not fully implemented. Would import: " +
+        purchases.length +
+        " purchases."
+    );
+    setShowImportModal(false);
   };
 
   if (loading && purchases.length === 0) {
@@ -129,8 +180,23 @@ const PurchasesPage = () => {
     <div className="space-y-6 bg-white text-gray-900 dark:bg-background dark:text-white min-h-screen">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Purchases</h1>
-
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<Download size={16} />}
+            onClick={() => exportPurchasesToCSV(filteredPurchases)}
+          >
+            Export CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<Upload size={16} />}
+            onClick={() => setShowImportModal(true)}
+          >
+            Import CSV
+          </Button>
           <Button
             variant="outline"
             size="md"
@@ -149,6 +215,18 @@ const PurchasesPage = () => {
           </Button>
         </div>
       </div>
+
+      <BulkActions
+        selectedItems={selectedItems}
+        onDelete={handleBulkDelete}
+        onExport={handleBulkExport}
+        onImport={handleBulkImport}
+        importConfig={{}}
+        showImport={false}
+        showExport={true}
+        showDelete={true}
+        className="mb-4"
+      />
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -250,6 +328,13 @@ const PurchasesPage = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={() => dispatch(toggleSelectAll())}
+                />
+              </TableHead>
               <TableHead>Purchase Order</TableHead>
               <TableHead>Date & Time</TableHead>
               <TableHead>Supplier</TableHead>
@@ -263,6 +348,15 @@ const PurchasesPage = () => {
             {filteredPurchases.length > 0 ? (
               filteredPurchases.map((purchase) => (
                 <TableRow key={purchase.id}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.includes(purchase.id)}
+                      onChange={() =>
+                        dispatch(toggleItemSelection(purchase.id))
+                      }
+                    />
+                  </TableCell>
                   <TableCell className="font-medium text-gray-900 dark:text-white">
                     {purchase.id}
                   </TableCell>
@@ -284,7 +378,7 @@ const PurchasesPage = () => {
                             size="sm"
                             icon={<Check size={16} />}
                             onClick={() =>
-                              handleUpdateStatus(purchase.id, "completed")
+                              handleUpdateStatus(purchase.id, "received")
                             }
                           >
                             Complete
@@ -314,7 +408,7 @@ const PurchasesPage = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center">
+                <TableCell colSpan={7} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center text-gray-500">
                     <ShoppingCart size={28} className="mb-2" />
                     <h3 className="text-lg font-medium">
@@ -344,6 +438,24 @@ const PurchasesPage = () => {
         onClose={() => setIsQRScannerOpen(false)}
         onScan={(qrCode) => {
           console.log("Scanned QR code:", qrCode);
+        }}
+      />
+
+      <CSVImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleBulkImport}
+        config={{
+          validate: validatePurchaseCSV,
+          templateHeaders: [
+            "Purchase Order",
+            "Date & Time",
+            "Supplier",
+            "Total Amount",
+            "Status",
+          ],
+          title: "Import Purchases from CSV",
+          importButtonLabel: "Import Purchases",
         }}
       />
     </div>

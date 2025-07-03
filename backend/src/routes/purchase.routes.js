@@ -7,10 +7,10 @@ const {
 } = require("../validators/purchase.validator");
 
 router.post("/", validateCreatePurchase, purchaseController.createPurchase);
-router.put("/:id", validateUpdatePurchase, purchaseController.updatePurchase);
 router.get("/", purchaseController.getAllPurchases);
 router.get("/:id", purchaseController.getPurchaseById);
-router.put("/:id", purchaseController.updatePurchase);
+router.put("/:id", validateUpdatePurchase, purchaseController.updatePurchase);
 router.delete("/:id", purchaseController.deletePurchase);
+router.post("/import", purchaseController.importPurchases);
 
 module.exports = router;

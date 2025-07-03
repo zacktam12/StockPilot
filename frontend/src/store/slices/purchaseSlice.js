@@ -4,33 +4,11 @@ import api from "../../services/api";
 // Async Thunks
 export const fetchPurchases = createAsyncThunk(
   "purchases/fetchPurchases",
-  async (
-    {
-      page = 1,
-      limit = 10,
-      search = "",
-      sortField = "",
-      sortOrder = "",
-      status = "",
-      supplierId = "",
-      startDate = "",
-      endDate = "",
-    },
-    { rejectWithValue }
-  ) => {
+  async ({ sortBy = "created_at", order = "desc" }, { rejectWithValue }) => {
     try {
-      const params = {
-        page,
-        limit,
-        search,
-        sortField,
-        sortOrder,
-        status,
-        supplierId,
-        startDate,
-        endDate,
-      };
-      const response = await api.get("/purchases", { params });
+      const response = await api.get(
+        `/purchases?sortBy=${sortBy}&order=${order}`
+      );
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -58,7 +36,17 @@ export const createPurchase = createAsyncThunk(
   "purchases/createPurchase",
   async (purchaseData, { rejectWithValue }) => {
     try {
-      const response = await api.post("/purchases", purchaseData);
+      // Do not send userId from frontend
+      const payload = {
+        supplierId: purchaseData.supplierId,
+        totalCost: purchaseData.totalCost,
+        discount: purchaseData.discount || 0,
+        tax: purchaseData.tax || 0,
+        status: purchaseData.status || "pending",
+        notes: purchaseData.notes || "",
+        items: purchaseData.items || [],
+      };
+      const response = await api.post("/purchases", payload);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -68,25 +56,15 @@ export const createPurchase = createAsyncThunk(
   }
 );
 
-export const updatePurchase = createAsyncThunk(
-  "purchases/updatePurchase",
-  async ({ id, data }, { rejectWithValue }) => {
-    try {
-      const response = await api.put(`/purchases/${id}`, data);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to update purchase"
-      );
-    }
-  }
-);
-
 export const updatePurchaseStatus = createAsyncThunk(
   "purchases/updateStatus",
   async ({ id, status }, { rejectWithValue }) => {
     try {
-      const response = await api.patch(`/purchases/${id}/status`, { status });
+      // Map 'completed' to 'received' for backend
+      const mappedStatus = status === "completed" ? "received" : status;
+      const response = await api.patch(`/purchases/${id}/status`, {
+        status: mappedStatus,
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -110,51 +88,6 @@ export const deletePurchase = createAsyncThunk(
   }
 );
 
-// Bulk operations
-export const bulkDeletePurchases = createAsyncThunk(
-  "purchases/bulkDelete",
-  async (ids, { rejectWithValue }) => {
-    try {
-      await api.post("/purchases/bulk-delete", { ids });
-      return ids;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to delete purchases"
-      );
-    }
-  }
-);
-
-export const bulkUpdatePurchases = createAsyncThunk(
-  "purchases/bulkUpdate",
-  async ({ ids, data }, { rejectWithValue }) => {
-    try {
-      await api.post("/purchases/bulk-update", { ids, data });
-      return { ids, data };
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to update purchases"
-      );
-    }
-  }
-);
-
-// Statistics
-export const fetchPurchaseStats = createAsyncThunk(
-  "purchases/fetchStats",
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await api.get("/purchases/stats/overview");
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch purchase statistics"
-      );
-    }
-  }
-);
-
-// Receipt generation
 export const generateReceipt = createAsyncThunk(
   "purchases/generateReceipt",
   async (purchaseId, { rejectWithValue }) => {
@@ -169,48 +102,13 @@ export const generateReceipt = createAsyncThunk(
   }
 );
 
-// Export to CSV
-export const exportPurchases = createAsyncThunk(
-  "purchases/export",
-  async (params, { rejectWithValue }) => {
-    try {
-      const response = await api.get("/purchases/export", {
-        params,
-        responseType: "blob",
-      });
-
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `purchases-${new Date().toISOString().split("T")[0]}.csv`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      return "Export completed";
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to export purchases"
-      );
-    }
-  }
-);
-
-// Import from CSV
 export const importPurchases = createAsyncThunk(
-  "purchases/import",
-  async (formData, { rejectWithValue }) => {
+  "purchases/importPurchases",
+  async (purchases, { rejectWithValue, dispatch }) => {
     try {
-      const response = await api.post("/purchases/import", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await api.post("/purchases/import", { purchases });
+      // Optionally, refresh purchases list
+      dispatch(fetchPurchases({}));
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -224,61 +122,31 @@ export const importPurchases = createAsyncThunk(
 const purchaseSlice = createSlice({
   name: "purchases",
   initialState: {
-    purchases: [],
+    purchases: [], // <-- Ensure purchases array is defined
     currentPurchase: null,
     receipt: null,
-    stats: null,
     loading: false,
     error: null,
-    selectedPurchases: [],
-    filters: {
-      search: "",
-      status: "",
-      supplierId: "",
-      startDate: "",
-      endDate: "",
-    },
     sortOptions: {
-      field: "createdAt",
+      field: "created_at",
       order: "desc",
     },
     pagination: {
       currentPage: 1,
       totalPages: 1,
       totalItems: 0,
-      itemsPerPage: 10,
     },
+    selectedItems: [],
+    selectAll: false,
   },
 
+  isModalOpen: false,
   reducers: {
-    setFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
-      state.pagination.currentPage = 1; // Reset to first page when filters change
-    },
     setSortOptions: (state, action) => {
       state.sortOptions = action.payload;
     },
     setCurrentPage: (state, action) => {
       state.pagination.currentPage = action.payload;
-    },
-    setSelectedPurchases: (state, action) => {
-      state.selectedPurchases = action.payload;
-    },
-    togglePurchaseSelection: (state, action) => {
-      const purchaseId = action.payload;
-      const index = state.selectedPurchases.indexOf(purchaseId);
-      if (index > -1) {
-        state.selectedPurchases.splice(index, 1);
-      } else {
-        state.selectedPurchases.push(purchaseId);
-      }
-    },
-    selectAllPurchases: (state, action) => {
-      if (action.payload) {
-        state.selectedPurchases = state.purchases.map((p) => p.id);
-      } else {
-        state.selectedPurchases = [];
-      }
     },
     clearCurrentPurchase: (state) => {
       state.currentPurchase = null;
@@ -289,8 +157,33 @@ const purchaseSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    clearStats: (state) => {
-      state.stats = null;
+    openModal: (state) => {
+      state.isModalOpen = true;
+    },
+    closeModal: (state) => {
+      state.isModalOpen = false;
+    },
+    toggleItemSelection: (state, action) => {
+      const id = action.payload;
+      if (state.selectedItems.includes(id)) {
+        state.selectedItems = state.selectedItems.filter((item) => item !== id);
+      } else {
+        state.selectedItems.push(id);
+      }
+      state.selectAll = false;
+    },
+    toggleSelectAll: (state) => {
+      if (state.selectAll) {
+        state.selectedItems = [];
+        state.selectAll = false;
+      } else {
+        state.selectedItems = state.purchases.map((purchase) => purchase.id);
+        state.selectAll = true;
+      }
+    },
+    clearSelection: (state) => {
+      state.selectedItems = [];
+      state.selectAll = false;
     },
   },
   extraReducers: (builder) => {
@@ -303,7 +196,11 @@ const purchaseSlice = createSlice({
       .addCase(fetchPurchases.fulfilled, (state, action) => {
         state.loading = false;
         state.purchases = action.payload.data;
-        state.pagination = action.payload.pagination;
+        state.pagination = {
+          currentPage: action.payload.currentPage,
+          totalPages: action.payload.totalPages,
+          totalItems: action.payload.totalItems,
+        };
       })
       .addCase(fetchPurchases.rejected, (state, action) => {
         state.loading = false;
@@ -317,7 +214,7 @@ const purchaseSlice = createSlice({
       })
       .addCase(fetchPurchaseById.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentPurchase = action.payload.data;
+        state.currentPurchase = action.payload;
       })
       .addCase(fetchPurchaseById.rejected, (state, action) => {
         state.loading = false;
@@ -331,32 +228,10 @@ const purchaseSlice = createSlice({
       })
       .addCase(createPurchase.fulfilled, (state, action) => {
         state.loading = false;
-        state.purchases.unshift(action.payload.data);
-        state.pagination.totalItems += 1;
+        if (!Array.isArray(state.purchases)) state.purchases = [];
+        state.purchases.unshift(action.payload);
       })
       .addCase(createPurchase.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // Update Purchase
-      .addCase(updatePurchase.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(updatePurchase.fulfilled, (state, action) => {
-        state.loading = false;
-        const index = state.purchases.findIndex(
-          (p) => p.id === action.payload.data.id
-        );
-        if (index !== -1) {
-          state.purchases[index] = action.payload.data;
-        }
-        if (state.currentPurchase?.id === action.payload.data.id) {
-          state.currentPurchase = action.payload.data;
-        }
-      })
-      .addCase(updatePurchase.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -368,14 +243,11 @@ const purchaseSlice = createSlice({
       })
       .addCase(updatePurchaseStatus.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.purchases.findIndex(
-          (p) => p.id === action.payload.data.id
+        state.purchases = state.purchases.map((purchase) =>
+          purchase.id === action.payload.id ? action.payload : purchase
         );
-        if (index !== -1) {
-          state.purchases[index] = action.payload.data;
-        }
-        if (state.currentPurchase?.id === action.payload.data.id) {
-          state.currentPurchase = action.payload.data;
+        if (state.currentPurchase?.id === action.payload.id) {
+          state.currentPurchase = action.payload;
         }
       })
       .addCase(updatePurchaseStatus.rejected, (state, action) => {
@@ -391,64 +263,10 @@ const purchaseSlice = createSlice({
       .addCase(deletePurchase.fulfilled, (state, action) => {
         state.loading = false;
         state.purchases = state.purchases.filter(
-          (p) => p.id !== action.payload
-        );
-        state.pagination.totalItems -= 1;
-        state.selectedPurchases = state.selectedPurchases.filter(
-          (id) => id !== action.payload
+          (purchase) => purchase.id !== action.payload
         );
       })
       .addCase(deletePurchase.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // Bulk Delete
-      .addCase(bulkDeletePurchases.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(bulkDeletePurchases.fulfilled, (state, action) => {
-        state.loading = false;
-        state.purchases = state.purchases.filter(
-          (p) => !action.payload.includes(p.id)
-        );
-        state.pagination.totalItems -= action.payload.length;
-        state.selectedPurchases = [];
-      })
-      .addCase(bulkDeletePurchases.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // Bulk Update
-      .addCase(bulkUpdatePurchases.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(bulkUpdatePurchases.fulfilled, (state, action) => {
-        state.loading = false;
-        const { ids, data } = action.payload;
-        state.purchases = state.purchases.map((p) =>
-          ids.includes(p.id) ? { ...p, ...data } : p
-        );
-        state.selectedPurchases = [];
-      })
-      .addCase(bulkUpdatePurchases.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // Fetch Stats
-      .addCase(fetchPurchaseStats.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchPurchaseStats.fulfilled, (state, action) => {
-        state.loading = false;
-        state.stats = action.payload.data;
-      })
-      .addCase(fetchPurchaseStats.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -460,37 +278,9 @@ const purchaseSlice = createSlice({
       })
       .addCase(generateReceipt.fulfilled, (state, action) => {
         state.loading = false;
-        state.receipt = action.payload.data;
+        state.receipt = action.payload;
       })
       .addCase(generateReceipt.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // Export
-      .addCase(exportPurchases.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(exportPurchases.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(exportPurchases.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // Import
-      .addCase(importPurchases.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(importPurchases.fulfilled, (state) => {
-        state.loading = false;
-        // Refresh the purchases list after import
-        // The component should call fetchPurchases after successful import
-      })
-      .addCase(importPurchases.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
@@ -499,16 +289,16 @@ const purchaseSlice = createSlice({
 
 // Export Actions
 export const {
-  setFilters,
   setSortOptions,
   setCurrentPage,
-  setSelectedPurchases,
-  togglePurchaseSelection,
-  selectAllPurchases,
   clearCurrentPurchase,
   clearReceipt,
   clearError,
-  clearStats,
+  openModal,
+  closeModal,
+  toggleItemSelection,
+  toggleSelectAll,
+  clearSelection,
 } = purchaseSlice.actions;
 
 // Export Reducer

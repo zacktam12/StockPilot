@@ -2,7 +2,22 @@ const purchaseService = require("../services/purchase.service");
 
 exports.createPurchase = async (req, res, next) => {
   try {
-    const purchase = await purchaseService.createPurchase(req.body);
+    const { items, ...purchaseData } = req.body;
+    const userId = req.user.id; // Always use authenticated user
+    // Create purchase with userId from backend
+    const purchase = await purchaseService.createPurchase({
+      ...purchaseData,
+      userId,
+    });
+    // If items are present, link products to purchase
+    if (items && Array.isArray(items) && items.length > 0) {
+      // You may need to implement this in the service/repository
+      await Promise.all(
+        items.map((item) =>
+          purchaseService.linkProductToPurchase(purchase.id, item)
+        )
+      );
+    }
     res.status(201).json({
       success: true,
       message: "Purchase created successfully",
@@ -15,11 +30,11 @@ exports.createPurchase = async (req, res, next) => {
 
 exports.getAllPurchases = async (req, res, next) => {
   try {
-    const result = await purchaseService.getAllPurchases(req.query);
+    const purchases = await purchaseService.getAllPurchases(req.query);
     res.json({
       success: true,
-      data: result.data,
-      meta: result.meta,
+      data: purchases, // <-- Fix here
+      // meta: ... (add pagination if needed)
     });
   } catch (error) {
     next(error);
@@ -66,6 +81,25 @@ exports.deletePurchase = async (req, res, next) => {
     res.json({
       success: true,
       message: "Purchase soft-deleted",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.importPurchases = async (req, res, next) => {
+  try {
+    const { purchases } = req.body;
+    if (!Array.isArray(purchases) || purchases.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No purchases provided for import." });
+    }
+    const result = await purchaseService.importPurchases(purchases);
+    res.status(201).json({
+      success: true,
+      message: "Purchases imported successfully",
+      data: result,
     });
   } catch (error) {
     next(error);
