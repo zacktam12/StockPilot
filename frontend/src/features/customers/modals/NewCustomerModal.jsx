@@ -14,10 +14,13 @@ import { useOutsideClick } from "../../../hooks/useOutsideClick";
 const NewCustomerModal = () => {
   const dispatch = useDispatch();
   const {
-    modal: { isOpen, mode, currentCustomer },
+    isModalOpen,
+    editingCustomer,
     loading: saveLoading,
     error: saveError,
   } = useSelector((state) => state.customer);
+
+  const isEdit = Boolean(editingCustomer);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -26,14 +29,14 @@ const NewCustomerModal = () => {
     address: "",
   });
 
-  // Initialize form when modal opens or currentCustomer changes
+  // Initialize form when modal opens or editingCustomer changes
   useEffect(() => {
-    if (currentCustomer) {
+    if (editingCustomer) {
       setFormData({
-        name: currentCustomer.name,
-        email: currentCustomer.email,
-        phone: currentCustomer.phone || "",
-        address: currentCustomer.address || "",
+        name: editingCustomer.name,
+        email: editingCustomer.email,
+        phone: editingCustomer.phone || "",
+        address: editingCustomer.address || "",
       });
     } else {
       setFormData({
@@ -43,11 +46,11 @@ const NewCustomerModal = () => {
         address: "",
       });
     }
-  }, [currentCustomer]);
+  }, [editingCustomer]);
 
   // Add outside click functionality
   const modalRef = useOutsideClick(() => {
-    if (isOpen) {
+    if (isModalOpen) {
       dispatch(closeModal());
     }
   });
@@ -56,10 +59,10 @@ const NewCustomerModal = () => {
     e.preventDefault();
 
     try {
-      if (mode === "edit") {
+      if (isEdit) {
         await dispatch(
           updateCustomer({
-            id: currentCustomer.id,
+            id: editingCustomer.id,
             ...formData,
           })
         ).unwrap();
@@ -74,7 +77,7 @@ const NewCustomerModal = () => {
     }
   };
 
-  if (!isOpen) return null;
+  if (!isModalOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -84,7 +87,7 @@ const NewCustomerModal = () => {
       >
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold">
-            {mode === "edit" ? "Edit Customer" : "Add New Customer"}
+            {isEdit ? "Edit Customer" : "Add New Customer"}
           </h2>
         </div>
 
@@ -151,7 +154,7 @@ const NewCustomerModal = () => {
               Cancel
             </Button>
             <Button variant="primary" type="submit" isLoading={saveLoading}>
-              {mode === "edit" ? "Update Customer" : "Create Customer"}
+              {isEdit ? "Update Customer" : "Create Customer"}
             </Button>
           </div>
         </form>
