@@ -19,7 +19,7 @@ http.interceptors.request.use(
     store.dispatch(setLoading({ key: endpointKey, value: true }));
 
     // Add auth token if exists
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken"); // <-- use "authToken" everywhere
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
