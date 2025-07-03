@@ -1,35 +1,47 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
-// Example: Checks for a token in localStorage to determine authentication
 const useAuthCheck = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const checkAuth = () => {
+    const verifyAuth = async () => {
       const token = localStorage.getItem("authToken");
-      const userRole = localStorage.getItem("userRole");
-      const userEmail = localStorage.getItem("userEmail");
 
-      if (!token || !userRole || !userEmail) {
-        // Clear any invalid data
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("userName");
-        localStorage.removeItem("userEmail");
-        navigate("/login");
+      if (!token) {
+        setIsAuthenticated(false);
+        setIsLoading(false);
         return;
       }
 
-      // Token exists and user data is present
-      setIsLoading(false);
+      try {
+        const res = await fetch("http://localhost:5000/api/test-auth", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          // Token invalid or expired
+          localStorage.clear();
+          setIsAuthenticated(false);
+        } else {
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        localStorage.clear();
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    checkAuth();
-  }, [navigate]);
+    verifyAuth();
+  }, []);
 
-  return { isLoading };
+  return { isLoading, isAuthenticated };
 };
 
 export default useAuthCheck;
