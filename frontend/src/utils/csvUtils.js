@@ -485,3 +485,132 @@ export const convertCSVToSuppliers = (csvData) => {
     companyName: row["Company Name"]?.trim() || "",
   }));
 };
+
+export const exportCustomersToCSV = (customers) => {
+  const headers = [
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
+    { key: "phone", label: "Phone" },
+    { key: "address", label: "Address" },
+    { key: "createdAt", label: "Created At" },
+  ];
+  const csvContent = convertToCSV(customers, headers);
+  const filename = generateCSVFilename("customers");
+  downloadCSV(csvContent, filename);
+};
+
+export const validateCustomerCSV = (data) => {
+  const errors = [];
+  const requiredFields = ["Name"];
+
+  if (!data || data.length === 0) {
+    return { isValid: false, errors: ["No data found in CSV file"] };
+  }
+
+  // Check required fields
+  const firstRow = data[0];
+  const missingFields = requiredFields.filter((field) => !(field in firstRow));
+  if (missingFields.length > 0) {
+    errors.push(`Missing required fields: ${missingFields.join(", ")}`);
+  }
+
+  // Validate data
+  data.forEach((row, index) => {
+    const rowNumber = index + 2;
+    requiredFields.forEach((field) => {
+      if (!row[field] || row[field].trim() === "") {
+        errors.push(`Row ${rowNumber}: ${field} is required`);
+      }
+    });
+    if (row.Email && !isValidEmail(row.Email)) {
+      errors.push(`Row ${rowNumber}: Invalid email format`);
+    }
+    if (row.Phone && row.Phone.trim() !== "" && row.Phone.length < 5) {
+      errors.push(`Row ${rowNumber}: Phone number is too short`);
+    }
+  });
+  return { isValid: errors.length === 0, errors };
+};
+
+export const convertCSVToCustomers = (csvData) => {
+  return csvData.map((row) => ({
+    name: row.Name?.trim() || "",
+    email: row.Email?.trim() || "",
+    phone: row.Phone?.trim() || "",
+    address: row.Address?.trim() || "",
+  }));
+};
+
+export const exportPurchasesToCSV = (purchases) => {
+  const headers = [
+    { key: "id", label: "Purchase Order" },
+    { key: "created_at", label: "Date & Time" },
+    { key: "supplierName", label: "Supplier" },
+    { key: "total_amount", label: "Total Amount" },
+    { key: "status", label: "Status" },
+  ];
+  const data = purchases.map((purchase) => ({
+    id: purchase.id,
+    created_at: purchase.created_at,
+    supplierName: purchase.supplier?.name || purchase.supplier_id,
+    total_amount: purchase.total_amount || purchase.totalCost,
+    status: purchase.status,
+  }));
+  const csvContent = convertToCSV(data, headers);
+  const filename = generateCSVFilename("purchases");
+  downloadCSV(csvContent, filename);
+};
+
+// Purchase CSV validation and conversion utilities
+export const validatePurchaseCSV = (data) => {
+  const errors = [];
+  const requiredFields = [
+    "Purchase Order",
+    "Date & Time",
+    "Supplier",
+    "Total Amount",
+    "Status",
+  ];
+  if (!data || data.length === 0) {
+    return { isValid: false, errors: ["No data found in CSV file"] };
+  }
+  // Check required fields
+  const firstRow = data[0];
+  const missingFields = requiredFields.filter((field) => !(field in firstRow));
+  if (missingFields.length > 0) {
+    errors.push(`Missing required fields: ${missingFields.join(", ")}`);
+  }
+  // Validate data
+  data.forEach((row, index) => {
+    const rowNumber = index + 2;
+    requiredFields.forEach((field) => {
+      if (!row[field] || row[field].trim() === "") {
+        errors.push(`Row ${rowNumber}: ${field} is required`);
+      }
+    });
+    if (row["Total Amount"] && isNaN(parseFloat(row["Total Amount"]))) {
+      errors.push(`Row ${rowNumber}: Total Amount must be a valid number`);
+    }
+    if (
+      row["Status"] &&
+      !["pending", "received", "cancelled"].includes(
+        row["Status"].toLowerCase()
+      )
+    ) {
+      errors.push(
+        `Row ${rowNumber}: Status must be one of pending, received, cancelled`
+      );
+    }
+  });
+  return { isValid: errors.length === 0, errors };
+};
+
+export const convertCSVToPurchases = (csvData) => {
+  return csvData.map((row) => ({
+    id: row["Purchase Order"],
+    created_at: row["Date & Time"],
+    supplier: { name: row["Supplier"] },
+    total_amount: parseFloat(row["Total Amount"]),
+    status: row["Status"].toLowerCase(),
+  }));
+};
