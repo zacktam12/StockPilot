@@ -2,24 +2,33 @@ const Joi = require("joi");
 
 // Schema for creating a purchase
 const createPurchaseSchema = Joi.object({
-  userId: Joi.number().integer().positive().required(),
-  supplierId: Joi.number().integer().positive().required(),
+  userId: Joi.string().optional(),
+  supplierId: Joi.string().required(),
   totalCost: Joi.number().precision(2).min(0).required(),
   discount: Joi.number().precision(2).min(0).optional(),
   tax: Joi.number().precision(2).min(0).optional(),
   status: Joi.string().valid("pending", "received", "cancelled").optional(),
   notes: Joi.string().allow("", null),
+  items: Joi.array()
+    .items(
+      Joi.object({
+        productId: Joi.string().required(),
+        purchase_price: Joi.number().precision(2).min(0).required(),
+        purchase_quantity: Joi.number().integer().min(1).required(),
+      })
+    )
+    .optional(),
 });
 
 // Schema for updating a purchase
 const updatePurchaseSchema = Joi.object({
-  userId: Joi.number().integer().positive(),
-  supplierId: Joi.number().integer().positive(),
-  totalCost: Joi.number().precision(2).min(0),
-  discount: Joi.number().precision(2).min(0),
-  tax: Joi.number().precision(2).min(0),
-  status: Joi.string().valid("pending", "received", "cancelled"),
-  notes: Joi.string().allow("", null),
+  userId: Joi.string().optional(),
+  supplierId: Joi.string().optional(),
+  totalCost: Joi.number().precision(2).min(0).optional(),
+  discount: Joi.number().precision(2).min(0).optional(),
+  tax: Joi.number().precision(2).min(0).optional(),
+  status: Joi.string().valid("pending", "received", "cancelled").optional(),
+  notes: Joi.string().allow("", null).optional(),
 });
 
 // Middleware: Validate purchase creation
