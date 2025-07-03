@@ -9,6 +9,7 @@ import { useTheme } from "../../../components/ThemeProvider";
 import LoginForm from "../components/LoginForm";
 import ForgotPasswordModal from "../modals/ForgotPasswordModal";
 import AccountRecoveryModal from "../modals/AccountRecoveryModal";
+import useAuthCheck from "../../../hooks/useAuthCheck";
 
 // Backend API configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -17,13 +18,13 @@ const LOGIN_ENDPOINT = `${API_BASE_URL}/api/auth/login`;
 export default function Login() {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { isLoading, isAuthenticated } = useAuthCheck();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     rememberMe: false,
   });
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [lockoutTime, setLockoutTime] = useState(0);
@@ -112,7 +113,6 @@ export default function Login() {
     if (isLocked) return;
     if (!validateForm()) return;
 
-    setIsLoading(true);
     setErrors({});
 
     try {
@@ -194,10 +194,14 @@ export default function Login() {
         });
         toast.error(error.message || "Login failed. Please try again.");
       }
-    } finally {
-      setIsLoading(false);
     }
   };
+
+  // Redirect if already authenticated
+  if (!isLoading && isAuthenticated) {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
 
   return (
     <div
