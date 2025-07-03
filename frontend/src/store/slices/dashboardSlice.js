@@ -3,14 +3,14 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 
 export const fetchDashboardStats = createAsyncThunk(
-  "dashboard/fetchStats",
-  async (_, { rejectWithValue }) => {
+  "dashboard/fetchDashboardStats",
+  async () => {
     try {
       const response = await api.get("/dashboard/stats");
       return response.data;
     } catch (error) {
       console.warn("Failed to load dashboard stats:", error);
-      // Return default stats structure to prevent crashes
+      // Return default stats structure
       return {
         stats: {
           totalProducts: 0,
@@ -19,9 +19,6 @@ export const fetchDashboardStats = createAsyncThunk(
           totalCustomers: 0,
           totalSuppliers: 0,
           lowStockItems: 0,
-          productChange: 0,
-          salesChange: 0,
-          revenueChange: 0,
         },
         lowStockItems: [],
       };
@@ -30,14 +27,14 @@ export const fetchDashboardStats = createAsyncThunk(
   {
     meta: {
       loadingMessage: "Loading dashboard statistics...",
-      loadingType: "full-page",
+      loadingType: "page",
     },
   }
 );
 
 export const fetchActivities = createAsyncThunk(
   "dashboard/fetchActivities",
-  async (params = { page: 1, limit: 10 }, { rejectWithValue }) => {
+  async (params = { page: 1, limit: 10 }) => {
     try {
       const response = await api.get("/dashboard/activities", { params });
       return response.data;
@@ -63,7 +60,7 @@ export const fetchActivities = createAsyncThunk(
 
 export const fetchLowStockAlerts = createAsyncThunk(
   "dashboard/fetchLowStockAlerts",
-  async (params = { page: 1, limit: 10 }, { rejectWithValue }) => {
+  async (params = { page: 1, limit: 10 }) => {
     try {
       const response = await api.get("/dashboard/low-stock-alerts", { params });
       return response.data;
@@ -89,7 +86,7 @@ export const fetchLowStockAlerts = createAsyncThunk(
 
 export const fetchRevenueData = createAsyncThunk(
   "dashboard/fetchRevenueData",
-  async (timeRange = "monthly", { rejectWithValue }) => {
+  async (timeRange = "monthly") => {
     try {
       const response = await api.get("/dashboard/revenue-data", {
         params: { range: timeRange },
@@ -111,7 +108,7 @@ export const fetchRevenueData = createAsyncThunk(
 
 export const fetchProductDistribution = createAsyncThunk(
   "dashboard/fetchProductDistribution",
-  async (_, { rejectWithValue }) => {
+  async () => {
     try {
       const response = await api.get("/products?fields=id,category");
       return response.data;
@@ -175,84 +172,6 @@ const dashboardSlice = createSlice({
   name: "dashboard",
   initialState,
   reducers: {
-    setSocketUpdates: (state, action) => {
-      const { type, data } = action.payload;
-      const now = new Date().toISOString();
-
-      switch (type) {
-        case "sale-created":
-          state.stats.totalSales += 1;
-          state.stats.totalRevenue += data.amount;
-          // Add to activities if we're on page 1
-          if (state.activities.page === 1) {
-            state.activities.data.unshift({
-              id: Date.now(),
-              type: "sale",
-              date: now,
-              amount: data.amount,
-              relatedEntity: data.customer,
-            });
-            // Remove last item if we exceed limit
-            if (state.activities.data.length > state.activities.limit) {
-              state.activities.data.pop();
-            }
-          }
-          state.lastUpdated.activities = now;
-          break;
-
-        case "purchase-created":
-          state.stats.totalProducts += data.quantity;
-          // Add to activities if we're on page 1
-          if (state.activities.page === 1) {
-            state.activities.data.unshift({
-              id: Date.now(),
-              type: "purchase",
-              date: now,
-              amount: data.amount,
-              relatedEntity: data.supplier,
-            });
-            // Remove last item if we exceed limit
-            if (state.activities.data.length > state.activities.limit) {
-              state.activities.data.pop();
-            }
-          }
-          state.lastUpdated.activities = now;
-          break;
-
-        case "product-updated":
-          if (data.quantity <= data.lowStockThreshold) {
-            const existingIndex = state.lowStockAlerts.data.findIndex(
-              (p) => p.id === data.id
-            );
-            if (existingIndex === -1) {
-              // Add to low stock alerts if we're on page 1
-              if (state.lowStockAlerts.page === 1) {
-                state.lowStockAlerts.data.unshift(data);
-                // Remove last item if we exceed limit
-                if (
-                  state.lowStockAlerts.data.length > state.lowStockAlerts.limit
-                ) {
-                  state.lowStockAlerts.data.pop();
-                }
-              }
-              state.stats.lowStockItems += 1;
-            }
-          }
-          state.lastUpdated.lowStockAlerts = now;
-          break;
-
-        case "revenue-update":
-          state.revenue = { data: data };
-          state.lastUpdated.revenue = now;
-          break;
-
-        default:
-          break;
-      }
-    },
-    setConnectionStatus: (state, action) => {
-      state.isConnected = action.payload;
-    },
     refreshStats: (state) => {
       state.loading = true;
     },
@@ -360,8 +279,6 @@ const dashboardSlice = createSlice({
 });
 
 export const {
-  setSocketUpdates,
-  setConnectionStatus,
   refreshStats,
   refreshActivities,
   refreshLowStockAlerts,
