@@ -30,16 +30,12 @@ model User {
 
   // Relations
   salesAsSeller    Sale[]     @relation("SalesToSeller")
-  salesAsCustomer  Sale[]     @relation("SalesToCustomer")
   purchasesAsBuyer Purchase[] @relation("PurchasesToBuyer")
   role             Role       @relation(fields: [roleId], references: [id])
 
- // Inverse relations for Supplier
+  // Inverse relations for Supplier
   createdSuppliers    Supplier[] @relation("CreatedSuppliers")
   deletedSuppliers    Supplier[] @relation("DeletedSuppliers")
-
-  // For conditional uniqueness, you'll need to handle this at application level
-  // or use a database trigger
 }
 
 enum UserStatus {
@@ -48,6 +44,7 @@ enum UserStatus {
   Deactivated
   Banned
 }
+
 model Role {
   id         String    @id @default(uuid()) @db.VarChar(36)
   role_type  String    @unique
@@ -93,6 +90,17 @@ model Product {
   productPurchases ProductPurchase[]
 }
 
+model Customer {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  name      String
+  email     String?  @unique
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+
+  sales     Sale[]
+}
+
 model Sale {
   id            String    @id @default(uuid()) @db.VarChar(36)
   userId        String    @db.VarChar(36)
@@ -108,9 +116,10 @@ model Sale {
   updatedAt     DateTime  @updatedAt
 
   user          User      @relation("SalesToSeller", fields: [userId], references: [id])
-  customer      User?     @relation("SalesToCustomer", fields: [customerId], references: [id])
+  customer      Customer? @relation(fields: [customerId], references: [id])
   productSales  ProductSale[]
 }
+
 model Purchase {
   id                String    @id @default(uuid()) @db.VarChar(36)
   userId            String    @db.VarChar(36)
@@ -128,7 +137,6 @@ model Purchase {
   supplier          Supplier  @relation(fields: [supplierId], references: [id])
   productPurchases  ProductPurchase[]
 }
-
 
 model ProductSale {
   id           String    @id @default(uuid()) @db.VarChar(36)
@@ -161,6 +169,7 @@ model ProductPurchase {
   product           Product   @relation(fields: [productId], references: [id])
   purchase          Purchase  @relation(fields: [purchaseId], references: [id])
 }
+
 model Supplier {
   id          String    @id @default(uuid()) @db.VarChar(36)
   name        String
@@ -181,8 +190,6 @@ model Supplier {
   deletedBy   User?     @relation("DeletedSuppliers", fields: [deletedById], references: [id])
   purchases   Purchase[]
 }
-
-
 
 model Settings {
   id                String    @id @default(uuid()) @db.VarChar(36)
