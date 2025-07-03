@@ -16,7 +16,7 @@ export default defineConfig({
     host: true, // optional: allows LAN access
     proxy: {
       "/api": {
-        target: "http://localhost:8000", // or 5000, depending on your backend
+        target: "http://localhost:5000",
         changeOrigin: true,
         secure: false,
       },
