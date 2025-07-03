@@ -2,7 +2,11 @@ const saleService = require("../services/sale.service");
 
 exports.createSale = async (req, res, next) => {
   try {
-    const sale = await saleService.createSale(req.body);
+    const saleData = {
+      ...req.body,
+      userId: req.user.id,
+    };
+    const sale = await saleService.createSale(saleData);
     res.status(201).json({
       success: true,
       message: "Sale created successfully",
@@ -19,7 +23,8 @@ exports.getAllSales = async (req, res, next) => {
     res.json({
       success: true,
       data: result.data,
-      meta: result.meta,
+      total: result.meta.total,
+      meta: result.meta, // Add meta for pagination
     });
   } catch (error) {
     next(error);
@@ -51,6 +56,20 @@ exports.updateSale = async (req, res, next) => {
     res.json({
       success: true,
       message: "Sale updated successfully",
+      data: sale,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateSaleStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const sale = await saleService.updateSale(req.params.id, { status });
+    res.json({
+      success: true,
+      message: "Sale status updated successfully",
       data: sale,
     });
   } catch (error) {

@@ -12,19 +12,31 @@ import {
   fetchCustomers,
 } from "../../../store/slices/salesSlice";
 
-const NewSaleModal = ({ isOpen, onClose, onSuccess }) => {
+const NewSaleModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  sale = null,
+  isEdit = false,
+}) => {
   const dispatch = useDispatch();
-  const products = useSelector((state) => state.product?.items || []);
-  const customers = useSelector((state) => state.customer?.items || []);
-  // loading: productsLoading,
-  // } = useSelector((state) => ({
-  //   products: state.products.items,
-  //   customers: state.customers.items,
-  //   loading: state.products.loading || state.customers.loading,
-  // }));
+  const { items: products = [], loading: productsLoading = false } =
+    useSelector((state) => state.product || {});
+  const { items: customers = [], loading: customersLoading = false } =
+    useSelector((state) => state.customer || {});
+  const { loading: saleLoading = false } = useSelector(
+    (state) => state.sales || {}
+  );
 
-  const [customerId, setCustomerId] = useState("");
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [customerId, setCustomerId] = useState(sale?.customer_id || "");
+  const [selectedProducts, setSelectedProducts] = useState(
+    sale?.items
+      ? sale.items.map((item) => ({
+          product: item.product,
+          quantity: item.quantity,
+        }))
+      : []
+  );
   const [showReceipt, setShowReceipt] = useState(false);
   const [saleId, setSaleId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,6 +46,20 @@ const NewSaleModal = ({ isOpen, onClose, onSuccess }) => {
     dispatch(fetchProducts());
     dispatch(fetchCustomers());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (isEdit && sale) {
+      setCustomerId(sale.customer_id || "");
+      setSelectedProducts(
+        sale.items
+          ? sale.items.map((item) => ({
+              product: item.product,
+              quantity: item.quantity,
+            }))
+          : []
+      );
+    }
+  }, [isEdit, sale]);
 
   const handleAddProduct = (product) => {
     if (product.quantity === 0) return;
@@ -86,22 +112,25 @@ const NewSaleModal = ({ isOpen, onClose, onSuccess }) => {
       if (selectedProducts.length === 0) {
         throw new Error("Please select at least one product");
       }
-
       const items = selectedProducts.map((item) => ({
         product_id: item.product.id,
         quantity: item.quantity,
         price: Number(item.product.price),
       }));
-
-      const result = await dispatch(
-        createSale({
-          customer_id: customerId ? Number(customerId) : null,
-          items,
-          status: "completed",
-        })
-      ).unwrap();
-
-      setSaleId(result.id);
+      let result;
+      if (isEdit && sale) {
+        // TODO: dispatch updateSale thunk
+        // result = await dispatch(updateSale({ id: sale.id, customer_id: customerId ? Number(customerId) : null, items })).unwrap();
+      } else {
+        result = await dispatch(
+          createSale({
+            customer_id: customerId ? Number(customerId) : null,
+            items,
+            status: "completed",
+          })
+        ).unwrap();
+      }
+      setSaleId(result?.id);
       setShowReceipt(true);
       onSuccess();
     } catch (error) {
@@ -161,36 +190,47 @@ const NewSaleModal = ({ isOpen, onClose, onSuccess }) => {
 
             <div className="border rounded-lg overflow-hidden">
               <div className="grid grid-cols-2 gap-4 p-4 max-h-[400px] overflow-y-auto">
-                {filteredProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="border rounded-lg p-3 cursor-pointer hover:border-indigo-500 transition-colors"
-                    onClick={() => handleAddProduct(product)}
-                  >
-                    <div className="w-full h-32 bg-gray-100 rounded-md mb-2 overflow-hidden">
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package size={32} className="text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <h3 className="font-medium text-gray-900">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      Stock: {product.quantity}
-                    </p>
-                    <p className="text-sm font-medium text-indigo-600">
-                      ${product.price.toFixed(2)}
-                    </p>
+                {productsLoading ? (
+                  <div className="col-span-2 text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-500">Loading products...</p>
                   </div>
-                ))}
+                ) : filteredProducts.length > 0 ? (
+                  filteredProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="border rounded-lg p-3 cursor-pointer hover:border-indigo-500 transition-colors"
+                      onClick={() => handleAddProduct(product)}
+                    >
+                      <div className="w-full h-32 bg-gray-100 rounded-md mb-2 overflow-hidden">
+                        {product.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package size={32} className="text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-medium text-gray-900">
+                        {product.name}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Stock: {product.quantity}
+                      </p>
+                      <p className="text-sm font-medium text-indigo-600">
+                        ${product.price.toFixed(2)}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-2 text-center py-8 text-gray-500">
+                    No products found
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -205,13 +245,20 @@ const NewSaleModal = ({ isOpen, onClose, onSuccess }) => {
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
                 className="w-full p-2 border rounded-md bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                disabled={customersLoading}
               >
                 <option value="">Walk-in Customer</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name} (ID: {customer.id})
+                {customersLoading ? (
+                  <option value="" disabled>
+                    Loading customers...
                   </option>
-                ))}
+                ) : (
+                  customers.map((customer) => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.name} (ID: {customer.id})
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -275,8 +322,8 @@ const NewSaleModal = ({ isOpen, onClose, onSuccess }) => {
               <Button
                 variant="primary"
                 onClick={handleSubmit}
-                // isLoading={loading}
-                disabled={selectedProducts.length === 0}
+                isLoading={saleLoading}
+                disabled={selectedProducts.length === 0 || saleLoading}
               >
                 Complete Sale
               </Button>

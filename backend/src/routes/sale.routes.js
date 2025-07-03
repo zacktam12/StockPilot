@@ -7,10 +7,10 @@ const {
 } = require("../validators/sale.validator");
 
 router.post("/", validateCreateSale, saleController.createSale);
-router.put("/:id", validateUpdateSale, saleController.updateSale);
 router.get("/", saleController.getAllSales);
 router.get("/:id", saleController.getSaleById);
-router.put("/:id", saleController.updateSale);
+router.put("/:id", validateUpdateSale, saleController.updateSale);
+router.put("/:id/status", saleController.updateSaleStatus);
 router.delete("/:id", saleController.deleteSale);
 
 module.exports = router;
