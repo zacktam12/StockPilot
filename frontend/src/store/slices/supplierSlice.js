@@ -49,6 +49,25 @@ const applyFilters = (state) => {
         (supplier.companyName && supplier.companyName.trim() !== ""))
   );
 
+  // Date range filter
+  if (
+    state.filters.dateRange &&
+    (state.filters.dateRange.from || state.filters.dateRange.to)
+  ) {
+    filtered = filtered.filter((supplier) => {
+      const created = new Date(supplier.createdAt || supplier.created_at);
+      const from = state.filters.dateRange.from
+        ? new Date(state.filters.dateRange.from)
+        : null;
+      const to = state.filters.dateRange.to
+        ? new Date(state.filters.dateRange.to)
+        : null;
+      if (from && created < from) return false;
+      if (to && created > to) return false;
+      return true;
+    });
+  }
+
   // Apply sorting
   filtered.sort((a, b) => {
     const aValue = a[state.filters.sortField];
@@ -221,6 +240,7 @@ const initialState = {
       hasEmail: false,
       hasCompany: false,
     },
+    dateRange: { from: "", to: "" },
   },
 };
 
@@ -294,6 +314,16 @@ const supplierSlice = createSlice({
     },
     toggleCompanyFilter: (state) => {
       state.filters.options.hasCompany = !state.filters.options.hasCompany;
+      state.currentPage = 1;
+      applyFilters(state);
+    },
+    setDateRangeFilter: (state, action) => {
+      state.filters.dateRange = action.payload;
+      state.currentPage = 1;
+      applyFilters(state);
+    },
+    clearDateRangeFilter: (state) => {
+      state.filters.dateRange = { from: "", to: "" };
       state.currentPage = 1;
       applyFilters(state);
     },
@@ -457,6 +487,8 @@ export const {
   toggleAddressFilter,
   toggleEmailFilter,
   toggleCompanyFilter,
+  setDateRangeFilter,
+  clearDateRangeFilter,
   setCurrentPage,
   resetSupplierState,
 } = supplierSlice.actions;
