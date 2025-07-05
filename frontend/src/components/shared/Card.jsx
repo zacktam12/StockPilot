@@ -4,7 +4,7 @@ import React from "react";
 const Card = ({ children, className = "" }) => {
   return (
     <div
-      className={`bg-white text-gray-800 rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 ${className}`}
+      className={`bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border border-gray-200 dark:border-gray-700 shadow-soft transition-all duration-300 ${className}`}
     >
       {children}
     </div>
@@ -14,7 +14,7 @@ const Card = ({ children, className = "" }) => {
 const CardHeader = ({ children, className = "" }) => {
   return (
     <div
-      className={`px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${className}`}
+      className={`px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-2xl ${className}`}
     >
       {children}
     </div>
@@ -24,7 +24,7 @@ const CardHeader = ({ children, className = "" }) => {
 const CardTitle = ({ children, className = "" }) => {
   return (
     <h3
-      className={`text-lg font-medium text-gray-800 dark:text-white ${className}`}
+      className={`text-lg font-semibold font-heading text-gray-900 dark:text-white ${className}`}
     >
       {children}
     </h3>
@@ -33,7 +33,9 @@ const CardTitle = ({ children, className = "" }) => {
 
 const CardDescription = ({ children, className = "" }) => {
   return (
-    <p className={`text-sm text-gray-500 dark:text-gray-400 mt-1 ${className}`}>
+    <p
+      className={`text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium ${className}`}
+    >
       {children}
     </p>
   );
@@ -46,7 +48,7 @@ const CardContent = ({ children, className = "" }) => {
 const CardFooter = ({ children, className = "" }) => {
   return (
     <div
-      className={`px-6 py-4 border-t border-gray-200 dark:border-gray-700 ${className}`}
+      className={`px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-2xl ${className}`}
     >
       {children}
     </div>
