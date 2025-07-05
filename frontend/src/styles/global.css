@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -47,16 +48,111 @@
   animation: bar-fluctuate 1s infinite ease-in-out;
 }
 
+/* Professional typography and spacing */
+@layer base {
+  html {
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Poppins", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+}
+
+/* Enhanced color schemes for better visibility */
+@layer utilities {
+  .text-primary {
+    @apply text-gray-900 dark:text-white;
+  }
+
+  .text-secondary {
+    @apply text-gray-600 dark:text-gray-300;
+  }
+
+  .text-muted {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  .bg-primary {
+    @apply bg-white dark:bg-gray-900;
+  }
+
+  .bg-secondary {
+    @apply bg-gray-50 dark:bg-gray-800;
+  }
+
+  .border-primary {
+    @apply border-gray-200 dark:border-gray-700;
+  }
+
+  .shadow-card {
+    @apply shadow-sm dark:shadow-gray-900/20;
+  }
+
+  .shadow-card-hover {
+    @apply shadow-md dark:shadow-gray-900/30;
+  }
+}
+
 /* Add any global overrides here */
 html,
 body {
   min-height: 100vh;
-  background-color: #fff;
-  color: #1f2937; /* text-gray-800 */
+  background-color: #fafafa;
+  color: #1f2937;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .dark html,
 .dark body {
-  background-color: #111827; /* gray-900 */
-  color: #f3f4f6; /* text-gray-200 */
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
