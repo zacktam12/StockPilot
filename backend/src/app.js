@@ -35,7 +35,7 @@ const prisma = new PrismaClient();
 const corsOptions = {
   origin: process.env.FRONTEND_URL || "http://localhost:5500", // Adjust based on your frontend port
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
   exposedHeaders: ["Authorization"],
   maxAge: 3600,
