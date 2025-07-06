@@ -10,7 +10,12 @@ const initialState = {
     newPurchase: false,
   },
   loading: false,
-  theme: 'light'
+  theme: 'light',
+  toast: {
+    message: '',
+    type: '', // 'success' | 'error' | 'info'
+    visible: false,
+  },
 };
 
 const uiSlice = createSlice({
@@ -26,9 +31,19 @@ const uiSlice = createSlice({
     },
     setTheme: (state, action) => {
       state.theme = action.payload;
-    }
+    },
+    showToast: (state, action) => {
+      state.toast = {
+        message: action.payload.message,
+        type: action.payload.type || 'info',
+        visible: true,
+      };
+    },
+    hideToast: (state) => {
+      state.toast = { message: '', type: '', visible: false };
+    },
   }
 });
 
-export const { toggleModal, setLoading, setTheme } = uiSlice.actions;
+export const { toggleModal, setLoading, setTheme, showToast, hideToast } = uiSlice.actions;
 export default uiSlice.reducer;
