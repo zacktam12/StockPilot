@@ -248,8 +248,8 @@ const CSVImportModal = ({ isOpen, onClose }) => {
               </div>
 
               {showPreview && (
-                <div className="p-4 max-h-64 overflow-y-auto">
-                  <div className="overflow-x-auto">
+                <div className="p-4  max-h-64 overflow-y-auto">
+                  <div className="overflow-x-auto ">
                     <table className="min-w-full text-sm">
                       <thead>
                         <tr className="border-b border-gray-200 dark:border-gray-700">
