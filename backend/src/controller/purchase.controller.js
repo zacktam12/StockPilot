@@ -1,14 +1,34 @@
 const purchaseService = require("../services/purchase.service");
+const NotificationService = require("../services/notification.service");
 
 exports.createPurchase = async (req, res, next) => {
   try {
     const { items, ...purchaseData } = req.body;
     const userId = req.user.id; // Always use authenticated user
-    // Create purchase with userId from backend
+
+    // Generate a unique, human-readable PO number
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random
+    const poNumber = `PO-${datePart}-${randomPart}`;
+
+    // Create purchase with userId from backend and generated poNumber
     const purchase = await purchaseService.createPurchase({
       ...purchaseData,
       userId,
+      poNumber,
     });
+
+    // Create notification for the purchase
+    try {
+      const supplier = purchase.supplier;
+      await NotificationService.createPurchaseNotification(purchase, supplier);
+    } catch (notificationError) {
+      console.warn(
+        "Failed to create purchase notification:",
+        notificationError
+      );
+    }
+
     // If items are present, link products to purchase
     if (items && Array.isArray(items) && items.length > 0) {
       // You may need to implement this in the service/repository
@@ -30,11 +50,11 @@ exports.createPurchase = async (req, res, next) => {
 
 exports.getAllPurchases = async (req, res, next) => {
   try {
-    const purchases = await purchaseService.getAllPurchases(req.query);
+    const result = await purchaseService.getAllPurchases(req.query);
     res.json({
       success: true,
-      data: purchases, // <-- Fix here
-      // meta: ... (add pagination if needed)
+      data: result.data,
+      pagination: result.pagination,
     });
   } catch (error) {
     next(error);
@@ -70,6 +90,29 @@ exports.updatePurchase = async (req, res, next) => {
       message: "Purchase updated successfully",
       data: purchase,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updatePurchaseStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    if (!status) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Status is required." });
+    }
+    const purchase = await purchaseService.updatePurchase(req.params.id, {
+      status,
+    });
+    if (!purchase) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Purchase not found." });
+    }
+    // Return the purchase object directly for frontend compatibility
+    res.json(purchase);
   } catch (error) {
     next(error);
   }
