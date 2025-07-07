@@ -1,5 +1,12 @@
 const userRepository = require("../repositories/user.repository");
 
+// Generate employee ID function
+const generateEmployeeId = () => {
+  const prefix = "EMP";
+  const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `${prefix}-${randomPart}`;
+};
+
 // Create a new user
 const createUser = async (data) => {
   // Check if email already exists
@@ -9,7 +16,13 @@ const createUser = async (data) => {
     throw new Error(`User with email ${data.email} already exists.`);
   }
 
-  const user = await userRepository.createUser(data);
+  // Generate employee ID if not provided
+  const userData = {
+    ...data,
+    employeeId: data.employeeId || generateEmployeeId(),
+  };
+
+  const user = await userRepository.createUser(userData);
 
   // Fetch the user with role included
   const userWithRole = await userRepository.findUnique(
@@ -234,12 +247,7 @@ const importUsers = async (usersData) => {
         continue;
       }
 
-      // Generate employee ID
-      const generateEmployeeId = () => {
-        const prefix = "EMP";
-        const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
-        return `${prefix}-${randomPart}`;
-      };
+      // Generate employee ID using the function defined at the top
 
       // Map CSV data to user model
       const userToCreate = {

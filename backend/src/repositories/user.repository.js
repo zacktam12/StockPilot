@@ -110,7 +110,6 @@ class UserRepository extends BaseRepository {
       where: {
         role_type: {
           equals: roleName,
-          mode: "insensitive",
         },
       },
     });
