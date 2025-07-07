@@ -1,4 +1,5 @@
 const productService = require("../services/product.service");
+const NotificationService = require("../services/notification.service");
 
 exports.createProduct = async (req, res, next) => {
   try {
@@ -30,9 +31,15 @@ exports.getProductById = async (req, res, next) => {
 
 exports.updateProduct = async (req, res, next) => {
   try {
+    console.log("Product controller updateProduct called");
+    console.log("Product ID:", req.params.id);
+    console.log("Request body:", req.body);
+
     const result = await productService.updateProduct(req.params.id, req.body);
+    console.log("Product controller result:", result);
     res.json(result);
   } catch (error) {
+    console.error("Product controller error:", error);
     next(error);
   }
 };
@@ -61,6 +68,19 @@ exports.updateStock = async (req, res, next) => {
     const { id } = req.params;
     const { quantity } = req.body;
     const result = await productService.updateStock(id, quantity);
+
+    // Check if stock is low and create notification
+    if (result.data && result.data.quantity <= (result.data.minStock || 5)) {
+      try {
+        await NotificationService.createLowStockNotification(result.data);
+      } catch (notificationError) {
+        console.warn(
+          "Failed to create low stock notification:",
+          notificationError
+        );
+      }
+    }
+
     res.json(result);
   } catch (error) {
     next(error);
@@ -83,6 +103,19 @@ exports.decrementStock = async (req, res, next) => {
     const { id } = req.params;
     const { quantity } = req.body;
     const result = await productService.decrementStock(id, quantity);
+
+    // Check if stock is low and create notification
+    if (result.data && result.data.quantity <= (result.data.minStock || 5)) {
+      try {
+        await NotificationService.createLowStockNotification(result.data);
+      } catch (notificationError) {
+        console.warn(
+          "Failed to create low stock notification:",
+          notificationError
+        );
+      }
+    }
+
     res.json(result);
   } catch (error) {
     next(error);
