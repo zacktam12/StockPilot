@@ -17,8 +17,8 @@ class CategoryRepository extends BaseRepository {
       isDeleted: false,
       ...(search && {
         OR: [
-          { name: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
+          { name: { contains: search } },
+          { description: { contains: search } },
         ],
       }),
     };

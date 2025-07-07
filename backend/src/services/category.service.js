@@ -4,7 +4,7 @@ const createCategory = (data) => categoryRepo.create(data);
 
 const getAllCategories = (
   page = 1,
-  limit = 10,
+  limit = 5,
   search = "",
   sortField = "",
   sortOrder = ""
