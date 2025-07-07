@@ -18,9 +18,9 @@ class SaleRepository extends BaseRepository {
             lte: new Date(endDate),
           },
         }),
-      ...(customerId && { customerId: Number.parseInt(customerId) }),
+      ...(customerId && { customerId }),
       ...(status && { status }),
-      ...(userId && { userId: Number.parseInt(userId) }),
+      ...(userId && { userId }),
     };
 
     return await this.findManyWithPagination(

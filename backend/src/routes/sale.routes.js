@@ -5,12 +5,14 @@ const {
   validateCreateSale,
   validateUpdateSale,
 } = require("../validators/sale.validator");
+const { authenticate } = require("../middlewares/auth");
 
-router.post("/", validateCreateSale, saleController.createSale);
-router.get("/", saleController.getAllSales);
-router.get("/:id", saleController.getSaleById);
-router.put("/:id", validateUpdateSale, saleController.updateSale);
-router.put("/:id/status", saleController.updateSaleStatus);
-router.delete("/:id", saleController.deleteSale);
+router.post("/", authenticate, validateCreateSale, saleController.createSale);
+router.get("/", authenticate, saleController.getAllSales);
+router.delete("/bulk", authenticate, saleController.bulkDeleteSales);
+router.get("/:id", authenticate, saleController.getSaleById);
+router.put("/:id", authenticate, validateUpdateSale, saleController.updateSale);
+router.put("/:id/status", authenticate, saleController.updateSaleStatus);
+router.delete("/:id", authenticate, saleController.deleteSale);
 
 module.exports = router;
