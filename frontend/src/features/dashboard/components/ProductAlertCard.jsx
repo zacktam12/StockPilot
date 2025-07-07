@@ -19,6 +19,7 @@ import Badge from "../../../components/shared/Badge";
 import CardLoaderOverlay from "../../../components/shared/CardLoaderOverlay";
 import { SimplePagination } from "../../../components/shared/Pagination";
 import { fetchLowStockAlerts } from "../../../store/slices/dashboardSlice";
+import { AlertTriangle, Package, TrendingDown } from "lucide-react";
 
 const ProductAlertCard = ({ compact = false }) => {
   const dispatch = useDispatch();
@@ -30,13 +31,13 @@ const ProductAlertCard = ({ compact = false }) => {
     dispatch(
       fetchLowStockAlerts({
         page: lowStockAlerts.page,
-        limit: compact ? 3 : 5,
+        limit: compact ? 3 : 6,
       })
     );
   }, [dispatch, lowStockAlerts.page, compact]);
 
   const handlePageChange = (newPage) => {
-    dispatch(fetchLowStockAlerts({ page: newPage, limit: compact ? 5 : 10 }));
+    dispatch(fetchLowStockAlerts({ page: newPage, limit: compact ? 6 : 10 }));
   };
 
   // Mock data for demonstration when backend is not available
@@ -46,18 +47,28 @@ const ProductAlertCard = ({ compact = false }) => {
       name: "Laptop Charger",
       status: "low-stock",
       quantity: 3,
+      category: "Electronics",
     },
     {
       id: 2,
       name: "Wireless Mouse",
       status: "out-of-stock",
       quantity: 0,
+      category: "Electronics",
     },
     {
       id: 3,
       name: "USB Cable",
       status: "low-stock",
       quantity: 5,
+      category: "Accessories",
+    },
+    {
+      id: 4,
+      name: "Office Chair",
+      status: "low-stock",
+      quantity: 2,
+      category: "Furniture",
     },
   ];
 
@@ -69,113 +80,128 @@ const ProductAlertCard = ({ compact = false }) => {
       ? lowStockProducts
       : mockLowStockProducts;
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "out-of-stock":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800";
+      case "low-stock":
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-200 dark:border-gray-800";
+    }
+  };
+
+  const getQuantityColor = (quantity, status) => {
+    if (status === "out-of-stock") {
+      return "text-red-600 dark:text-red-400 font-bold";
+    }
+    if (quantity <= 5) {
+      return "text-amber-600 dark:text-amber-400 font-semibold";
+    }
+    return "text-gray-900 dark:text-white";
+  };
+
   return (
-    <Card className="h-full relative cursor-pointer transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] hover:bg-blue-50 dark:hover:bg-gray-800">
+    <div className="h-full">
       {lowStockLoading && <CardLoaderOverlay />}
-      <CardHeader
-        className={`flex flex-row items-center justify-between ${
-          compact ? "p-2 sm:p-3 pb-1 sm:pb-2" : "p-4 sm:p-6"
-        }`}
-      >
-        <CardTitle
-          className={`transition-colors duration-300 hover:text-blue-600 dark:hover:text-blue-400 ${
-            compact ? "text-xs sm:text-sm" : "text-sm sm:text-base"
-          }`}
-        >
-          Low Stock Alerts
-        </CardTitle>
-        <Badge
-          variant="danger"
-          className={`transition-all duration-300 hover:scale-110 ${
-            compact ? "text-xs px-1 sm:px-2 py-0.5 sm:py-1" : ""
-          }`}
-        >
-          {lowStockLoading ? "..." : displayData.length} products
-        </Badge>
-      </CardHeader>
 
-      <CardContent className={compact ? "p-2 sm:p-3 pt-0" : "p-4 sm:p-6"}>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead
-                className={`transition-colors duration-300 hover:text-blue-600 dark:hover:text-blue-400 ${
-                  compact ? "text-xs py-1 sm:py-2" : ""
-                }`}
-              >
-                Product
-              </TableHead>
-              <TableHead
-                className={`transition-colors duration-300 hover:text-blue-600 dark:hover:text-blue-400 ${
-                  compact ? "text-xs py-1 sm:py-2" : ""
-                }`}
-              >
-                Status
-              </TableHead>
-              <TableHead
-                className={`transition-colors duration-300 hover:text-blue-600 dark:hover:text-blue-400 ${
-                  compact ? "text-xs py-1 sm:py-2" : ""
-                }`}
-              >
-                Qty
-              </TableHead>
-            </TableRow>
-          </TableHeader>
+      <div className="space-y-4">
+        {lowStockLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-3"></div>
+              <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                Loading alerts...
+              </div>
+            </div>
+          </div>
+        ) : displayData && displayData.length > 0 ? (
+          displayData.map((product) => (
+            <div
+              key={product.id}
+              className="relative p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-medium hover:scale-[1.01] group"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                    <Package className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  </div>
+                </div>
 
-          <TableBody>
-            {displayData.length > 0 ? (
-              displayData.map((product) => (
-                <TableRow
-                  key={product.id}
-                  className="cursor-pointer transition-all duration-300 hover:bg-blue-50 dark:hover:bg-gray-700 hover:scale-[1.01]"
-                >
-                  <TableCell
-                    className={`font-medium text-gray-900 transition-colors duration-300 hover:text-blue-700 dark:hover:text-blue-300 truncate ${
-                      compact ? "text-xs py-0.5 sm:py-1" : ""
-                    }`}
-                  >
-                    {product.name}
-                  </TableCell>
-                  <TableCell className={compact ? "py-0.5 sm:py-1" : ""}>
-                    <Badge
-                      variant={
-                        product.status === "out-of-stock" ? "danger" : "warning"
-                      }
-                      className={`transition-all duration-300 hover:scale-110 ${
-                        compact ? "text-xs px-1 py-0.5" : ""
-                      }`}
-                    >
-                      {product.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell
-                    className={`font-medium transition-colors duration-300 hover:text-blue-700 dark:hover:text-blue-300 ${
-                      compact ? "text-xs py-0.5 sm:py-1" : ""
-                    }`}
-                  >
-                    {product.quantity}
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={3}
-                  className={`text-center text-gray-500 transition-colors duration-300 hover:text-blue-600 dark:hover:text-blue-400 ${
-                    compact ? "py-2 sm:py-3 text-xs" : "py-6"
-                  }`}
-                >
-                  No low stock products found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {product.name}
+                    </h4>
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                          product.status
+                        )}`}
+                      >
+                        {product.status === "out-of-stock" ? (
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                        ) : (
+                          <TrendingDown className="w-3 h-3 mr-1" />
+                        )}
+                        {product.status.replace("-", " ")}
+                      </span>
+                    </div>
+                  </div>
 
-        {/* Pagination - only show if we have real data with multiple pages */}
-        {lowStockAlerts.totalPages > 1 &&
-          lowStockAlerts.data &&
-          lowStockAlerts.data.length > 0 && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4 text-sm">
+                      <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
+                        <span>Quantity:</span>
+                        <span
+                          className={`font-semibold ${getQuantityColor(
+                            product.quantity,
+                            product.status
+                          )}`}
+                        >
+                          {product.quantity}
+                        </span>
+                      </div>
+                      {product.category && (
+                        <div className="text-gray-500 dark:text-gray-400">
+                          {product.category}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {product.status === "out-of-stock"
+                        ? "Restock needed"
+                        : "Low inventory"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subtle hover effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-red-50/30 dark:to-red-900/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Package className="w-8 h-8 text-green-600 dark:text-green-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              All Stock Levels Good
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              No low stock alerts at the moment
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Enhanced Pagination */}
+      {lowStockAlerts.totalPages > 1 &&
+        lowStockAlerts.data &&
+        lowStockAlerts.data.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
             <SimplePagination
               currentPage={lowStockAlerts.page}
               totalPages={lowStockAlerts.totalPages}
@@ -183,9 +209,9 @@ const ProductAlertCard = ({ compact = false }) => {
               compact={compact}
               showInfo={!compact}
             />
-          )}
-      </CardContent>
-    </Card>
+          </div>
+        )}
+    </div>
   );
 };
 
