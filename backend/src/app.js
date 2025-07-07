@@ -26,6 +26,7 @@ const supplierRoutes = require("./routes/supplier.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const customerRoutes = require("./routes/customer.routes");
 const reportsRoutes = require("./routes/reports.routes");
+const notificationRoutes = require("./routes/notification.routes");
 
 // Initialize app and database
 const app = express();
@@ -100,6 +101,7 @@ app.use("/api/suppliers", supplierRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/reports", reportsRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Error handling
 app.use(notFound);
