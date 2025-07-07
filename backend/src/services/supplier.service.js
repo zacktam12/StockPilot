@@ -12,12 +12,12 @@ exports.getAllSuppliers = async (
     isDeleted: false,
     ...(search && {
       OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { contactName: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search, mode: "insensitive" } },
-        { address: { contains: search, mode: "insensitive" } },
-        { companyName: { contains: search, mode: "insensitive" } },
+        { name: { contains: search } },
+        { contactName: { contains: search } },
+        { email: { contains: search } },
+        { phone: { contains: search } },
+        { address: { contains: search } },
+        { companyName: { contains: search } },
       ],
     }),
   };
@@ -126,12 +126,12 @@ exports.getSuppliersForExport = async (search = "") => {
     isDeleted: false,
     ...(search && {
       OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { contactName: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search, mode: "insensitive" } },
-        { address: { contains: search, mode: "insensitive" } },
-        { companyName: { contains: search, mode: "insensitive" } },
+        { name: { contains: search } },
+        { contactName: { contains: search } },
+        { email: { contains: search } },
+        { phone: { contains: search } },
+        { address: { contains: search } },
+        { companyName: { contains: search } },
       ],
     }),
   };
