@@ -5,8 +5,8 @@ const createProductSchema = Joi.object({
   description: Joi.string().max(500),
   sku: Joi.string().max(50),
   barcode: Joi.string().max(50),
-  price: Joi.number().positive().required(),
-  cost: Joi.number().positive(),
+  price: Joi.number().min(0).required(),
+  cost: Joi.number().min(0),
   quantity: Joi.number().integer().min(0).default(0),
   minStock: Joi.number().integer().min(0),
   maxStock: Joi.number().integer().min(0),
@@ -20,8 +20,8 @@ const updateProductSchema = Joi.object({
   description: Joi.string().max(500),
   sku: Joi.string().max(50),
   barcode: Joi.string().max(50),
-  price: Joi.number().positive(),
-  cost: Joi.number().positive(),
+  price: Joi.number().min(0),
+  cost: Joi.number().min(0),
   quantity: Joi.number().integer().min(0),
   minStock: Joi.number().integer().min(0),
   maxStock: Joi.number().integer().min(0),
@@ -43,18 +43,25 @@ const validateCreateProduct = (req, res, next) => {
 };
 
 const validateUpdateProduct = (req, res, next) => {
+  console.log("validateUpdateProduct called with body:", req.body);
+
   // Remove id from body if present to avoid Joi validation error
   if ("id" in req.body) {
     delete req.body.id;
   }
+
+  console.log("Body after removing id:", req.body);
+
   const { error } = updateProductSchema.validate(req.body);
   if (error) {
+    console.log("Validation error:", error.details);
     return res.status(400).json({
       success: false,
       message: "Validation error",
       errors: error.details.map((detail) => detail.message),
     });
   }
+  console.log("Validation passed");
   next();
 };
 

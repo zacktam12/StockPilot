@@ -1,4 +1,5 @@
 const productRepository = require("../repositories/product.repository");
+const { generateProductIdentifiers } = require("../utils/generators");
 
 const createProduct = async (data) => {
   try {
@@ -16,21 +17,26 @@ const createProduct = async (data) => {
       }
     }
 
-    // Defensive: Always ensure SKU is at least an empty string
-    if (typeof data.sku === "undefined" || data.sku === null) {
-      data.sku = "";
-    }
-
-    // Check if SKU already exists
-    if (data.sku) {
+    // Auto-generate SKU and barcode if not provided
+    if (!data.sku || data.sku.trim() === "") {
+      const { sku } = await generateProductIdentifiers(data.name);
+      data.sku = sku;
+      console.log(`Auto-generated SKU: ${sku}`);
+    } else {
+      // Check if provided SKU already exists
       const existingProduct = await productRepository.findBySku(data.sku);
       if (existingProduct) {
         throw new Error(`Product with SKU "${data.sku}" already exists`);
       }
     }
 
-    // Check if barcode already exists
-    if (data.barcode) {
+    // Auto-generate barcode if not provided
+    if (!data.barcode || data.barcode.trim() === "") {
+      const { barcode } = await generateProductIdentifiers(data.name);
+      data.barcode = barcode;
+      console.log(`Auto-generated barcode: ${barcode}`);
+    } else {
+      // Check if provided barcode already exists
       const existingProduct = await productRepository.findByBarcode(
         data.barcode
       );
@@ -53,7 +59,7 @@ const createProduct = async (data) => {
       minStock: data.minStock ? parseInt(data.minStock) : null,
       maxStock: data.maxStock ? parseInt(data.maxStock) : null,
       categoryId: data.categoryId,
-      image: data.image || data.image_url, // Handle both image and image_url from frontend
+      image: data.image_url || data.image, // Prioritize image_url from frontend
     };
 
     const product = await productRepository.create(productData);
@@ -76,6 +82,8 @@ const createProduct = async (data) => {
 
 const getAllProducts = async (query = {}) => {
   try {
+    console.log("getAllProducts received query:", query);
+
     const {
       page = 1,
       limit = 5,
@@ -91,22 +99,55 @@ const getAllProducts = async (query = {}) => {
       sortOrder = "desc",
     } = query;
 
+    // Coerce string booleans to real booleans for checkbox filters
+    const coerceBoolean = (val) => {
+      if (val === "true") return true;
+      if (val === "false") return false;
+      return val;
+    };
+
+    // Parse price and stock ranges if they're strings
+    let parsedPriceRange = priceRange;
+    let parsedStockRange = stockRange;
+
+    if (typeof priceRange === "string") {
+      try {
+        parsedPriceRange = JSON.parse(priceRange);
+      } catch (e) {
+        console.warn("Failed to parse priceRange:", e);
+        parsedPriceRange = null;
+      }
+    }
+
+    if (typeof stockRange === "string") {
+      try {
+        parsedStockRange = JSON.parse(stockRange);
+      } catch (e) {
+        console.warn("Failed to parse stockRange:", e);
+        parsedStockRange = null;
+      }
+    }
+
+    // If limit is very high (like 1000), treat it as "fetch all"
+    const actualLimit = limit >= 1000 ? undefined : parseInt(limit);
+    const actualPage = limit >= 1000 ? undefined : parseInt(page);
+
     const filters = {
       search,
       categoryId,
       status,
-      priceRange,
-      stockRange,
-      hasImage,
-      hasBarcode,
-      hasSku,
+      priceRange: parsedPriceRange,
+      stockRange: parsedStockRange,
+      hasImage: coerceBoolean(hasImage),
+      hasBarcode: coerceBoolean(hasBarcode),
+      hasSku: coerceBoolean(hasSku),
       sortField,
       sortOrder,
     };
 
     const result = await productRepository.findActiveProducts(
-      parseInt(page),
-      parseInt(limit),
+      actualPage,
+      actualLimit,
       filters
     );
 
@@ -151,10 +192,10 @@ const getAllProducts = async (query = {}) => {
 
 const getProductById = async (id) => {
   try {
-    const product = await productRepository.findUnique({
-      id: String(id),
-      isDeleted: false,
-    });
+    const product = await productRepository.findUnique(
+      { id: String(id) },
+      { category: true }
+    );
     if (!product) {
       throw new Error("Product not found");
     }
@@ -192,6 +233,36 @@ const getProductById = async (id) => {
 
 const updateProduct = async (id, data) => {
   try {
+    console.log("Update product called with id:", id);
+    console.log("Update product data:", data);
+
+    // Get existing product to check current SKU and barcode
+    const existingProduct = await productRepository.findUnique(
+      { id: String(id) },
+      { category: true }
+    );
+
+    if (!existingProduct) {
+      throw new Error("Product not found");
+    }
+
+    // Auto-generate SKU if not provided and doesn't exist
+    if ((!data.sku || data.sku.trim() === "") && !existingProduct.sku) {
+      const { sku } = await generateProductIdentifiers(data.name);
+      data.sku = sku;
+      console.log(`Auto-generated SKU for existing product: ${sku}`);
+    }
+
+    // Auto-generate barcode if not provided and doesn't exist
+    if (
+      (!data.barcode || data.barcode.trim() === "") &&
+      !existingProduct.barcode
+    ) {
+      const { barcode } = await generateProductIdentifiers(data.name);
+      data.barcode = barcode;
+      console.log(`Auto-generated barcode for existing product: ${barcode}`);
+    }
+
     // Map frontend field names to backend field names
     const productData = {
       name: data.name,
@@ -204,15 +275,51 @@ const updateProduct = async (id, data) => {
       minStock: data.minStock ? parseInt(data.minStock) : null,
       maxStock: data.maxStock ? parseInt(data.maxStock) : null,
       categoryId: data.categoryId,
-      image: data.image || data.image_url, // Handle both image and image_url from frontend
+      image: data.image_url || data.image, // Prioritize image_url from frontend
     };
+
+    console.log("Mapped product data:", productData);
 
     const product = await productRepository.update(
       { id: String(id) },
       productData
     );
-    return { success: true, data: product };
+
+    console.log("Updated product result:", product);
+
+    // Fetch the updated product with category information
+    const updatedProduct = await productRepository.findUnique(
+      { id: String(id) },
+      { category: true }
+    );
+
+    // Transform the data to match frontend expectations
+    const transformedProduct = {
+      id: updatedProduct.id,
+      name: updatedProduct.name,
+      description: updatedProduct.description,
+      sku: updatedProduct.sku,
+      barcode: updatedProduct.barcode,
+      price: parseFloat(updatedProduct.price),
+      cost: parseFloat(updatedProduct.cost || 0),
+      quantity: parseInt(updatedProduct.quantity),
+      minStock: parseInt(updatedProduct.minStock || 0),
+      maxStock: parseInt(updatedProduct.maxStock || 0),
+      image_url: updatedProduct.image,
+      category_id: updatedProduct.categoryId,
+      category: updatedProduct.category
+        ? {
+            id: updatedProduct.category.id,
+            name: updatedProduct.category.name,
+          }
+        : null,
+      created_at: updatedProduct.createdAt,
+      updated_at: updatedProduct.updatedAt,
+    };
+
+    return { success: true, data: transformedProduct };
   } catch (error) {
+    console.error("Error updating product:", error);
     throw new Error(`Failed to update product: ${error.message}`);
   }
 };
