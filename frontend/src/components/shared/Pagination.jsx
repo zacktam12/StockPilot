@@ -15,7 +15,7 @@ export default function Pagination({ sliceName = "product" }) {
   // Get the appropriate slice state based on sliceName
   const getSliceState = (state) => {
     switch (sliceName) {
-      case "user":
+      case "staff":
         return state.user;
       case "category":
         return state.category;
@@ -35,7 +35,7 @@ export default function Pagination({ sliceName = "product" }) {
   // Get the appropriate setCurrentPage action based on sliceName
   const getSetCurrentPageAction = (page) => {
     switch (sliceName) {
-      case "user":
+      case "staff":
         return setUserCurrentPage(page);
       case "category":
         return setCategoryCurrentPage(page);
@@ -156,7 +156,7 @@ export function FloatingPagination({ sliceName = "product" }) {
   // Get the appropriate slice state based on sliceName
   const getSliceState = (state) => {
     switch (sliceName) {
-      case "user":
+      case "staff":
         return state.user;
       case "category":
         return state.category;
@@ -176,7 +176,7 @@ export function FloatingPagination({ sliceName = "product" }) {
   // Get the appropriate setCurrentPage action based on sliceName
   const getSetCurrentPageAction = (page) => {
     switch (sliceName) {
-      case "user":
+      case "staff":
         return setUserCurrentPage(page);
       case "category":
         return setCategoryCurrentPage(page);
