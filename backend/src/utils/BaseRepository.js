@@ -86,8 +86,12 @@ class BaseRepository {
   findUnique(where, include) {
     // Only pass unique fields to where
     const uniqueWhere = this.extractUniqueWhere(where);
+    // Apply isDeleted filter if the model supports it
+    const finalWhere = this.hasIsDeletedField()
+      ? { ...uniqueWhere, isDeleted: false }
+      : uniqueWhere;
     return this.model.findUnique({
-      where: uniqueWhere,
+      where: finalWhere,
       include,
     });
   }
