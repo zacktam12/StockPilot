@@ -75,7 +75,7 @@ http.interceptors.response.use(
 );
 
 const handleUnauthorized = () => {
-  localStorage.removeItem("token");
+  localStorage.removeItem("authToken");
   delete http.defaults.headers.common["Authorization"];
   if (window.location.pathname !== "/login") {
     window.location.href =
@@ -114,7 +114,7 @@ export const uploadFile = (file, onProgress, endpoint = "/upload") => {
 // Enhanced auth token management
 export const setAuthToken = (token) => {
   if (token) {
-    localStorage.setItem("token", token);
+    localStorage.setItem("authToken", token);
     http.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   } else {
     handleUnauthorized();

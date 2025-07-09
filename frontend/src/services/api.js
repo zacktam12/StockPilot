@@ -60,8 +60,29 @@ export const usersAPI = {
   create: (data) => api.post("/users", data),
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
-  getProfile: () => api.get("/users/profile"),
-  updateProfile: (data) => api.put("/users/profile", data),
+  getProfile: () => api.get("/users/me"),
+  updateProfile: (userId, data) => api.put(`/users/${userId}`, data),
+  // TODO: Implement updateProfile with the correct endpoint when backend supports it (e.g., /users/me or /users/:id)
+  uploadProfilePicture: (formData) => {
+    console.log("API_URL:", API_URL);
+    console.log("Token:", localStorage.getItem("authToken"));
+
+    const uploadApi = axios.create({
+      baseURL: API_URL,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      uploadApi.defaults.headers.Authorization = `Bearer ${token}`;
+    }
+
+    console.log("Making request to:", `${API_URL}/users/me/profile-picture`);
+    console.log("Headers:", uploadApi.defaults.headers);
+
+    return uploadApi.post("/users/me/profile-picture", formData);
+  },
   import: (data) => api.post("/users/import", data),
   invite: (data) => api.post("/users/invite", data),
 };
@@ -177,11 +198,46 @@ export const suppliersAPI = {
 };
 
 export const reportsAPI = {
-  getSales: (params) => api.get("/reports/sales", { params }),
-  getPurchases: (params) => api.get("/reports/purchases", { params }),
-  getInventory: () => api.get("/reports/inventory"),
+  // Sales Reports
+  getDailySales: (params) => api.get("/reports/daily-sales", { params }),
+  getMonthlyRevenue: () => api.get("/reports/monthly-revenue"),
   getTopProducts: (params) => api.get("/reports/top-products", { params }),
+  getCustomerSales: (params) => api.get("/reports/customer-sales", { params }),
+  getSalesPerformance: (params) =>
+    api.get("/reports/sales-performance", { params }),
+
+  // Inventory Reports
+  getInventory: () => api.get("/reports/inventory"),
+  getLowStock: () => api.get("/reports/low-stock"),
+  getInventoryValue: () => api.get("/reports/inventory-value"),
+  getCategoryAnalysis: () => api.get("/reports/category-analysis"),
+  getStockMovement: (params) => api.get("/reports/stock-movement", { params }),
+
+  // Purchase Reports
+  getPurchaseOrders: (params) =>
+    api.get("/reports/purchase-orders", { params }),
+  getSupplierAnalysis: () => api.get("/reports/supplier-analysis"),
+  getCostAnalysis: () => api.get("/reports/cost-analysis"),
+  getPurchaseTrends: (params) =>
+    api.get("/reports/purchase-trends", { params }),
+
+  // User & System Reports
+  getUserActivity: (params) => api.get("/reports/user-activity", { params }),
+  getRoleDistribution: () => api.get("/reports/role-distribution"),
+  getNotifications: () => api.get("/reports/notifications"),
+
+  // Legacy endpoints for backward compatibility
+  getSales: (params) => api.get("/reports/daily-sales", { params }),
+  getPurchases: (params) => api.get("/reports/purchase-orders", { params }),
   getDashboard: () => api.get("/reports/dashboard"),
+};
+
+export const notificationsAPI = {
+  getAll: (params) => api.get("/notifications", { params }),
+  getUnreadCount: () => api.get("/notifications/unread-count"),
+  markAsRead: (id) => api.post(`/notifications/mark-read/${id}`),
+  markAllAsRead: () => api.post("/notifications/mark-all-read"),
+  delete: (id) => api.delete(`/notifications/${id}`),
 };
 
 export const settingsAPI = {
@@ -202,7 +258,7 @@ export const settingsAPI = {
 
 export const integrationsAPI = {
   getIntegrations: () => api.get("/integrations"),
-  updateIntegration: (id, data) => api.put(`/integrations/${id}", data`),
+  updateIntegration: (id, data) => api.put(`/integrations/${id}`, data),
 };
 
 export default api;
