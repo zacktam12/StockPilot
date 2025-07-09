@@ -2,84 +2,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 
-// Helper function for filtering/sorting
-const applyFilters = (state) => {
-  let filtered = [...state.items];
-
-  // Apply search
-  if (state.filters.searchTerm) {
-    filtered = filtered.filter(
-      (supplier) =>
-        supplier.name
-          .toLowerCase()
-          .includes(state.filters.searchTerm.toLowerCase()) ||
-        (supplier.contactName &&
-          supplier.contactName
-            .toLowerCase()
-            .includes(state.filters.searchTerm.toLowerCase())) ||
-        (supplier.email &&
-          supplier.email
-            .toLowerCase()
-            .includes(state.filters.searchTerm.toLowerCase())) ||
-        (supplier.phone &&
-          supplier.phone
-            .toLowerCase()
-            .includes(state.filters.searchTerm.toLowerCase())) ||
-        (supplier.address &&
-          supplier.address
-            .toLowerCase()
-            .includes(state.filters.searchTerm.toLowerCase())) ||
-        (supplier.companyName &&
-          supplier.companyName
-            .toLowerCase()
-            .includes(state.filters.searchTerm.toLowerCase()))
-    );
-  }
-
-  // Apply filters
-  filtered = filtered.filter(
-    (supplier) =>
-      (!state.filters.options.hasPhone ||
-        (supplier.phone && supplier.phone.trim() !== "")) &&
-      (!state.filters.options.hasAddress ||
-        (supplier.address && supplier.address.trim() !== "")) &&
-      (!state.filters.options.hasEmail ||
-        (supplier.email && supplier.email.trim() !== "")) &&
-      (!state.filters.options.hasCompany ||
-        (supplier.companyName && supplier.companyName.trim() !== ""))
-  );
-
-  // Date range filter
-  if (
-    state.filters.dateRange &&
-    (state.filters.dateRange.from || state.filters.dateRange.to)
-  ) {
-    filtered = filtered.filter((supplier) => {
-      const created = new Date(supplier.createdAt || supplier.created_at);
-      const from = state.filters.dateRange.from
-        ? new Date(state.filters.dateRange.from)
-        : null;
-      const to = state.filters.dateRange.to
-        ? new Date(state.filters.dateRange.to)
-        : null;
-      if (from && created < from) return false;
-      if (to && created > to) return false;
-      return true;
-    });
-  }
-
-  // Apply sorting
-  filtered.sort((a, b) => {
-    const aValue = a[state.filters.sortField];
-    const bValue = b[state.filters.sortField];
-    if (aValue < bValue) return state.filters.sortOrder === "asc" ? -1 : 1;
-    if (aValue > bValue) return state.filters.sortOrder === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  state.filteredItems = filtered;
-};
-
 // Async Thunks
 export const fetchSuppliers = createAsyncThunk(
   "supplier/fetchAll",
@@ -211,36 +133,22 @@ export const exportSuppliers = createAsyncThunk(
 
 const initialState = {
   items: [],
-  filteredItems: [],
   loading: false,
   error: null,
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
-  itemsPerPage: 10,
-  modal: {
-    isOpen: false,
-    mode: "create", // 'create' or 'edit'
-    formData: {
-      name: "",
-      contactName: "",
-      email: "",
-      phone: "",
-      address: "",
-      companyName: "",
-    },
-  },
+  itemsPerPage: 5,
+  searchTerm: "",
+  sortField: "createdAt",
+  sortOrder: "desc",
+  isModalOpen: false,
+  editingSupplier: null,
   filters: {
-    searchTerm: "",
-    sortField: "name",
-    sortOrder: "asc",
-    options: {
-      hasPhone: false,
-      hasAddress: false,
-      hasEmail: false,
-      hasCompany: false,
-    },
-    dateRange: { from: "", to: "" },
+    hasPhone: false,
+    hasAddress: false,
+    hasEmail: false,
+    hasCompany: false,
   },
 };
 
@@ -248,91 +156,42 @@ const supplierSlice = createSlice({
   name: "supplier",
   initialState,
   reducers: {
-    // Modal actions
-    openCreateModal: (state) => {
-      state.modal = {
-        isOpen: true,
-        mode: "create",
-        formData: initialState.modal.formData,
-      };
-      state.error = null;
-    },
-    openEditModal: (state, action) => {
-      state.modal = {
-        isOpen: true,
-        mode: "edit",
-        formData: action.payload,
-      };
-      state.error = null;
-    },
-    closeModal: (state) => {
-      state.modal.isOpen = false;
-    },
-
-    // Form actions
-    setFormField: (state, action) => {
-      const { field, value } = action.payload;
-      state.modal.formData = {
-        ...state.modal.formData,
-        [field]: value,
-      };
-    },
-    resetForm: (state) => {
-      state.modal.formData = initialState.modal.formData;
-    },
-
-    // Filter/sort actions
     setSearchTerm: (state, action) => {
-      state.filters.searchTerm = action.payload;
-      state.currentPage = 1;
-      applyFilters(state);
+      state.searchTerm = action.payload;
+      state.currentPage = 1; // Reset to first page when searching
     },
-    setSort: (state, action) => {
-      if (state.filters.sortField === action.payload.field) {
-        state.filters.sortOrder =
-          state.filters.sortOrder === "asc" ? "desc" : "asc";
+    setSortField: (state, action) => {
+      const newField = action.payload;
+      if (state.sortField === newField) {
+        // Toggle order if same field
+        state.sortOrder = state.sortOrder === "asc" ? "desc" : "asc";
       } else {
-        state.filters.sortField = action.payload.field;
-        state.filters.sortOrder = "asc";
+        // Set new field with default ascending order
+        state.sortField = newField;
+        state.sortOrder = "asc";
       }
-      applyFilters(state);
-    },
-    togglePhoneFilter: (state) => {
-      state.filters.options.hasPhone = !state.filters.options.hasPhone;
+      // Reset to first page when sorting changes
       state.currentPage = 1;
-      applyFilters(state);
     },
-    toggleAddressFilter: (state) => {
-      state.filters.options.hasAddress = !state.filters.options.hasAddress;
+    setFilter: (state, action) => {
+      state.filters[action.payload.key] = action.payload.value;
       state.currentPage = 1;
-      applyFilters(state);
-    },
-    toggleEmailFilter: (state) => {
-      state.filters.options.hasEmail = !state.filters.options.hasEmail;
-      state.currentPage = 1;
-      applyFilters(state);
-    },
-    toggleCompanyFilter: (state) => {
-      state.filters.options.hasCompany = !state.filters.options.hasCompany;
-      state.currentPage = 1;
-      applyFilters(state);
-    },
-    setDateRangeFilter: (state, action) => {
-      state.filters.dateRange = action.payload;
-      state.currentPage = 1;
-      applyFilters(state);
-    },
-    clearDateRangeFilter: (state) => {
-      state.filters.dateRange = { from: "", to: "" };
-      state.currentPage = 1;
-      applyFilters(state);
     },
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload;
     },
-
-    // Reset state
-    resetSupplierState: () => initialState,
+    openCreateModal: (state) => {
+      state.isModalOpen = true;
+      state.editingSupplier = null;
+    },
+    openEditModal: (state, action) => {
+      state.isModalOpen = true;
+      state.editingSupplier = action.payload;
+    },
+    closeModal: (state) => {
+      state.isModalOpen = false;
+      state.editingSupplier = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -343,20 +202,42 @@ const supplierSlice = createSlice({
       })
       .addCase(fetchSuppliers.fulfilled, (state, action) => {
         state.loading = false;
-        // Handle paginated response from backend
+        console.log("fetchSuppliers fulfilled:", action.payload);
         if (action.payload && action.payload.data) {
+          // Server-side paginated response
           state.items = action.payload.data;
-          state.totalItems = action.payload.pagination?.totalItems || 0;
-          state.totalPages = action.payload.pagination?.totalPages || 1;
-          state.currentPage = action.payload.pagination?.currentPage || 1;
-          state.itemsPerPage = action.payload.pagination?.itemsPerPage || 10;
-        } else {
-          // Fallback for non-paginated response
-          state.items = Array.isArray(action.payload) ? action.payload : [];
+          if (action.payload.pagination) {
+            state.totalItems =
+              action.payload.pagination.totalItems || action.payload.total || 0;
+            state.totalPages =
+              action.payload.pagination.totalPages || action.payload.pages || 1;
+            state.currentPage =
+              action.payload.pagination.currentPage || action.payload.page || 1;
+            state.itemsPerPage = action.payload.pagination.itemsPerPage || 5;
+          } else {
+            // Fallback for flattened response structure
+            state.totalItems = action.payload.total || 0;
+            state.totalPages = action.payload.pages || 1;
+            state.currentPage = action.payload.page || 1;
+            state.itemsPerPage = 5;
+          }
+        } else if (Array.isArray(action.payload)) {
+          // Non-paginated response or direct array
+          state.items = action.payload;
           state.totalItems = state.items.length;
           state.totalPages = Math.ceil(state.items.length / state.itemsPerPage);
+        } else {
+          // Fallback
+          state.items = [];
+          state.totalItems = 0;
+          state.totalPages = 1;
         }
-        applyFilters(state);
+        console.log("Updated supplier state:", {
+          itemsCount: state.items.length,
+          currentPage: state.currentPage,
+          totalPages: state.totalPages,
+          totalItems: state.totalItems,
+        });
       })
       .addCase(fetchSuppliers.rejected, (state, action) => {
         state.loading = false;
@@ -367,11 +248,10 @@ const supplierSlice = createSlice({
       .addCase(createSupplier.pending, (state) => {
         state.loading = true;
       })
-      .addCase(createSupplier.fulfilled, (state, action) => {
-        state.loading = false;
-        state.items.unshift(action.payload);
-        applyFilters(state);
-        state.modal.isOpen = false;
+      .addCase(createSupplier.fulfilled, (state) => {
+        // Refresh the supplier list to get updated pagination
+        // The useEffect will automatically refetch with current parameters
+        state.isModalOpen = false;
       })
       .addCase(createSupplier.rejected, (state, action) => {
         state.loading = false;
@@ -382,16 +262,10 @@ const supplierSlice = createSlice({
       .addCase(updateSupplier.pending, (state) => {
         state.loading = true;
       })
-      .addCase(updateSupplier.fulfilled, (state, action) => {
-        state.loading = false;
-        const index = state.items.findIndex(
-          (item) => item.id === action.payload.id
-        );
-        if (index !== -1) {
-          state.items[index] = action.payload;
-        }
-        applyFilters(state);
-        state.modal.isOpen = false;
+      .addCase(updateSupplier.fulfilled, (state) => {
+        // Refresh the supplier list to get updated data
+        // The useEffect will automatically refetch with current parameters
+        state.isModalOpen = false;
       })
       .addCase(updateSupplier.rejected, (state, action) => {
         state.loading = false;
@@ -402,10 +276,10 @@ const supplierSlice = createSlice({
       .addCase(deleteSupplier.pending, (state) => {
         state.loading = true;
       })
-      .addCase(deleteSupplier.fulfilled, (state, action) => {
+      .addCase(deleteSupplier.fulfilled, (state) => {
         state.loading = false;
-        state.items = state.items.filter((item) => item.id !== action.payload);
-        applyFilters(state);
+        // Refresh the supplier list to get updated pagination
+        // The useEffect will automatically refetch with current parameters
       })
       .addCase(deleteSupplier.rejected, (state, action) => {
         state.loading = false;
@@ -416,12 +290,10 @@ const supplierSlice = createSlice({
       .addCase(bulkDeleteSuppliers.pending, (state) => {
         state.loading = true;
       })
-      .addCase(bulkDeleteSuppliers.fulfilled, (state, action) => {
+      .addCase(bulkDeleteSuppliers.fulfilled, (state) => {
         state.loading = false;
-        state.items = state.items.filter(
-          (item) => !action.payload.includes(item.id)
-        );
-        applyFilters(state);
+        // Refresh the supplier list to get updated pagination
+        // The useEffect will automatically refetch with current parameters
       })
       .addCase(bulkDeleteSuppliers.rejected, (state, action) => {
         state.loading = false;
@@ -432,13 +304,10 @@ const supplierSlice = createSlice({
       .addCase(bulkUpdateSuppliers.pending, (state) => {
         state.loading = true;
       })
-      .addCase(bulkUpdateSuppliers.fulfilled, (state, action) => {
+      .addCase(bulkUpdateSuppliers.fulfilled, (state) => {
         state.loading = false;
-        const updatedItems = state.items.map((item) =>
-          action.payload.ids.includes(item.id) ? action.payload.data : item
-        );
-        state.items = updatedItems;
-        applyFilters(state);
+        // Refresh the supplier list to get updated data
+        // The useEffect will automatically refetch with current parameters
       })
       .addCase(bulkUpdateSuppliers.rejected, (state, action) => {
         state.loading = false;
@@ -449,10 +318,10 @@ const supplierSlice = createSlice({
       .addCase(importSuppliers.pending, (state) => {
         state.loading = true;
       })
-      .addCase(importSuppliers.fulfilled, (state, action) => {
+      .addCase(importSuppliers.fulfilled, (state) => {
         state.loading = false;
-        state.items = [...state.items, ...action.payload];
-        applyFilters(state);
+        // Refresh the supplier list to get updated pagination
+        // The useEffect will automatically refetch with current parameters
       })
       .addCase(importSuppliers.rejected, (state, action) => {
         state.loading = false;
@@ -463,10 +332,9 @@ const supplierSlice = createSlice({
       .addCase(exportSuppliers.pending, (state) => {
         state.loading = true;
       })
-      .addCase(exportSuppliers.fulfilled, (state, action) => {
+      .addCase(exportSuppliers.fulfilled, (state) => {
         state.loading = false;
-        state.items = action.payload;
-        applyFilters(state);
+        // Export completed successfully
       })
       .addCase(exportSuppliers.rejected, (state, action) => {
         state.loading = false;
@@ -476,21 +344,13 @@ const supplierSlice = createSlice({
 });
 
 export const {
+  setSearchTerm,
+  setSortField,
+  setFilter,
+  setCurrentPage,
   openCreateModal,
   openEditModal,
   closeModal,
-  setFormField,
-  resetForm,
-  setSearchTerm,
-  setSort,
-  togglePhoneFilter,
-  toggleAddressFilter,
-  toggleEmailFilter,
-  toggleCompanyFilter,
-  setDateRangeFilter,
-  clearDateRangeFilter,
-  setCurrentPage,
-  resetSupplierState,
 } = supplierSlice.actions;
 
 export default supplierSlice.reducer;
