@@ -465,3 +465,25 @@ exports.resetPasswordWithCode = async (req, res, next) => {
     next(error);
   }
 };
+
+// Update current user profile
+exports.updateCurrentUser = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const updateData = req.body;
+    // Remove fields that should not be updated by the user
+    delete updateData.employeeId;
+    delete updateData.role;
+    delete updateData.profilePicture; // Use the dedicated endpoint for this
+    // You may want to add more field restrictions as needed
+    const { prisma } = require("../config/db");
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+    const { password, ...userWithoutPassword } = updatedUser;
+    res.json({ success: true, data: userWithoutPassword });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -136,6 +136,7 @@ const userSlice = createSlice({
     // Filters
     searchTerm: "",
     statusFilter: "",
+    roleFilter: "",
 
     // Sorting
     sortField: "createdAt",
@@ -148,6 +149,10 @@ const userSlice = createSlice({
     },
     setStatusFilter: (state, action) => {
       state.statusFilter = action.payload;
+      state.currentPage = 1;
+    },
+    setRoleFilter: (state, action) => {
+      state.roleFilter = action.payload;
       state.currentPage = 1;
     },
     setCurrentPage: (state, action) => {
@@ -273,6 +278,7 @@ export const {
   clearError,
   setSearchTerm,
   setStatusFilter,
+  setRoleFilter,
   setCurrentPage,
   setSortField,
 } = userSlice.actions;
