@@ -103,21 +103,71 @@ exports.bulkUpdateSuppliers = async (ids, data) => {
   });
 };
 
-// Import suppliers from array
+// Import suppliers from array with validation and error handling
 exports.importSuppliers = async (suppliers) => {
-  const validSuppliers = suppliers.map((supplier) => ({
-    name: supplier.name || supplier.Name,
-    contactName: supplier.contactName || supplier["Contact Name"] || null,
-    email: supplier.email || supplier.Email || null,
-    phone: supplier.phone || supplier.Phone || null,
-    address: supplier.address || supplier.Address || null,
-    companyName: supplier.companyName || supplier["Company Name"] || null,
-  }));
+  try {
+    console.log("Bulk importing suppliers:", suppliers.length);
 
-  return prisma.supplier.createMany({
-    data: validSuppliers,
-    skipDuplicates: true, // Skip if email already exists
-  });
+    const results = [];
+    const errors = [];
+
+    for (let i = 0; i < suppliers.length; i++) {
+      try {
+        const supplier = suppliers[i];
+
+        // Map CSV fields to supplier data format
+        const mappedSupplier = {
+          name: supplier.name || supplier.Name || "",
+          contactName: supplier.contactName || supplier["Contact Name"] || "",
+          email: supplier.email || supplier.Email || "",
+          phone: supplier.phone || supplier.Phone || "",
+          address: supplier.address || supplier.Address || "",
+          companyName: supplier.companyName || supplier["Company Name"] || "",
+        };
+
+        // Validate required fields
+        if (!mappedSupplier.name || mappedSupplier.name.trim() === "") {
+          throw new Error("Name is required");
+        }
+
+        // Validate email format if provided
+        if (mappedSupplier.email && mappedSupplier.email.trim() !== "") {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(mappedSupplier.email)) {
+            throw new Error("Invalid email format");
+          }
+        }
+
+        // Validate phone format if provided
+        if (
+          mappedSupplier.phone &&
+          mappedSupplier.phone.trim() !== "" &&
+          mappedSupplier.phone.length < 5
+        ) {
+          throw new Error("Phone number is too short");
+        }
+
+        const result = await this.createSupplier(mappedSupplier);
+        results.push(result);
+      } catch (error) {
+        errors.push({
+          index: i,
+          supplier: suppliers[i],
+          error: error.message,
+        });
+      }
+    }
+
+    return {
+      success: true,
+      data: results,
+      importedCount: results.length,
+      errorCount: errors.length,
+      errors: errors,
+    };
+  } catch (error) {
+    throw new Error(`Failed to bulk import suppliers: ${error.message}`);
+  }
 };
 
 // Get suppliers for export
