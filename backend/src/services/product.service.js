@@ -1,6 +1,21 @@
 const productRepository = require("../repositories/product.repository");
 const { generateProductIdentifiers } = require("../utils/generators");
 
+// Helper function to get low stock threshold from settings
+const getLowStockThreshold = async () => {
+  try {
+    const { prisma } = require("../config/db");
+    const settings = await prisma.settings.findFirst();
+    return settings?.lowStockThreshold || 10; // Default to 10 if not set
+  } catch (error) {
+    console.warn(
+      "Failed to get low stock threshold from settings, using default:",
+      error.message
+    );
+    return 10; // Default fallback
+  }
+};
+
 const createProduct = async (data) => {
   try {
     // Accept both JSON and multipart/form-data (req.body may be a string if multipart)
@@ -199,33 +214,7 @@ const getProductById = async (id) => {
     if (!product) {
       throw new Error("Product not found");
     }
-
-    // Transform the data to match frontend expectations
-    return {
-      success: true,
-      data: {
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        sku: product.sku,
-        barcode: product.barcode,
-        price: parseFloat(product.price),
-        cost: parseFloat(product.cost || 0),
-        quantity: parseInt(product.quantity),
-        minStock: parseInt(product.minStock || 0),
-        maxStock: parseInt(product.maxStock || 0),
-        image_url: product.image,
-        category_id: product.categoryId,
-        category: product.category
-          ? {
-              id: product.category.id,
-              name: product.category.name,
-            }
-          : null,
-        created_at: product.createdAt,
-        updated_at: product.updatedAt,
-      },
-    };
+    return { success: true, data: product };
   } catch (error) {
     throw new Error(`Failed to fetch product: ${error.message}`);
   }
@@ -335,9 +324,13 @@ const deleteProduct = async (id) => {
   }
 };
 
-const getLowStockProducts = async (threshold = 5) => {
+const getLowStockProducts = async (threshold = null) => {
   try {
-    const products = await productRepository.findLowStockProducts(threshold);
+    // Use provided threshold or get from settings
+    const lowStockThreshold = threshold || (await getLowStockThreshold());
+    const products = await productRepository.findLowStockProducts(
+      lowStockThreshold
+    );
     return { success: true, data: products };
   } catch (error) {
     throw new Error(`Failed to fetch low stock products: ${error.message}`);
@@ -380,6 +373,111 @@ const decrementStock = async (id, quantity) => {
   }
 };
 
+const bulkImportProducts = async (products) => {
+  try {
+    console.log("Bulk importing products:", products.length);
+
+    const results = [];
+    const errors = [];
+
+    for (let i = 0; i < products.length; i++) {
+      try {
+        const product = products[i];
+
+        // Map CSV fields to product data format
+        const mappedProduct = {
+          name: product.name || product.Name || "",
+          description: product.description || product.Description || "",
+          sku: product.sku || product.SKU || "",
+          barcode: product.barcode || product.Barcode || "",
+          price: product.price || product.Price || 0,
+          cost: product.cost || product.Cost || null,
+          quantity: product.quantity || product.Quantity || 0,
+          minStock: product.minStock || product["Min Stock"] || null,
+          maxStock: product.maxStock || product["Max Stock"] || null,
+          categoryId: product.categoryId || product["Category ID"] || null,
+          image_url: product.image_url || product["Image URL"] || "",
+        };
+
+        // Handle category name to ID mapping if needed
+        if (product.Category && !mappedProduct.categoryId) {
+          try {
+            const { prisma } = require("../config/db");
+            const category = await prisma.category.findFirst({
+              where: { name: product.Category },
+            });
+            if (category) {
+              mappedProduct.categoryId = category.id;
+            }
+          } catch (categoryError) {
+            console.warn(`Could not find category: ${product.Category}`);
+          }
+        }
+
+        // Validate required fields
+        if (!mappedProduct.name || mappedProduct.name.trim() === "") {
+          throw new Error("Name is required");
+        }
+
+        if (!mappedProduct.price || isNaN(parseFloat(mappedProduct.price))) {
+          throw new Error("Valid price is required");
+        }
+
+        const result = await createProduct(mappedProduct);
+        results.push(result.data);
+      } catch (error) {
+        errors.push({
+          index: i,
+          product: products[i],
+          error: error.message,
+        });
+      }
+    }
+
+    return {
+      success: true,
+      data: results,
+      importedCount: results.length,
+      errorCount: errors.length,
+      errors: errors,
+    };
+  } catch (error) {
+    throw new Error(`Failed to bulk import products: ${error.message}`);
+  }
+};
+
+const bulkDeleteProducts = async (productIds) => {
+  try {
+    console.log("Bulk deleting products:", productIds.length);
+
+    const results = [];
+    const errors = [];
+
+    for (let i = 0; i < productIds.length; i++) {
+      try {
+        const result = await productRepository.delete(productIds[i]);
+        results.push(result);
+      } catch (error) {
+        errors.push({
+          index: i,
+          productId: productIds[i],
+          error: error.message,
+        });
+      }
+    }
+
+    return {
+      success: true,
+      data: results,
+      deletedCount: results.length,
+      errorCount: errors.length,
+      errors: errors,
+    };
+  } catch (error) {
+    throw new Error(`Failed to bulk delete products: ${error.message}`);
+  }
+};
+
 module.exports = {
   createProduct,
   getAllProducts,
@@ -390,4 +488,6 @@ module.exports = {
   updateStock,
   incrementStock,
   decrementStock,
+  bulkImportProducts,
+  bulkDeleteProducts,
 };

@@ -81,4 +81,20 @@ router.delete(
   productController.deleteProduct
 );
 
+// Bulk import products (Admin-only)
+router.post(
+  "/bulk",
+  authenticate,
+  authorize("admin"),
+  productController.bulkImportProducts
+);
+
+// Bulk delete products (Admin-only)
+router.delete(
+  "/bulk",
+  authenticate,
+  authorize("admin"),
+  productController.bulkDeleteProducts
+);
+
 module.exports = router;

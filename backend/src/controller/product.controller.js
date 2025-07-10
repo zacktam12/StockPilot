@@ -121,3 +121,39 @@ exports.decrementStock = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.bulkImportProducts = async (req, res, next) => {
+  try {
+    const { products } = req.body;
+
+    if (!products || !Array.isArray(products)) {
+      return res.status(400).json({
+        success: false,
+        error: "Products array is required",
+      });
+    }
+
+    const result = await productService.bulkImportProducts(products);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.bulkDeleteProducts = async (req, res, next) => {
+  try {
+    const { productIds } = req.body;
+
+    if (!productIds || !Array.isArray(productIds)) {
+      return res.status(400).json({
+        success: false,
+        error: "Product IDs array is required",
+      });
+    }
+
+    const result = await productService.bulkDeleteProducts(productIds);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};

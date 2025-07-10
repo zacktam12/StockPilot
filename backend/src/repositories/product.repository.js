@@ -1,6 +1,20 @@
 const { prisma } = require("../config/db");
 const BaseRepository = require("../utils/BaseRepository");
 
+// Helper function to get low stock threshold from settings
+const getLowStockThreshold = async () => {
+  try {
+    const settings = await prisma.settings.findFirst();
+    return settings?.lowStockThreshold || 10; // Default to 10 if not set
+  } catch (error) {
+    console.warn(
+      "Failed to get low stock threshold from settings, using default:",
+      error.message
+    );
+    return 10; // Default fallback
+  }
+};
+
 class ProductRepository extends BaseRepository {
   constructor() {
     super(prisma.product);
@@ -52,17 +66,19 @@ class ProductRepository extends BaseRepository {
     if (hasBarcode === true) where.barcode = { not: null };
     if (hasSku === true) where.sku = { not: null };
 
-    // Handle status filter
+    // Handle status filter with configurable threshold
     if (status) {
+      const lowStockThreshold = await getLowStockThreshold();
+
       switch (status) {
         case "in_stock":
           where.quantity = { gt: 0 };
           break;
         case "low_stock":
-          // Low stock: quantity > 0 but <= minStock (default 10)
+          // Low stock: quantity > 0 but <= threshold (configurable)
           where.quantity = {
             gt: 0,
-            lte: 10, // Default threshold, can be made configurable
+            lte: lowStockThreshold,
           };
           break;
         case "out_of_stock":
@@ -193,17 +209,24 @@ class ProductRepository extends BaseRepository {
     );
   }
 
-  async findLowStockProducts(threshold = 5) {
-    return await this.findMany({
+  async findLowStockProducts(threshold = null) {
+    // Use provided threshold or get from settings
+    const lowStockThreshold = threshold || (await getLowStockThreshold());
+    // Fetch all products with quantity > 0 or quantity === 0 (out of stock)
+    const products = await this.findMany({
       where: {
-        quantity: {
-          lte: threshold,
-        },
+        isDeleted: false,
+        // Get all products with quantity >= 0 (so we can filter both low and out of stock)
+        quantity: { gte: 0 },
       },
-      include: {
-        category: true,
-      },
+      include: { category: true },
       orderBy: { quantity: "asc" },
+    });
+    // Filter in JS: out of stock or low stock (quantity <= minStock or threshold)
+    return products.filter((p) => {
+      if (p.quantity === 0) return true; // Out of stock
+      const minStock = p.minStock != null ? p.minStock : lowStockThreshold;
+      return p.quantity > 0 && p.quantity <= minStock;
     });
   }
 
