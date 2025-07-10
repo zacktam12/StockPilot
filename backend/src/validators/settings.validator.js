@@ -7,6 +7,13 @@ const updateSettingsSchema = Joi.object({
   lowStockThreshold: Joi.number().integer().min(0),
   currency: Joi.string().min(1).max(10),
   taxRate: Joi.number().min(0).max(100),
+  lowStockAlerts: Joi.boolean(),
+  salesReports: Joi.boolean(),
+  newCustomerAlerts: Joi.boolean(),
+  systemUpdates: Joi.boolean(),
+  passwordExpiry: Joi.number().integer().min(1),
+  sessionTimeout: Joi.number().integer().min(1),
+  loginAttempts: Joi.number().integer().min(1),
 });
 
 // Middleware: Validate settings update
