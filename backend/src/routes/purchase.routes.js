@@ -12,5 +12,6 @@ router.get("/:id", purchaseController.getPurchaseById);
 router.put("/:id", validateUpdatePurchase, purchaseController.updatePurchase);
 router.delete("/:id", purchaseController.deletePurchase);
 router.post("/import", purchaseController.importPurchases);
+router.patch("/:id/status", purchaseController.updatePurchaseStatus);
 
 module.exports = router;

@@ -16,6 +16,7 @@ exports.createPurchase = async (req, res, next) => {
       ...purchaseData,
       userId,
       poNumber,
+      items, // Pass items to be handled in the transaction
     });
 
     // Create notification for the purchase
@@ -29,15 +30,6 @@ exports.createPurchase = async (req, res, next) => {
       );
     }
 
-    // If items are present, link products to purchase
-    if (items && Array.isArray(items) && items.length > 0) {
-      // You may need to implement this in the service/repository
-      await Promise.all(
-        items.map((item) =>
-          purchaseService.linkProductToPurchase(purchase.id, item)
-        )
-      );
-    }
     res.status(201).json({
       success: true,
       message: "Purchase created successfully",

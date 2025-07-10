@@ -18,9 +18,9 @@ class PurchaseRepository extends BaseRepository {
             lte: new Date(endDate),
           },
         }),
-      ...(supplierId && { supplierId: Number.parseInt(supplierId) }),
+      ...(supplierId && { supplierId }),
       ...(status && { status }),
-      ...(userId && { userId: Number.parseInt(userId) }),
+      ...(userId && { userId }),
     };
 
     return await this.findManyWithPagination(
