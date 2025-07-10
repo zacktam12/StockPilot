@@ -163,3 +163,22 @@ exports.bulkDeleteSales = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.importSales = async (req, res, next) => {
+  try {
+    const { sales } = req.body;
+    if (!Array.isArray(sales) || sales.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No sales provided for import." });
+    }
+    const result = await saleService.importSales(sales);
+    res.status(201).json({
+      success: true,
+      message: "Sales imported successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
