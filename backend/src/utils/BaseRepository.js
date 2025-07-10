@@ -46,6 +46,12 @@ class BaseRepository {
     });
   }
 
+  async count(where = {}) {
+    return this.model.count({
+      where: this.buildWhereClause(where),
+    });
+  }
+
   async findManyWithPagination(
     where = {},
     page = 1,
