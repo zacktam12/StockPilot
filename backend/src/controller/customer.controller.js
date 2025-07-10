@@ -77,6 +77,42 @@ class CustomerController {
       next(err);
     }
   }
+
+  async bulkImportCustomers(req, res, next) {
+    try {
+      const { customers } = req.body;
+
+      if (!customers || !Array.isArray(customers)) {
+        return res.status(400).json({
+          success: false,
+          error: "Customers array is required",
+        });
+      }
+
+      const result = await customerService.bulkImportCustomers(customers);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async bulkDeleteCustomers(req, res, next) {
+    try {
+      const { customerIds } = req.body;
+
+      if (!customerIds || !Array.isArray(customerIds)) {
+        return res.status(400).json({
+          success: false,
+          error: "Customer IDs array is required",
+        });
+      }
+
+      const result = await customerService.bulkDeleteCustomers(customerIds);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new CustomerController();
