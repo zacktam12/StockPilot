@@ -14,5 +14,6 @@ router.get("/:id", authenticate, saleController.getSaleById);
 router.put("/:id", authenticate, validateUpdateSale, saleController.updateSale);
 router.put("/:id/status", authenticate, saleController.updateSaleStatus);
 router.delete("/:id", authenticate, saleController.deleteSale);
+router.post("/import", authenticate, saleController.importSales);
 
 module.exports = router;

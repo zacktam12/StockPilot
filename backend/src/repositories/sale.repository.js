@@ -103,10 +103,8 @@ class SaleRepository extends BaseRepository {
       this.findMany({
         where,
         include: {
-          productSales: {
-            include: {
-              product: true,
-            },
+          customer: {
+            select: { id: true, name: true, email: true },
           },
         },
       }),
@@ -127,51 +125,47 @@ class SaleRepository extends BaseRepository {
   }
 
   async getTopSellingProducts(startDate, endDate, limit = 10) {
-    const result = await this.prisma.productSale.groupBy({
-      by: ["productId"],
-      where: {
-        isDeleted: false,
-        sale: {
+    try {
+      // 1. Find all product sales in the date range
+      const productSales = await this.prisma.productSale.findMany({
+        where: {
           isDeleted: false,
-          createdAt: {
-            gte: new Date(startDate),
-            lte: new Date(endDate),
+          sale: {
+            isDeleted: false,
+            createdAt: {
+              gte: new Date(startDate),
+              lte: new Date(endDate),
+            },
           },
         },
-      },
-      _sum: {
-        sale_quantity: true,
-        sale_price: true,
-      },
-      orderBy: {
-        _sum: {
-          sale_quantity: "desc",
+        include: {
+          product: true,
         },
-      },
-      take: limit,
-    });
+      });
 
-    // Get product details
-    const productIds = result.map((item) => item.productId);
-    const products = await this.prisma.product.findMany({
-      where: {
-        id: {
-          in: productIds,
-        },
-      },
-      include: {
-        category: true,
-      },
-    });
+      // 2. Aggregate in JS
+      const productMap = {};
+      for (const ps of productSales) {
+        const pid = ps.productId;
+        if (!productMap[pid]) {
+          productMap[pid] = {
+            product: ps.product,
+            totalQuantitySold: 0,
+            totalRevenue: 0,
+          };
+        }
+        productMap[pid].totalQuantitySold += ps.sale_quantity;
+        productMap[pid].totalRevenue += ps.sale_price;
+      }
 
-    return result.map((item) => {
-      const product = products.find((p) => p.id === item.productId);
-      return {
-        product,
-        totalQuantitySold: item._sum.sale_quantity,
-        totalRevenue: item._sum.sale_price,
-      };
-    });
+      // 3. Sort and return top N
+      return Object.values(productMap)
+        .sort((a, b) => b.totalQuantitySold - a.totalQuantitySold)
+        .slice(0, limit);
+    } catch (error) {
+      console.error("Error in getTopSellingProducts:", error);
+      return [];
+    }
   }
 }
 

@@ -347,10 +347,72 @@ const deleteSale = async (id) => {
   });
 };
 
+const importSales = async (sales) => {
+  const created = [];
+  const errors = [];
+  for (let i = 0; i < sales.length; i++) {
+    try {
+      const sale = sales[i];
+      // Support both export/import formats
+      const orderNumber = sale["Order Number"] || sale.orderNumber || sale.id;
+      const createdAt =
+        sale["Date & Time"] || sale.created_at || sale.createdAt || new Date();
+      const customerName =
+        sale.Customer || sale.customerName || sale.customer?.name;
+      const customerId = sale.customerId || sale.customer_id;
+      const totalAmount =
+        sale["Total Amount"] || sale.total_amount || sale.totalPrice;
+      const status = sale.Status || sale.status || "completed";
+      // Validate required fields
+      if (!orderNumber) throw new Error("Order Number is required");
+      if (!customerName && !customerId) throw new Error("Customer is required");
+      if (!totalAmount || isNaN(Number(totalAmount)))
+        throw new Error("Total Amount is required and must be a number");
+      if (!status) throw new Error("Status is required");
+      // Find or create customer by name if needed
+      let resolvedCustomerId = customerId;
+      if (!resolvedCustomerId && customerName) {
+        let customer = await prisma.customer.findFirst({
+          where: { name: customerName },
+        });
+        if (!customer) {
+          customer = await prisma.customer.create({
+            data: { name: customerName },
+          });
+        }
+        resolvedCustomerId = customer.id;
+      }
+      // Create the sale
+      const data = {
+        orderNumber: String(orderNumber),
+        createdAt: new Date(createdAt),
+        customerId: resolvedCustomerId,
+        totalPrice: Number(totalAmount),
+        status: String(status).toLowerCase(),
+      };
+      const createdSale = await prisma.sale.create({ data });
+      created.push(createdSale);
+    } catch (error) {
+      errors.push({
+        index: i,
+        sale: sales[i],
+        error: error.message,
+      });
+    }
+  }
+  return {
+    importedCount: created.length,
+    errorCount: errors.length,
+    errors,
+    data: created,
+  };
+};
+
 module.exports = {
   createSale,
   getAllSales,
   getSaleById,
   updateSale,
   deleteSale,
+  importSales,
 };
