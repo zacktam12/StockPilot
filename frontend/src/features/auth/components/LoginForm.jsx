@@ -19,6 +19,8 @@ export default function LoginForm({
   isLocked,
   lockoutTime,
   showSuccess,
+  maxLoginAttempts = 5,
+  loginAttempts = 0,
 }) {
   const { theme } = useTheme();
 
@@ -31,6 +33,19 @@ export default function LoginForm({
       />
 
       <LockoutMessage lockoutTime={lockoutTime} isVisible={isLocked} />
+
+      {/* Show remaining attempts if not locked and there was an error */}
+      {!isLocked &&
+        errors?.general &&
+        typeof maxLoginAttempts === "number" &&
+        typeof loginAttempts === "number" &&
+        loginAttempts > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-xs text-yellow-800 mb-2">
+            {`You have ${maxLoginAttempts - loginAttempts} login attempt${
+              maxLoginAttempts - loginAttempts === 1 ? "" : "s"
+            } remaining.`}
+          </div>
+        )}
 
       <form onSubmit={onSubmit} className="space-y-3 sm:space-y-4">
         <EmailInput
