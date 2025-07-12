@@ -2,16 +2,16 @@ const Joi = require("joi");
 
 // Schema for creating a product purchase
 const createProductPurchaseSchema = Joi.object({
-  productId: Joi.number().integer().positive().required(),
-  purchaseId: Joi.number().integer().positive().required(),
+  productId: Joi.string().required(),
+  purchaseId: Joi.string().required(),
   purchase_price: Joi.number().precision(2).min(0).required(),
   purchase_quantity: Joi.number().integer().positive().required(),
 });
 
 // Schema for updating a product purchase
 const updateProductPurchaseSchema = Joi.object({
-  productId: Joi.number().integer().positive(),
-  purchaseId: Joi.number().integer().positive(),
+  productId: Joi.string(),
+  purchaseId: Joi.string(),
   purchase_price: Joi.number().precision(2).min(0),
   purchase_quantity: Joi.number().integer().positive(),
 });
