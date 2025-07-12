@@ -41,6 +41,50 @@ async function main() {
     },
   });
 
+  // Create default staff role
+  const staffRole = await prisma.role.upsert({
+    where: { role_type: "staff" },
+    update: {},
+    create: {
+      role_type: "staff",
+    },
+  });
+
+  // Create sample staff users
+  const staffUsers = [
+    {
+      email: "staff1@example.com",
+      password: await bcrypt.hash("staff123", 10),
+      firstName: "Staff",
+      lastName: "One",
+      roleId: staffRole.id,
+      status: "Active",
+    },
+    {
+      email: "staff2@example.com",
+      password: await bcrypt.hash("staff123", 10),
+      firstName: "Staff",
+      lastName: "Two",
+      roleId: staffRole.id,
+      status: "Active",
+    },
+    {
+      email: "staff3@example.com",
+      password: await bcrypt.hash("staff123", 10),
+      firstName: "Staff",
+      lastName: "Three",
+      roleId: staffRole.id,
+      status: "Active",
+    },
+  ];
+  for (const staff of staffUsers) {
+    await prisma.user.upsert({
+      where: { email: staff.email },
+      update: {},
+      create: staff,
+    });
+  }
+
   // Create sample categories
   const electronicsCategory = await prisma.category.upsert({
     where: { name: "Electronics" },

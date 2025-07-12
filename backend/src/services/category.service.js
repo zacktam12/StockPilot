@@ -26,19 +26,31 @@ const updateCategory = (id, data) =>
   categoryRepo.update({ id: String(id) }, data);
 
 const deleteCategory = async (id) => {
-  // First, update all products in this category to have null categoryId
-  await prisma.product.updateMany({
-    where: {
-      categoryId: id,
-      isDeleted: false,
-    },
-    data: {
-      categoryId: null,
-    },
-  });
+  try {
+    // First, get all products in this category
+    const productsInCategory = await prisma.product.findMany({
+      where: {
+        categoryId: id,
+        isDeleted: false,
+      },
+    });
 
-  // Then soft delete the category
-  return categoryRepo.softDelete({ id: String(id) });
+    // Update each product individually to remove the category reference
+    for (const product of productsInCategory) {
+      await prisma.product.update({
+        where: { id: product.id },
+        data: {
+          categoryId: null,
+        },
+      });
+    }
+
+    // Then soft delete the category
+    return categoryRepo.softDelete({ id: String(id) });
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    throw error;
+  }
 };
 
 const getCategoryStats = () => categoryRepo.getCategoryStats();
