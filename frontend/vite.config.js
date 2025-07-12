@@ -29,12 +29,22 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes("sentry")) {
-            return "sentry";
-          }
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"],
+          redux: ["@reduxjs/toolkit", "react-redux"],
+          ui: ["lucide-react", "@headlessui/react"],
+          utils: ["axios", "date-fns"],
         },
       },
     },
+  },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "@reduxjs/toolkit",
+      "react-redux",
+    ],
   },
 });
