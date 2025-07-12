@@ -476,6 +476,10 @@ exports.updateCurrentUser = async (req, res, next) => {
     delete updateData.role;
     delete updateData.profilePicture; // Use the dedicated endpoint for this
     // You may want to add more field restrictions as needed
+    if (updateData.password) {
+      const bcrypt = require("bcryptjs");
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
     const { prisma } = require("../config/db");
     const updatedUser = await prisma.user.update({
       where: { id: userId },

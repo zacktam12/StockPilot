@@ -33,6 +33,9 @@ router.get("/me", authenticate, (req, res) => {
   res.json({ success: true, data: userWithoutPassword });
 });
 
+// Update current user profile (authenticated user)
+router.put("/me", authenticate, userController.updateCurrentUser);
+
 // Upload profile picture (authenticated user)
 router.post(
   "/me/profile-picture",
