@@ -10,7 +10,7 @@ const getSettings = async () => {
     if (!settings) {
       settings = await prisma.settings.create({
         data: {
-          appName: "Inventory Management System",
+          appName: "StockPilot",
           theme: "light",
           lowStockThreshold: 5,
           currency: "USD",
