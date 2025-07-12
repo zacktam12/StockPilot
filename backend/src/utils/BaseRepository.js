@@ -127,6 +127,14 @@ class BaseRepository {
     });
   }
 
+  // Add hard delete for models without isDeleted
+  delete(where) {
+    const uniqueWhere = this.extractUniqueWhere(where);
+    return this.model.delete({
+      where: uniqueWhere,
+    });
+  }
+
   async paginate({
     page = 1,
     pageSize = 10,
