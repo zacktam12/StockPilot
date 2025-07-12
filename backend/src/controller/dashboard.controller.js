@@ -48,3 +48,13 @@ exports.getRevenueData = async (req, res, next) => {
     next(error);
   }
 };
+
+// GET /api/dashboard/product-distribution
+exports.getProductDistribution = async (req, res, next) => {
+  try {
+    const data = await dashboardService.getProductDistribution();
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+};

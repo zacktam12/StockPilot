@@ -18,4 +18,7 @@ router.get("/low-stock-alerts", dashboardController.getLowStockAlerts);
 // GET /api/dashboard/revenue-data
 router.get("/revenue-data", dashboardController.getRevenueData);
 
+// GET /api/dashboard/product-distribution
+router.get("/product-distribution", dashboardController.getProductDistribution);
+
 module.exports = router;
