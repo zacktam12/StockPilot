@@ -107,6 +107,10 @@
   .shadow-card-hover {
     @apply shadow-md dark:shadow-gray-900/30;
   }
+
+  .shadow-soft {
+    @apply shadow-lg shadow-gray-200/50 dark:shadow-gray-900/30;
+  }
 }
 
 /* Add any global overrides here */
