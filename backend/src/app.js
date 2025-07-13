@@ -6,6 +6,10 @@ const express = require("express");
 const cors = require("cors");
 const { PrismaClient } = require("@prisma/client");
 
+// Swagger dependencies
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./docs/swagger");
+
 // Middleware & utilities
 const { authenticate } = require("./middlewares/auth");
 const { errorHandler, notFound } = require("./middlewares/errorHandler");
@@ -31,6 +35,9 @@ const notificationRoutes = require("./routes/notification.routes");
 // Initialize app and database
 const app = express();
 const prisma = new PrismaClient();
+
+// Swagger docs
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // CORS configuration
 const corsOptions = {
