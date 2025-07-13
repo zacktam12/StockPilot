@@ -1,7 +1,6 @@
 // src/store/slices/reportsSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
-import { format } from "date-fns";
 
 export const generateReport = createAsyncThunk(
   "reports/generate",
@@ -18,7 +17,7 @@ export const generateReport = createAsyncThunk(
           endpoint = `${baseUrl}/inventory`;
           break;
         case "purchase-orders":
-          endpoint = `${baseUrl}/purchases`;
+          endpoint = `${baseUrl}/purchase-orders`;
           break;
         case "monthly-revenue":
           endpoint = `${baseUrl}/monthly-revenue`;
@@ -35,8 +34,29 @@ export const generateReport = createAsyncThunk(
         case "supplier-analysis":
           endpoint = `${baseUrl}/supplier-analysis`;
           break;
-        case "cost-analysis":
-          endpoint = `${baseUrl}/cost-analysis`;
+        case "customer-sales":
+          endpoint = `${baseUrl}/customer-sales`;
+          break;
+        case "sales-performance":
+          endpoint = `${baseUrl}/sales-performance`;
+          break;
+        case "category-analysis":
+          endpoint = `${baseUrl}/category-analysis`;
+          break;
+        case "stock-movement":
+          endpoint = `${baseUrl}/stock-movement`;
+          break;
+        case "purchase-trends":
+          endpoint = `${baseUrl}/purchase-trends`;
+          break;
+        case "user-activity":
+          endpoint = `${baseUrl}/user-activity`;
+          break;
+        case "role-distribution":
+          endpoint = `${baseUrl}/role-distribution`;
+          break;
+        case "notifications":
+          endpoint = `${baseUrl}/notifications`;
           break;
         default:
           throw new Error("Invalid report type");
@@ -46,6 +66,7 @@ export const generateReport = createAsyncThunk(
       return {
         reportType,
         data: response.data,
+        params,
         generatedAt: new Date().toISOString(),
       };
     } catch (error) {
@@ -67,6 +88,8 @@ const initialState = {
         { name: "Daily Sales", id: "daily-sales" },
         { name: "Monthly Revenue", id: "monthly-revenue" },
         { name: "Top Selling Products", id: "top-products" },
+        { name: "Sales by Customer", id: "customer-sales" },
+        { name: "Sales Performance", id: "sales-performance" },
       ],
     },
     {
@@ -77,6 +100,8 @@ const initialState = {
         { name: "Stock Status", id: "inventory" },
         { name: "Low Stock Items", id: "low-stock" },
         { name: "Inventory Valuation", id: "inventory-value" },
+        { name: "Category Analysis", id: "category-analysis" },
+        { name: "Stock Movement", id: "stock-movement" },
       ],
     },
     {
@@ -86,7 +111,17 @@ const initialState = {
       options: [
         { name: "Purchase Orders", id: "purchase-orders" },
         { name: "Supplier Analysis", id: "supplier-analysis" },
-        { name: "Cost Analysis", id: "cost-analysis" },
+        { name: "Purchase Trends", id: "purchase-trends" },
+      ],
+    },
+    {
+      title: "User & System Reports",
+      description: "User activity and system analytics",
+      icon: "user",
+      options: [
+        { name: "User Activity", id: "user-activity" },
+        { name: "Role Distribution", id: "role-distribution" },
+        { name: "System Notifications", id: "notifications" },
       ],
     },
   ],
@@ -132,7 +167,14 @@ const getReportTitle = (reportType) => {
     "low-stock": "Low Stock Items Report",
     "inventory-value": "Inventory Valuation Report",
     "supplier-analysis": "Supplier Analysis Report",
-    "cost-analysis": "Cost Analysis Report",
+    "customer-sales": "Customer Sales Report",
+    "sales-performance": "Sales Performance Report",
+    "category-analysis": "Category Analysis Report",
+    "stock-movement": "Stock Movement Report",
+    "purchase-trends": "Purchase Trends Report",
+    "user-activity": "User Activity Report",
+    "role-distribution": "Role Distribution Report",
+    notifications: "System Notifications Report",
   };
   return titles[reportType] || "Report";
 };
@@ -143,7 +185,7 @@ const getReportColumns = (reportType) => {
     inventory: ["Product Name", "Category", "Quantity", "Price", "Status"],
     "purchase-orders": ["Date", "Order ID", "Supplier", "Amount", "Status"],
     "monthly-revenue": ["Month", "Total Revenue"],
-    "top-products": ["Product Name", "Units Sold"],
+    "top-products": ["Product Name", "Units Sold", "Total Revenue"],
     "low-stock": ["Product Name", "Category", "Quantity", "Status"],
     "inventory-value": [
       "Product Name",
@@ -153,7 +195,29 @@ const getReportColumns = (reportType) => {
       "Total Value",
     ],
     "supplier-analysis": ["Supplier", "Total Orders", "Total Spent"],
-    "cost-analysis": ["Product Name", "Total Purchased", "Total Cost"],
+    "customer-sales": ["Customer", "Total Orders", "Total Spent", "Last Order"],
+    "sales-performance": [
+      "Sales Person",
+      "Total Sales",
+      "Total Revenue",
+      "Orders Count",
+    ],
+    "category-analysis": [
+      "Category",
+      "Product Count",
+      "Total Quantity",
+      "Total Value",
+    ],
+    "stock-movement": ["Product Name", "Sold", "Purchased", "Net Movement"],
+    "purchase-trends": [
+      "Month",
+      "Total Orders",
+      "Total Cost",
+      "Suppliers Count",
+    ],
+    "user-activity": ["User Name", "Email", "Role", "Status", "Created At"],
+    "role-distribution": ["Role Type", "User Count"],
+    notifications: ["Type", "Title", "Message", "Read", "Created At"],
   };
   return columns[reportType] || [];
 };
