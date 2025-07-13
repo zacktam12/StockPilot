@@ -8,6 +8,63 @@ const {
 const { authenticate, authorize } = require("../middlewares/auth");
 
 // Create product (Admin-only)
+/**
+ * @swagger
+ * /api/products:
+ *   post:
+ *     summary: Create a new product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - price
+ *               - stock
+ *               - categoryId
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Product name
+ *               description:
+ *                 type: string
+ *                 description: Product description
+ *               price:
+ *                 type: number
+ *                 description: Product price
+ *               stock:
+ *                 type: integer
+ *                 description: Initial stock quantity
+ *               categoryId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: Category ID
+ *               supplierId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: Supplier ID
+ *               image:
+ *                 type: string
+ *                 description: Product image URL
+ *     responses:
+ *       201:
+ *         description: Product created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Bad request - validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin access required
+ */
 router.post(
   "/",
   authenticate,
@@ -17,6 +74,71 @@ router.post(
 );
 
 // Get all products (Admin and Staff) - with pagination and filtering
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     summary: Get all products with pagination and filtering
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search term for product name
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category ID
+ *       - in: query
+ *         name: supplier
+ *         schema:
+ *           type: string
+ *         description: Filter by supplier ID
+ *     responses:
+ *       200:
+ *         description: List of products with pagination
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 products:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Product'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     pages:
+ *                       type: integer
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Insufficient permissions
+ */
+
 router.get(
   "/",
   authenticate,
@@ -33,6 +155,36 @@ router.get(
 );
 
 // Get product by ID (Admin and Staff)
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   get:
+ *     summary: Get a product by ID
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Product ID
+ *     responses:
+ *       200:
+ *         description: Product details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       404:
+ *         description: Product not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Insufficient permissions
+ */
 router.get(
   "/:id",
   authenticate,
