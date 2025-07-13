@@ -1,18 +1,12 @@
 // src/App.jsx
-import React, { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import React from "react";
+import { useSelector } from "react-redux";
 import AppRoutes from "./routes/AppRoutes";
 import LoadingOverlay from "./components/shared/LoadingOverlay";
 import ToastNotification from "./components/shared/ToastNotification";
 import { hideToast } from "./store/slices/uiSlice";
-import { fetchSettings } from "./store/slices/settingsSlice";
 
 function App() {
-  const dispatch = useDispatch();
-  const settings = useSelector((state) => state.settings.settings);
-  useEffect(() => {
-    dispatch(fetchSettings());
-  }, [dispatch]);
   // Use only the global loading state
   const isLoading = useSelector((state) => state.loading.isLoading);
   const toast = useSelector((state) => state.ui.toast);
@@ -24,7 +18,7 @@ function App() {
       <ToastNotification
         message={toast.message}
         type={toast.type}
-        onClose={() => dispatch(hideToast())}
+        onClose={() => hideToast()}
       />
     </div>
   );
