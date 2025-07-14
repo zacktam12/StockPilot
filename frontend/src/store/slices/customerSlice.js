@@ -63,7 +63,7 @@ export const importCustomers = createAsyncThunk(
   "customer/importCustomers",
   async (data, { rejectWithValue }) => {
     try {
-      const response = await customersAPI.importFromCSV(data);
+      const response = await customersAPI.bulkImport(data);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -78,18 +78,16 @@ const initialState = {
   items: [],
   loading: false,
   error: null,
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  itemsPerPage: 5,
+  searchTerm: "",
+  sortField: "createdAt",
+  sortOrder: "desc",
   isModalOpen: false,
   editingCustomer: null,
-  pagination: {
-    page: 1,
-    limit: 5,
-    total: 0,
-    pages: 1,
-  },
   filters: {
-    searchTerm: "",
-    sortField: "createdAt",
-    sortOrder: "desc",
     hasPhone: false,
     hasAddress: false,
   },
@@ -101,24 +99,28 @@ const customerSlice = createSlice({
   initialState,
   reducers: {
     setSearchTerm: (state, action) => {
-      state.filters.searchTerm = action.payload;
-      state.pagination.page = 1;
+      state.searchTerm = action.payload;
+      state.currentPage = 1; // Reset to first page when searching
     },
-    setSort: (state, action) => {
-      if (state.filters.sortField === action.payload.field) {
-        state.filters.sortOrder =
-          state.filters.sortOrder === "asc" ? "desc" : "asc";
+    setSortField: (state, action) => {
+      const newField = action.payload;
+      if (state.sortField === newField) {
+        // Toggle order if same field
+        state.sortOrder = state.sortOrder === "asc" ? "desc" : "asc";
       } else {
-        state.filters.sortField = action.payload.field;
-        state.filters.sortOrder = "asc";
+        // Set new field with default ascending order
+        state.sortField = newField;
+        state.sortOrder = "asc";
       }
+      // Reset to first page when sorting changes
+      state.currentPage = 1;
     },
     setFilter: (state, action) => {
       state.filters[action.payload.key] = action.payload.value;
-      state.pagination.page = 1;
+      state.currentPage = 1;
     },
     setCurrentPage: (state, action) => {
-      state.pagination.page = action.payload;
+      state.currentPage = action.payload;
     },
     openCreateModal: (state) => {
       state.isModalOpen = true;
@@ -141,28 +143,55 @@ const customerSlice = createSlice({
       })
       .addCase(fetchCustomers.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.data;
-        state.pagination = {
-          ...state.pagination,
-          total: action.payload.total,
-          pages: action.payload.pages,
-        };
+        console.log("fetchCustomers fulfilled:", action.payload);
+        if (action.payload && action.payload.data) {
+          // Server-side paginated response
+          state.items = action.payload.data;
+          if (action.payload.pagination) {
+            state.totalItems =
+              action.payload.pagination.totalItems || action.payload.total || 0;
+            state.totalPages =
+              action.payload.pagination.totalPages || action.payload.pages || 1;
+            state.currentPage =
+              action.payload.pagination.currentPage || action.payload.page || 1;
+            state.itemsPerPage = action.payload.pagination.itemsPerPage || 5;
+          } else {
+            // Fallback for flattened response structure
+            state.totalItems = action.payload.total || 0;
+            state.totalPages = action.payload.pages || 1;
+            state.currentPage = action.payload.page || 1;
+            state.itemsPerPage = 5;
+          }
+        } else if (Array.isArray(action.payload)) {
+          // Non-paginated response or direct array
+          state.items = action.payload;
+          state.totalItems = state.items.length;
+          state.totalPages = Math.ceil(state.items.length / state.itemsPerPage);
+        } else {
+          // Fallback
+          state.items = [];
+          state.totalItems = 0;
+          state.totalPages = 1;
+        }
+        console.log("Updated customer state:", {
+          itemsCount: state.items.length,
+          currentPage: state.currentPage,
+          totalPages: state.totalPages,
+          totalItems: state.totalItems,
+        });
       })
       .addCase(fetchCustomers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(createCustomer.fulfilled, (state, action) => {
-        state.items.unshift(action.payload);
+      .addCase(createCustomer.fulfilled, (state) => {
+        // Refresh the customer list to get updated pagination
+        // The useEffect will automatically refetch with current parameters
         state.isModalOpen = false;
       })
-      .addCase(updateCustomer.fulfilled, (state, action) => {
-        const index = state.items.findIndex(
-          (item) => item.id === action.payload.id
-        );
-        if (index !== -1) {
-          state.items[index] = action.payload;
-        }
+      .addCase(updateCustomer.fulfilled, (state) => {
+        // Refresh the customer list to get updated data
+        // The useEffect will automatically refetch with current parameters
         state.isModalOpen = false;
       })
       .addCase(deleteCustomer.fulfilled, (state, action) => {
@@ -173,7 +202,7 @@ const customerSlice = createSlice({
 
 export const {
   setSearchTerm,
-  setSort,
+  setSortField,
   setFilter,
   setCurrentPage,
   openCreateModal,
