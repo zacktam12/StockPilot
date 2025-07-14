@@ -4,11 +4,9 @@ import api from "../../services/api";
 // Async Thunks
 export const fetchPurchases = createAsyncThunk(
   "purchases/fetchPurchases",
-  async ({ sortBy = "created_at", order = "desc" }, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const response = await api.get(
-        `/purchases?sortBy=${sortBy}&order=${order}`
-      );
+      const response = await api.get("/purchases", { params });
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -104,11 +102,9 @@ export const generateReceipt = createAsyncThunk(
 
 export const importPurchases = createAsyncThunk(
   "purchases/importPurchases",
-  async (purchases, { rejectWithValue, dispatch }) => {
+  async (purchases, { rejectWithValue }) => {
     try {
       const response = await api.post("/purchases/import", { purchases });
-      // Optionally, refresh purchases list
-      dispatch(fetchPurchases({}));
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -122,31 +118,42 @@ export const importPurchases = createAsyncThunk(
 const purchaseSlice = createSlice({
   name: "purchases",
   initialState: {
-    purchases: [], // <-- Ensure purchases array is defined
-    currentPurchase: null,
-    receipt: null,
+    items: [],
     loading: false,
     error: null,
-    sortOptions: {
-      field: "created_at",
-      order: "desc",
-    },
-    pagination: {
-      currentPage: 1,
-      totalPages: 1,
-      totalItems: 0,
-    },
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 5,
+    searchTerm: "",
+    sortField: "createdAt",
+    sortOrder: "desc",
     selectedItems: [],
     selectAll: false,
+    currentPurchase: null,
+    receipt: null,
   },
 
-  isModalOpen: false,
   reducers: {
-    setSortOptions: (state, action) => {
-      state.sortOptions = action.payload;
+    setSearchTerm: (state, action) => {
+      state.searchTerm = action.payload;
+      state.currentPage = 1; // Reset to first page when searching
+    },
+    setSortField: (state, action) => {
+      const newField = action.payload;
+      if (state.sortField === newField) {
+        // Toggle order if same field
+        state.sortOrder = state.sortOrder === "asc" ? "desc" : "asc";
+      } else {
+        // Set new field with default ascending order
+        state.sortField = newField;
+        state.sortOrder = "asc";
+      }
+      // Reset to first page when sorting changes
+      state.currentPage = 1;
     },
     setCurrentPage: (state, action) => {
-      state.pagination.currentPage = action.payload;
+      state.currentPage = action.payload;
     },
     clearCurrentPurchase: (state) => {
       state.currentPurchase = null;
@@ -156,12 +163,6 @@ const purchaseSlice = createSlice({
     },
     clearError: (state) => {
       state.error = null;
-    },
-    openModal: (state) => {
-      state.isModalOpen = true;
-    },
-    closeModal: (state) => {
-      state.isModalOpen = false;
     },
     toggleItemSelection: (state, action) => {
       const id = action.payload;
@@ -177,7 +178,7 @@ const purchaseSlice = createSlice({
         state.selectedItems = [];
         state.selectAll = false;
       } else {
-        state.selectedItems = state.purchases.map((purchase) => purchase.id);
+        state.selectedItems = state.items.map((purchase) => purchase.id);
         state.selectAll = true;
       }
     },
@@ -195,12 +196,42 @@ const purchaseSlice = createSlice({
       })
       .addCase(fetchPurchases.fulfilled, (state, action) => {
         state.loading = false;
-        state.purchases = action.payload.data;
-        state.pagination = {
-          currentPage: action.payload.currentPage,
-          totalPages: action.payload.totalPages,
-          totalItems: action.payload.totalItems,
-        };
+        console.log("fetchPurchases fulfilled:", action.payload);
+        if (action.payload && action.payload.data) {
+          // Server-side paginated response
+          state.items = action.payload.data;
+          if (action.payload.pagination) {
+            state.totalItems =
+              action.payload.pagination.totalItems || action.payload.total || 0;
+            state.totalPages =
+              action.payload.pagination.totalPages || action.payload.pages || 1;
+            state.currentPage =
+              action.payload.pagination.currentPage || action.payload.page || 1;
+            state.itemsPerPage = action.payload.pagination.itemsPerPage || 5;
+          } else {
+            // Fallback for flattened response structure
+            state.totalItems = action.payload.total || 0;
+            state.totalPages = action.payload.pages || 1;
+            state.currentPage = action.payload.page || 1;
+            state.itemsPerPage = 5;
+          }
+        } else if (Array.isArray(action.payload)) {
+          // Non-paginated response or direct array
+          state.items = action.payload;
+          state.totalItems = state.items.length;
+          state.totalPages = Math.ceil(state.items.length / state.itemsPerPage);
+        } else {
+          // Fallback
+          state.items = [];
+          state.totalItems = 0;
+          state.totalPages = 1;
+        }
+        console.log("Updated purchase state:", {
+          itemsCount: state.items.length,
+          currentPage: state.currentPage,
+          totalPages: state.totalPages,
+          totalItems: state.totalItems,
+        });
       })
       .addCase(fetchPurchases.rejected, (state, action) => {
         state.loading = false;
@@ -226,10 +257,10 @@ const purchaseSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(createPurchase.fulfilled, (state, action) => {
+      .addCase(createPurchase.fulfilled, (state) => {
         state.loading = false;
-        if (!Array.isArray(state.purchases)) state.purchases = [];
-        state.purchases.unshift(action.payload);
+        // Refresh the purchase list to get updated pagination
+        // The useEffect will automatically refetch with current parameters
       })
       .addCase(createPurchase.rejected, (state, action) => {
         state.loading = false;
@@ -243,11 +274,13 @@ const purchaseSlice = createSlice({
       })
       .addCase(updatePurchaseStatus.fulfilled, (state, action) => {
         state.loading = false;
-        state.purchases = state.purchases.map((purchase) =>
-          purchase.id === action.payload.id ? action.payload : purchase
+        // Update the specific purchase in the local state
+        const updatedPurchase = action.payload.data || action.payload;
+        const index = state.items.findIndex(
+          (item) => item.id === updatedPurchase.id
         );
-        if (state.currentPurchase?.id === action.payload.id) {
-          state.currentPurchase = action.payload;
+        if (index !== -1) {
+          state.items[index] = { ...state.items[index], ...updatedPurchase };
         }
       })
       .addCase(updatePurchaseStatus.rejected, (state, action) => {
@@ -260,11 +293,10 @@ const purchaseSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(deletePurchase.fulfilled, (state, action) => {
+      .addCase(deletePurchase.fulfilled, (state) => {
         state.loading = false;
-        state.purchases = state.purchases.filter(
-          (purchase) => purchase.id !== action.payload
-        );
+        // Refresh the purchase list to get updated pagination
+        // The useEffect will automatically refetch with current parameters
       })
       .addCase(deletePurchase.rejected, (state, action) => {
         state.loading = false;
@@ -283,19 +315,32 @@ const purchaseSlice = createSlice({
       .addCase(generateReceipt.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      // Import Purchases
+      .addCase(importPurchases.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(importPurchases.fulfilled, (state) => {
+        state.loading = false;
+        // Refresh the purchase list to get updated pagination
+        // The useEffect will automatically refetch with current parameters
+      })
+      .addCase(importPurchases.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
 // Export Actions
 export const {
-  setSortOptions,
+  setSearchTerm,
+  setSortField,
   setCurrentPage,
   clearCurrentPurchase,
   clearReceipt,
   clearError,
-  openModal,
-  closeModal,
   toggleItemSelection,
   toggleSelectAll,
   clearSelection,
