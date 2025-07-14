@@ -3,19 +3,18 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
-import { PersistGate } from "redux-persist/integration/react";
-import { store, persistor } from "./store";
+import { store } from "./store";
 import App from "./App";
 import LoadingOverlay from "./components/shared/LoadingOverlay";
 import "./assets/report-print.css";
 import "./styles/global.css";
 
-// Error Boundary Component (add this if missing)
+// Error Boundary Component
 class ErrorBoundary extends React.Component {
-  state = { hasError: false };
+  state = { hasError: false, error: null };
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error, errorInfo) {
@@ -30,6 +29,9 @@ class ErrorBoundary extends React.Component {
             <h1 className="text-2xl font-bold text-red-600 mb-2">
               Something went wrong
             </h1>
+            <p className="text-gray-600 mb-4">
+              {this.state.error?.message || "An unexpected error occurred"}
+            </p>
             <button
               className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
               onClick={() => window.location.reload()}
@@ -44,17 +46,22 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
+// Prevent dynamic import errors
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Root element not found");
+}
 
+const root = ReactDOM.createRoot(rootElement);
+
+// Wrap the entire app in error boundary and providers
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <Provider store={store}>
-        {/* <PersistGate loading={<LoadingOverlay />} persistor={persistor}> */}
         <BrowserRouter>
           <App />
         </BrowserRouter>
-        {/* </PersistGate> */}
       </Provider>
     </ErrorBoundary>
   </React.StrictMode>
