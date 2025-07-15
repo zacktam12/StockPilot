@@ -1,5 +1,4 @@
 import React, { useState, useRef } from "react";
-import { useDispatch } from "react-redux";
 import {
   Upload,
   FileText,
@@ -14,8 +13,15 @@ import Button from "./Button";
 import { parseCSV, validateUserCSV } from "../../utils/csvUtils";
 import { useOutsideClick } from "../../hooks/useOutsideClick";
 
-const CSVImportModal = ({ isOpen, onClose, onImport, config = {} }) => {
-  const dispatch = useDispatch();
+const CSVImportModal = ({
+  isOpen,
+  onClose,
+  onImport,
+  config = {},
+  entityType = "users",
+  title = "Import from CSV",
+  description = "Select a CSV file with data to import",
+}) => {
   const fileInputRef = useRef(null);
   const modalRef = useRef(null);
 
@@ -95,16 +101,39 @@ const CSVImportModal = ({ isOpen, onClose, onImport, config = {} }) => {
   };
 
   const downloadTemplate = () => {
-    const template = [
-      "First Name,Last Name,Email,Phone,Employee ID,Role,Status",
-      "John,Doe,john@example.com,1234567890,EMP001,admin,Active",
-    ].join("\n");
+    let template;
+    let filename;
+
+    switch (entityType) {
+      case "customers":
+        template = [
+          "Name,Email,Phone,Address",
+          "John Doe,john@example.com,1234567890,123 Main St",
+          "Jane Smith,jane@example.com,0987654321,456 Oak Ave",
+        ].join("\n");
+        filename = "customer-import-template.csv";
+        break;
+      case "suppliers":
+        template = [
+          "Name,Contact Name,Email,Phone,Address,Company Name",
+          "ABC Corp,John Manager,john@abc.com,1234567890,123 Business St,ABC Corporation",
+        ].join("\n");
+        filename = "supplier-import-template.csv";
+        break;
+      default: // users
+        template = [
+          "First Name,Last Name,Email,Phone,Employee ID,Role,Status",
+          "John,Doe,john@example.com,1234567890,EMP001,admin,Active",
+        ].join("\n");
+        filename = "user-import-template.csv";
+        break;
+    }
 
     const blob = new Blob([template], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "user-import-template.csv";
+    link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -120,7 +149,7 @@ const CSVImportModal = ({ isOpen, onClose, onImport, config = {} }) => {
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Import Users from CSV</h2>
+            <h2 className="text-xl font-semibold">{title}</h2>
             <Button
               variant="ghost"
               size="sm"
@@ -157,7 +186,7 @@ const CSVImportModal = ({ isOpen, onClose, onImport, config = {} }) => {
                 Upload CSV File
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Select a CSV file with user data to import
+                {description}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
