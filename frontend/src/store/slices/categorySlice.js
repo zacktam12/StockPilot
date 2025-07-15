@@ -65,7 +65,10 @@ const initialState = {
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
-  itemsPerPage: 10,
+  itemsPerPage: 5,
+  searchTerm: "",
+  sortField: "name",
+  sortOrder: "asc",
   modal: {
     isOpen: false,
     mode: "create",
@@ -73,12 +76,10 @@ const initialState = {
     isLoading: false,
   },
   filters: {
-    searchTerm: "",
-    sortField: "name",
-    sortOrder: "asc",
     options: {
       hasDescription: false,
     },
+    dateRange: { from: "", to: "" },
   },
 };
 
@@ -114,21 +115,32 @@ const categorySlice = createSlice({
       state.modal.isOpen = false;
     },
     setSearchTerm: (state, action) => {
-      state.filters.searchTerm = action.payload;
-      state.currentPage = 1;
+      state.searchTerm = action.payload;
+      state.currentPage = 1; // Reset to first page when searching
     },
     setSort: (state, action) => {
       const { field } = action.payload;
-      if (state.filters.sortField === field) {
-        state.filters.sortOrder =
-          state.filters.sortOrder === "asc" ? "desc" : "asc";
+      if (state.sortField === field) {
+        state.sortOrder = state.sortOrder === "asc" ? "desc" : "asc";
       } else {
-        state.filters.sortField = field;
-        state.filters.sortOrder = "asc";
+        state.sortField = field;
+        state.sortOrder = "asc";
       }
+      // Reset to first page when sorting changes
+      state.currentPage = 1;
     },
     setSortField: (state, action) => {
-      state.filters.sortField = action.payload;
+      const newField = action.payload;
+      if (state.sortField === newField) {
+        // Toggle order if same field
+        state.sortOrder = state.sortOrder === "asc" ? "desc" : "asc";
+      } else {
+        // Set new field with default ascending order
+        state.sortField = newField;
+        state.sortOrder = "asc";
+      }
+      // Reset to first page when sorting changes
+      state.currentPage = 1;
     },
     setFilterOptions: (state, action) => {
       state.filters.options = { ...state.filters.options, ...action.payload };
@@ -136,6 +148,14 @@ const categorySlice = createSlice({
     toggleDescriptionFilter: (state) => {
       state.filters.options.hasDescription =
         !state.filters.options.hasDescription;
+    },
+    setDateRangeFilter: (state, action) => {
+      state.filters.dateRange = action.payload;
+      state.currentPage = 1;
+    },
+    clearDateRangeFilter: (state) => {
+      state.filters.dateRange = { from: "", to: "" };
+      state.currentPage = 1;
     },
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload;
@@ -150,20 +170,40 @@ const categorySlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.loading = false;
+        console.log("fetchCategories fulfilled:", action.payload);
         // Handle both paginated and non-paginated responses
-        if (action.payload && action.payload.data) {
+        if (action.payload && action.payload.success && action.payload.data) {
           // Server-side paginated response
           state.items = action.payload.data;
-          state.totalItems = action.payload.pagination?.totalItems || 0;
-          state.totalPages = action.payload.pagination?.totalPages || 1;
-          state.currentPage = action.payload.pagination?.currentPage || 1;
-          state.itemsPerPage = action.payload.pagination?.itemsPerPage || 10;
-        } else {
+          if (action.payload.pagination) {
+            state.totalItems = action.payload.pagination.totalItems || 0;
+            state.totalPages = action.payload.pagination.totalPages || 1;
+            state.currentPage = action.payload.pagination.currentPage || 1;
+            state.itemsPerPage = action.payload.pagination.itemsPerPage || 5;
+          } else {
+            // Fallback for non-paginated responses
+            state.totalItems = state.items.length;
+            state.totalPages = Math.ceil(
+              state.items.length / state.itemsPerPage
+            );
+          }
+        } else if (Array.isArray(action.payload)) {
           // Non-paginated response or direct array
-          state.items = Array.isArray(action.payload) ? action.payload : [];
+          state.items = action.payload;
           state.totalItems = state.items.length;
           state.totalPages = Math.ceil(state.items.length / state.itemsPerPage);
+        } else {
+          // Fallback
+          state.items = [];
+          state.totalItems = 0;
+          state.totalPages = 1;
         }
+        console.log("Updated category state:", {
+          itemsCount: state.items.length,
+          currentPage: state.currentPage,
+          totalPages: state.totalPages,
+          totalItems: state.totalItems,
+        });
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.loading = false;
@@ -228,6 +268,10 @@ const categorySlice = createSlice({
         if (state.currentPage > state.totalPages && state.totalPages > 0) {
           state.currentPage = state.totalPages;
         }
+
+        // Trigger dashboard refresh after category deletion
+        console.log("🗑️ Category deleted, triggering dashboard refresh...");
+        // We'll dispatch this from the component instead to avoid circular imports
       })
       .addCase(deleteCategory.rejected, (state, action) => {
         state.items = state.items.map((item) =>
@@ -248,6 +292,8 @@ export const {
   setSortField,
   setFilterOptions,
   toggleDescriptionFilter,
+  setDateRangeFilter,
+  clearDateRangeFilter,
   setCurrentPage,
   resetCategoryState,
 } = categorySlice.actions;
