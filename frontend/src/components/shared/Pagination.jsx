@@ -8,6 +8,10 @@ import { setCurrentPage as setSupplierCurrentPage } from "../../store/slices/sup
 import { setCurrentPage as setSaleCurrentPage } from "../../store/slices/salesSlice";
 import { setCurrentPage as setPurchaseCurrentPage } from "../../store/slices/purchaseSlice";
 import { setCurrentPage as setCustomerCurrentPage } from "../../store/slices/customerSlice";
+import {
+  setActivitiesCurrentPage,
+  setLowStockAlertsCurrentPage,
+} from "../../store/slices/dashboardSlice";
 
 export default function Pagination({ sliceName = "product" }) {
   const dispatch = useDispatch();
@@ -27,6 +31,10 @@ export default function Pagination({ sliceName = "product" }) {
         return state.purchase;
       case "customer":
         return state.customer;
+      case "dashboard-activities":
+        return state.dashboard.activities;
+      case "dashboard-alerts":
+        return state.dashboard.lowStockAlerts;
       default:
         return state.product;
     }
@@ -47,6 +55,10 @@ export default function Pagination({ sliceName = "product" }) {
         return setPurchaseCurrentPage(page);
       case "customer":
         return setCustomerCurrentPage(page);
+      case "dashboard-activities":
+        return setActivitiesCurrentPage(page);
+      case "dashboard-alerts":
+        return setLowStockAlertsCurrentPage(page);
       default:
         return setProductCurrentPage(page);
     }
@@ -63,6 +75,15 @@ export default function Pagination({ sliceName = "product" }) {
     totalPages = sliceState.pagination?.totalPages || 0;
     totalItems = sliceState.pagination?.totalItems || 0;
     itemsPerPage = sliceState.pagination?.itemsPerPage || 5;
+  } else if (
+    sliceName === "dashboard-activities" ||
+    sliceName === "dashboard-alerts"
+  ) {
+    // Dashboard slices have pagination properties directly on the state
+    currentPage = sliceState.page || 1;
+    totalPages = sliceState.totalPages || 0;
+    totalItems = sliceState.totalItems || 0;
+    itemsPerPage = sliceState.limit || 10;
   } else {
     // Other slices have pagination properties directly on the state
     currentPage = sliceState.currentPage || 1;
@@ -168,6 +189,10 @@ export function FloatingPagination({ sliceName = "product" }) {
         return state.purchase;
       case "customer":
         return state.customer;
+      case "dashboard-activities":
+        return state.dashboard.activities;
+      case "dashboard-alerts":
+        return state.dashboard.lowStockAlerts;
       default:
         return state.product;
     }
@@ -188,6 +213,10 @@ export function FloatingPagination({ sliceName = "product" }) {
         return setPurchaseCurrentPage(page);
       case "customer":
         return setCustomerCurrentPage(page);
+      case "dashboard-activities":
+        return setActivitiesCurrentPage(page);
+      case "dashboard-alerts":
+        return setLowStockAlertsCurrentPage(page);
       default:
         return setProductCurrentPage(page);
     }
@@ -201,6 +230,12 @@ export function FloatingPagination({ sliceName = "product" }) {
   if (sliceName === "sale") {
     currentPage = sliceState.pagination?.currentPage || 1;
     totalPages = sliceState.pagination?.totalPages || 0;
+  } else if (
+    sliceName === "dashboard-activities" ||
+    sliceName === "dashboard-alerts"
+  ) {
+    currentPage = sliceState.page || 1;
+    totalPages = sliceState.totalPages || 0;
   } else {
     currentPage = sliceState.currentPage || 1;
     totalPages = sliceState.totalPages || 0;
