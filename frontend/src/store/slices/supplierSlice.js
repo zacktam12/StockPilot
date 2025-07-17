@@ -202,7 +202,6 @@ const supplierSlice = createSlice({
       })
       .addCase(fetchSuppliers.fulfilled, (state, action) => {
         state.loading = false;
-        console.log("fetchSuppliers fulfilled:", action.payload);
         if (action.payload && action.payload.data) {
           // Server-side paginated response
           state.items = action.payload.data;
@@ -232,12 +231,6 @@ const supplierSlice = createSlice({
           state.totalItems = 0;
           state.totalPages = 1;
         }
-        console.log("Updated supplier state:", {
-          itemsCount: state.items.length,
-          currentPage: state.currentPage,
-          totalPages: state.totalPages,
-          totalItems: state.totalItems,
-        });
       })
       .addCase(fetchSuppliers.rejected, (state, action) => {
         state.loading = false;
