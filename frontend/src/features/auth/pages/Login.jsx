@@ -10,6 +10,7 @@ import LoginForm from "../components/LoginForm";
 import ForgotPasswordModal from "../modals/ForgotPasswordModal";
 import AccountRecoveryModal from "../modals/AccountRecoveryModal";
 import useAuthCheck from "../../../hooks/useAuthCheck";
+import { useSelector } from "react-redux";
 
 // Backend API configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -32,6 +33,13 @@ export default function Login() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showAccountRecovery, setShowAccountRecovery] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+
+  const maxLoginAttempts =
+    useSelector(
+      (state) => state.settings.settings?.securitySettings?.loginAttempts
+    ) || 5;
+
+  const settingsLoading = useSelector((state) => state.settings.loading);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
@@ -169,23 +177,25 @@ export default function Login() {
         const newAttempts = loginAttempts + 1;
         setLoginAttempts(newAttempts);
 
-        if (newAttempts >= 5) {
+        if (newAttempts >= maxLoginAttempts) {
           setIsLocked(true);
           setLockoutTime(60);
           setErrors({
-            general: "Too many failed attempts. Account locked for 60 seconds.",
+            general: `Too many failed attempts. Account locked for 60 seconds.`,
           });
           toast.error(
-            "Too many failed attempts. Account locked for 60 seconds."
+            `Too many failed attempts. Account locked for 60 seconds.`
           );
         } else {
           setErrors({
             general: `Invalid credentials. ${
-              5 - newAttempts
+              maxLoginAttempts - newAttempts
             } attempts remaining.`,
           });
           toast.error(
-            `Invalid credentials. ${5 - newAttempts} attempts remaining.`
+            `Invalid credentials. ${
+              maxLoginAttempts - newAttempts
+            } attempts remaining.`
           );
         }
       } else {
@@ -197,10 +207,26 @@ export default function Login() {
     }
   };
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (move to useEffect)
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      if (window.location.pathname !== "/dashboard") {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [isLoading, isAuthenticated, navigate]);
+
+  // Prevent rendering login form if already authenticated
   if (!isLoading && isAuthenticated) {
-    navigate("/dashboard", { replace: true });
     return null;
+  }
+
+  if (settingsLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-lg">
+        Loading settings...
+      </div>
+    );
   }
 
   return (
@@ -246,13 +272,12 @@ export default function Login() {
           },
         }}
       />
-
       {/* Compact Header */}
       <header className="flex-shrink-0 relative z-10">
         <div
           className={`flex items-center justify-between p-3 sm:p-4 ${
             theme === "dark"
-              ? "bg-gray-800/80 backdrop-blur-md border-b border-gray-700/50"
+              ? "bg-white-800/80 backdrop-blur-md border-b border-gray-700/50"
               : "bg-white/80 backdrop-blur-md border-b border-gray-200/50"
           }`}
         >
@@ -335,6 +360,8 @@ export default function Login() {
                   isLocked={isLocked}
                   lockoutTime={lockoutTime}
                   showSuccess={showSuccess}
+                  maxLoginAttempts={maxLoginAttempts}
+                  loginAttempts={loginAttempts}
                 />
 
                 {/* Compact Footer */}
@@ -363,7 +390,7 @@ export default function Login() {
         <div className="hidden lg:flex flex-1 relative overflow-hidden">
           {/* Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900">
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center opacity-20"></div>
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center opacity-80"></div>
             <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-blue-800/60 to-indigo-900/80"></div>
           </div>
 
