@@ -179,34 +179,6 @@ const Header = () => {
     }
   };
 
-  const handleDebugNotifications = () => {
-    console.log("🔍 Debugging notification system...");
-    console.log("Current state:", {
-      notifications: notifications,
-      unreadCount,
-    });
-
-    // Test API directly
-    const token = localStorage.getItem("authToken");
-    console.log("Auth token exists:", !!token);
-
-    if (token) {
-      fetch(`${API_BASE_URL}/notifications`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log("🔍 Direct API response:", data);
-        })
-        .catch((err) => {
-          console.error("🔍 Direct API error:", err);
-        });
-    }
-  };
-
   // Only show notifications if enabled in settings
   const notificationsEnabled = notificationSettings?.systemUpdates !== false;
 
@@ -295,13 +267,6 @@ const Header = () => {
                           Clear all
                         </button>
                       )}
-                      <button
-                        onClick={handleDebugNotifications}
-                        className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition-colors duration-200"
-                        title="Debug notifications"
-                      >
-                        🔍
-                      </button>
                     </div>
                   </div>
 
