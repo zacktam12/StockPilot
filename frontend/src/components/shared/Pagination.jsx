@@ -242,32 +242,16 @@ export function FloatingPagination({ sliceName = "product" }) {
   }
 
   const nextPage = () => {
-    console.log("FloatingPagination Next page clicked:", {
-      currentPage,
-      totalPages,
-      canGoNext: currentPage < totalPages,
-    });
     if (currentPage < totalPages) {
       dispatch(getSetCurrentPageAction(currentPage + 1));
     }
   };
 
   const prevPage = () => {
-    console.log("FloatingPagination Prev page clicked:", {
-      currentPage,
-      totalPages,
-      canGoPrev: currentPage > 1,
-    });
     if (currentPage > 1) {
       dispatch(getSetCurrentPageAction(currentPage - 1));
     }
   };
-
-  console.log("FloatingPagination state:", {
-    currentPage,
-    totalPages,
-    sliceName,
-  });
 
   if (totalPages <= 1) return null;
 
