@@ -3,9 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { Upload, Plus, X } from "lucide-react";
 import {
   createPurchase,
-  createProduct,
   closeModal,
 } from "../../../store/slices/purchaseSlice";
+import { createProduct } from "../../../store/slices/productSlice";
 import { fetchSuppliers } from "../../../store/slices/supplierSlice";
 import { fetchCategories } from "../../../store/slices/categorySlice";
 import Button from "../../../components/shared/Button";
