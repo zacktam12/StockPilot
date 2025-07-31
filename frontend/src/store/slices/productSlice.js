@@ -79,6 +79,29 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
+export const createProduct = createAsyncThunk(
+  "products/createProduct",
+  async (productData, { rejectWithValue }) => {
+    try {
+      console.log("createProduct called with data:", productData);
+      const response = await api.post("/products", productData);
+      console.log("createProduct response:", response.data);
+      return response.data;
+    } catch (err) {
+      console.error("createProduct error:", err);
+      console.error("Error response:", err.response?.data);
+      return rejectWithValue(
+        err.response?.data?.error || "Failed to create product"
+      );
+    }
+  },
+  {
+    meta: {
+      loadingMessage: "Creating product...",
+    },
+  }
+);
+
 export const saveProduct = createAsyncThunk(
   "products/saveProduct",
   async (productData, { rejectWithValue }) => {
@@ -434,6 +457,26 @@ const productSlice = createSlice({
         }
       })
       .addCase(saveProduct.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Create Product
+      .addCase(createProduct.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createProduct.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.success) {
+          const product = action.payload.data;
+          state.items.unshift(product);
+          state.filteredItems.unshift(product);
+        } else {
+          state.error = "Failed to create product";
+        }
+      })
+      .addCase(createProduct.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

@@ -144,6 +144,7 @@ const initialState = {
   sortOrder: "desc",
   isModalOpen: false,
   editingSupplier: null,
+  formData: {},
   filters: {
     hasPhone: false,
     hasAddress: false,
@@ -173,6 +174,13 @@ const supplierSlice = createSlice({
       // Reset to first page when sorting changes
       state.currentPage = 1;
     },
+    setSort: (state, action) => {
+      const { field, order } = action.payload;
+      state.sortField = field;
+      state.sortOrder = order || "asc";
+      // Reset to first page when sorting changes
+      state.currentPage = 1;
+    },
     setFilter: (state, action) => {
       state.filters[action.payload.key] = action.payload.value;
       state.currentPage = 1;
@@ -191,6 +199,25 @@ const supplierSlice = createSlice({
     closeModal: (state) => {
       state.isModalOpen = false;
       state.editingSupplier = null;
+    },
+    setFormField: (state, action) => {
+      const { field, value } = action.payload;
+      if (!state.formData) {
+        state.formData = {};
+      }
+      state.formData[field] = value;
+    },
+    toggleEmailFilter: (state) => {
+      state.filters.hasEmail = !state.filters.hasEmail;
+    },
+    togglePhoneFilter: (state) => {
+      state.filters.hasPhone = !state.filters.hasPhone;
+    },
+    toggleAddressFilter: (state) => {
+      state.filters.hasAddress = !state.filters.hasAddress;
+    },
+    toggleCompanyFilter: (state) => {
+      state.filters.hasCompany = !state.filters.hasCompany;
     },
   },
   extraReducers: (builder) => {
@@ -339,11 +366,17 @@ const supplierSlice = createSlice({
 export const {
   setSearchTerm,
   setSortField,
+  setSort,
   setFilter,
   setCurrentPage,
   openCreateModal,
   openEditModal,
   closeModal,
+  setFormField,
+  toggleEmailFilter,
+  togglePhoneFilter,
+  toggleAddressFilter,
+  toggleCompanyFilter,
 } = supplierSlice.actions;
 
 export default supplierSlice.reducer;

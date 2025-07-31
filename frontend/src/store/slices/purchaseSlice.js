@@ -132,6 +132,8 @@ const purchaseSlice = createSlice({
     selectAll: false,
     currentPurchase: null,
     receipt: null,
+    isModalOpen: false,
+    editingPurchase: null,
   },
 
   reducers: {
@@ -185,6 +187,18 @@ const purchaseSlice = createSlice({
     clearSelection: (state) => {
       state.selectedItems = [];
       state.selectAll = false;
+    },
+    openCreateModal: (state) => {
+      state.isModalOpen = true;
+      state.editingPurchase = null;
+    },
+    openEditModal: (state, action) => {
+      state.isModalOpen = true;
+      state.editingPurchase = action.payload;
+    },
+    closeModal: (state) => {
+      state.isModalOpen = false;
+      state.editingPurchase = null;
     },
   },
   extraReducers: (builder) => {
@@ -344,6 +358,9 @@ export const {
   toggleItemSelection,
   toggleSelectAll,
   clearSelection,
+  openCreateModal,
+  openEditModal,
+  closeModal,
 } = purchaseSlice.actions;
 
 // Export Reducer

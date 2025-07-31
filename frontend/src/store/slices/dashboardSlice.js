@@ -224,6 +224,20 @@ const dashboardSlice = createSlice({
     setLowStockAlertsCurrentPage: (state, action) => {
       state.lowStockAlerts.page = action.payload;
     },
+    // Socket updates for real-time dashboard updates
+    setSocketUpdates: (state, action) => {
+      const { stats, activities, lowStockAlerts } = action.payload;
+      if (stats) {
+        state.stats = { ...state.stats, ...stats };
+      }
+      if (activities) {
+        state.activities.data = activities;
+      }
+      if (lowStockAlerts) {
+        state.lowStockAlerts.data = lowStockAlerts;
+      }
+      state.lastUpdated.stats = new Date().toISOString();
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -346,6 +360,7 @@ export const {
   resetDashboard,
   setActivitiesCurrentPage,
   setLowStockAlertsCurrentPage,
+  setSocketUpdates,
 } = dashboardSlice.actions;
 
 // Add middleware to listen for category changes and refresh product distribution

@@ -115,6 +115,13 @@ const customerSlice = createSlice({
       // Reset to first page when sorting changes
       state.currentPage = 1;
     },
+    setSort: (state, action) => {
+      const { field, order } = action.payload;
+      state.sortField = field;
+      state.sortOrder = order || "asc";
+      // Reset to first page when sorting changes
+      state.currentPage = 1;
+    },
     setFilter: (state, action) => {
       state.filters[action.payload.key] = action.payload.value;
       state.currentPage = 1;
@@ -203,6 +210,7 @@ const customerSlice = createSlice({
 export const {
   setSearchTerm,
   setSortField,
+  setSort,
   setFilter,
   setCurrentPage,
   openCreateModal,
