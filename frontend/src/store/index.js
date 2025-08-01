@@ -16,11 +16,14 @@ import debounceReducer from "./slices/debounceSlice";
 import loadingReducer from "./slices/loadingSlice";
 import settingsReducer from "./slices/settingsSlice";
 import { loadingMiddleware } from "./middleware/loadingMiddleware";
+import uiReducer from "./slices/uiSlice";
 
 // Recommended serializable check configuration
 const serializableCheck = {
   ignoredActions: [
     "qrScanner/setScannerInstance", // Add any non-serializable actions here
+    "persist/PERSIST", // Ignore Redux Persist actions
+    "persist/REHYDRATE", // Ignore Redux Persist actions
     // Add other actions that might contain non-serializable values
   ],
   ignoredPaths: [
@@ -46,6 +49,7 @@ const store = configureStore({
     debounce: debounceReducer,
     loading: loadingReducer,
     settings: settingsReducer,
+    ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
