@@ -5,7 +5,7 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Inventory Management System API",
+      title: "StockPilot",
       version: "1.0.0",
       description: "API documentation for the Inventory Management System",
       contact: {
@@ -87,6 +87,67 @@ const options = {
               enum: ["pending", "received", "cancelled"],
             },
             createdAt: { type: "string", format: "date-time" },
+          },
+        },
+        Customer: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            name: { type: "string" },
+            email: { type: "string", format: "email" },
+            phone: { type: "string" },
+            address: { type: "string" },
+            createdAt: { type: "string", format: "date-time" },
+          },
+        },
+        Supplier: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            name: { type: "string" },
+            email: { type: "string", format: "email" },
+            phone: { type: "string" },
+            address: { type: "string" },
+            contactPerson: { type: "string" },
+            createdAt: { type: "string", format: "date-time" },
+          },
+        },
+        ProductSale: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            productId: { type: "string", format: "uuid" },
+            saleId: { type: "string", format: "uuid" },
+            quantity: { type: "integer" },
+            unitPrice: { type: "number" },
+            totalPrice: { type: "number" },
+          },
+        },
+        ProductPurchase: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            productId: { type: "string", format: "uuid" },
+            purchaseId: { type: "string", format: "uuid" },
+            quantity: { type: "integer" },
+            unitPrice: { type: "number" },
+            totalPrice: { type: "number" },
+          },
+        },
+        Error: {
+          type: "object",
+          properties: {
+            error: { type: "string" },
+            message: { type: "string" },
+            statusCode: { type: "integer" },
+          },
+        },
+        Success: {
+          type: "object",
+          properties: {
+            success: { type: "boolean" },
+            message: { type: "string" },
+            data: { type: "object" },
           },
         },
       },
