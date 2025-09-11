@@ -1,5 +1,41 @@
 const supplierService = require("../services/supplier.service");
 
+// Enhanced error handling function
+const handleSupplierError = (error, res) => {
+  console.error('Supplier Controller Error:', error);
+  
+  // Handle specific Prisma errors
+  if (error.code === 'P2002') {
+    return res.status(409).json({
+      success: false,
+      message: 'Supplier with this information already exists',
+      field: error.meta?.target?.[0] || 'unknown'
+    });
+  }
+  
+  if (error.code === 'P2025') {
+    return res.status(404).json({
+      success: false,
+      message: 'Supplier not found'
+    });
+  }
+  
+  // Handle validation errors
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: error.details || [error.message]
+    });
+  }
+  
+  // Default error response
+  return res.status(500).json({
+    success: false,
+    message: 'Internal server error'
+  });
+};
+
 // Get all suppliers (with optional search/filter)
 exports.getAllSuppliers = async (req, res, next) => {
   try {
@@ -9,19 +45,37 @@ exports.getAllSuppliers = async (req, res, next) => {
       search = "",
       sortField = "",
       sortOrder = "",
+      status = ""
     } = req.query;
 
+    // Validate pagination parameters
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10));
+    const offset = (pageNum - 1) * limitNum;
+
     const result = await supplierService.getAllSuppliers(
-      Number(page),
-      Number(limit),
+      pageNum,
+      limitNum,
       search,
       sortField,
-      sortOrder
+      sortOrder,
+      status
     );
 
-    res.json(result);
+    res.json({
+      success: true,
+      data: result.suppliers,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(result.total / limitNum),
+        totalItems: result.total,
+        itemsPerPage: limitNum,
+        hasNext: pageNum < Math.ceil(result.total / limitNum),
+        hasPrev: pageNum > 1
+      }
+    });
   } catch (error) {
-    next(error);
+    handleSupplierError(error, res);
   }
 };
 
@@ -30,11 +84,17 @@ exports.getSupplierById = async (req, res, next) => {
   try {
     const supplier = await supplierService.getSupplierById(req.params.id);
     if (!supplier || supplier.isDeleted) {
-      return res.status(404).json({ message: "Supplier not found" });
+      return res.status(404).json({ 
+        success: false,
+        message: "Supplier not found" 
+      });
     }
-    res.json(supplier);
+    res.json({
+      success: true,
+      data: supplier
+    });
   } catch (error) {
-    next(error);
+    handleSupplierError(error, res);
   }
 };
 
@@ -42,9 +102,13 @@ exports.getSupplierById = async (req, res, next) => {
 exports.createSupplier = async (req, res, next) => {
   try {
     const supplier = await supplierService.createSupplier(req.body);
-    res.status(201).json(supplier);
+    res.status(201).json({
+      success: true,
+      message: 'Supplier created successfully',
+      data: supplier
+    });
   } catch (error) {
-    next(error);
+    handleSupplierError(error, res);
   }
 };
 
@@ -55,19 +119,38 @@ exports.updateSupplier = async (req, res, next) => {
       req.params.id,
       req.body
     );
-    res.json(supplier);
+    if (!supplier) {
+      return res.status(404).json({
+        success: false,
+        message: "Supplier not found"
+      });
+    }
+    res.json({
+      success: true,
+      message: 'Supplier updated successfully',
+      data: supplier
+    });
   } catch (error) {
-    next(error);
+    handleSupplierError(error, res);
   }
 };
 
 // Soft delete supplier
 exports.deleteSupplier = async (req, res, next) => {
   try {
-    await supplierService.deleteSupplier(req.params.id);
-    res.json({ message: "Supplier deleted" });
+    const deleted = await supplierService.deleteSupplier(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Supplier not found"
+      });
+    }
+    res.json({ 
+      success: true,
+      message: "Supplier deleted successfully" 
+    });
   } catch (error) {
-    next(error);
+    handleSupplierError(error, res);
   }
 };
 
