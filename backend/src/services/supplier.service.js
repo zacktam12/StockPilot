@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+const cacheService = require("./cache.service");
 const prisma = new PrismaClient();
 
 exports.getAllSuppliers = async (
@@ -45,16 +46,31 @@ exports.getAllSuppliers = async (
     take: limit,
   });
 
-  return {
-    success: true,
-    data: data || [],
+  const result = {
+    suppliers: data || [],
+    total: totalItems,
     pagination: {
-      currentPage: page,
-      totalPages,
+      page,
+      limit,
       totalItems,
-      itemsPerPage: limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
     },
   };
+
+  // Cache the result for 5 minutes
+  const cacheKey = cacheService.generateKey(
+    'suppliers',
+    page.toString(),
+    limit.toString(),
+    search,
+    sortField,
+    sortOrder
+  );
+  await cacheService.set(cacheKey, result, 300);
+
+  return result;
 };
 
 exports.getSupplierById = async (id) => {
@@ -67,25 +83,40 @@ exports.getSupplierById = async (id) => {
 };
 
 exports.createSupplier = async (data) => {
-  const { name, contactName, email, phone, address, companyName } = data;
-  return prisma.supplier.create({
-    data: { name, contactName, email, phone, address, companyName },
+  const { name, contactName, email, phone, address, companyName, status, notes } = data;
+  const supplier = await prisma.supplier.create({
+    data: { name, contactName, email, phone, address, companyName, status, notes },
   });
+  
+  // Invalidate cache
+  await cacheService.deletePattern('suppliers:*');
+  
+  return supplier;
 };
 
 exports.updateSupplier = async (id, data) => {
-  const { name, contactName, email, phone, address, companyName } = data;
-  return prisma.supplier.update({
+  const { name, contactName, email, phone, address, companyName, status, notes } = data;
+  const supplier = await prisma.supplier.update({
     where: { id },
-    data: { name, contactName, email, phone, address, companyName },
+    data: { name, contactName, email, phone, address, companyName, status, notes },
   });
+  
+  // Invalidate cache
+  await cacheService.deletePattern('suppliers:*');
+  
+  return supplier;
 };
 
 exports.deleteSupplier = async (id) => {
-  return prisma.supplier.update({
+  const supplier = await prisma.supplier.update({
     where: { id },
     data: { isDeleted: true },
   });
+  
+  // Invalidate cache
+  await cacheService.deletePattern('suppliers:*');
+  
+  return supplier;
 };
 
 // Bulk operations
