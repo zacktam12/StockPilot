@@ -5,7 +5,9 @@ const { authenticate } = require("../middlewares/auth");
 const {
   validateCreateSupplier,
   validateUpdateSupplier,
+  validateSupplierId,
 } = require("../validators/supplier.validator");
+const { generalLimiter, strictLimiter, uploadLimiter, searchLimiter } = require("../middlewares/rateLimiter");
 
 /**
  * @swagger
@@ -389,21 +391,27 @@ const {
  *         description: Unauthorized
  */
 
-// All routes require authentication
+// All routes require authentication and rate limiting
 router.use(authenticate);
+router.use(generalLimiter);
 
-router.get("/", supplierController.getAllSuppliers);
-router.get("/:id", supplierController.getSupplierById);
+// Search operations (more lenient rate limiting)
+router.get("/", searchLimiter, supplierController.getAllSuppliers);
+
+// CRUD operations
+router.get("/:id", validateSupplierId, supplierController.getSupplierById);
 router.post("/", validateCreateSupplier, supplierController.createSupplier);
-router.put("/:id", validateUpdateSupplier, supplierController.updateSupplier);
-router.delete("/:id", supplierController.deleteSupplier);
+router.put("/:id", validateSupplierId, validateUpdateSupplier, supplierController.updateSupplier);
 
-// Bulk operations
-router.post("/bulk-delete", supplierController.bulkDeleteSuppliers);
-router.post("/bulk-update", supplierController.bulkUpdateSuppliers);
+// Strict rate limiting for delete operations
+router.delete("/:id", validateSupplierId, strictLimiter, supplierController.deleteSupplier);
+
+// Bulk operations (strict rate limiting)
+router.post("/bulk-delete", strictLimiter, supplierController.bulkDeleteSuppliers);
+router.post("/bulk-update", strictLimiter, supplierController.bulkUpdateSuppliers);
 
 // Import/Export operations
-router.post("/import", supplierController.importSuppliers);
+router.post("/import", uploadLimiter, supplierController.importSuppliers);
 router.get("/export", supplierController.exportSuppliers);
 
 module.exports = router;
