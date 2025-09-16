@@ -4,8 +4,11 @@ const productController = require("../controller/product.controller");
 const {
   validateCreateProduct,
   validateUpdateProduct,
+  validateProductId,
+  validateSKUUniqueness,
 } = require("../validators/product.validator");
 const { authenticate, authorize } = require("../middlewares/auth");
+const { generalLimiter, strictLimiter, uploadLimiter, searchLimiter } = require("../middlewares/rateLimiter");
 
 // Create product (Admin-only)
 /**
@@ -65,11 +68,16 @@ const { authenticate, authorize } = require("../middlewares/auth");
  *       403:
  *         description: Forbidden - Admin access required
  */
+// All routes require authentication and rate limiting
+router.use(authenticate);
+router.use(generalLimiter);
+
+// Create product (Admin-only)
 router.post(
   "/",
-  authenticate,
   authorize("admin"),
   validateCreateProduct,
+  validateSKUUniqueness,
   productController.createProduct
 );
 
