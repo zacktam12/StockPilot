@@ -1,6 +1,58 @@
 const purchaseService = require("../services/purchase.service");
 const NotificationService = require("../services/notification.service");
 
+// Enhanced error handling function
+const handlePurchaseError = (error, res) => {
+  console.error('Purchase Controller Error:', error);
+  
+  // Handle specific Prisma errors
+  if (error.code === 'P2002') {
+    return res.status(409).json({
+      success: false,
+      message: 'Purchase with this PO number already exists',
+      field: error.meta?.target?.[0] || 'unknown'
+    });
+  }
+  
+  if (error.code === 'P2025') {
+    return res.status(404).json({
+      success: false,
+      message: 'Purchase not found'
+    });
+  }
+  
+  if (error.code === 'P2003') {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid supplier or product reference'
+    });
+  }
+  
+  // Handle validation errors
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: error.details || [error.message]
+    });
+  }
+  
+  // Handle insufficient stock errors
+  if (error.message && error.message.includes('insufficient stock')) {
+    return res.status(400).json({
+      success: false,
+      message: 'Insufficient stock for one or more products',
+      details: error.details
+    });
+  }
+  
+  // Default error response
+  return res.status(500).json({
+    success: false,
+    message: 'Internal server error'
+  });
+};
+
 exports.createPurchase = async (req, res, next) => {
   try {
     const { items, ...purchaseData } = req.body;
@@ -36,54 +88,94 @@ exports.createPurchase = async (req, res, next) => {
       data: purchase,
     });
   } catch (error) {
-    next(error);
+    handlePurchaseError(error, res);
   }
 };
 
 exports.getAllPurchases = async (req, res, next) => {
   try {
-    const result = await purchaseService.getAllPurchases(req.query);
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      status = "",
+      supplierId = "",
+      paymentMethod = "",
+      startDate = "",
+      endDate = "",
+      sortField = "createdAt",
+      sortOrder = "desc"
+    } = req.query;
+
+    // Validate pagination parameters
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10));
+
+    const result = await purchaseService.getAllPurchases({
+      page: pageNum,
+      limit: limitNum,
+      search,
+      status,
+      supplierId,
+      paymentMethod,
+      startDate,
+      endDate,
+      sortField,
+      sortOrder
+    });
+
     res.json({
       success: true,
-      data: result.data,
-      pagination: result.pagination,
+      data: result.purchases,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(result.total / limitNum),
+        totalItems: result.total,
+        itemsPerPage: limitNum,
+        hasNext: pageNum < Math.ceil(result.total / limitNum),
+        hasPrev: pageNum > 1
+      },
+      summary: result.summary || {}
     });
   } catch (error) {
-    next(error);
+    handlePurchaseError(error, res);
   }
 };
 
 exports.getPurchaseById = async (req, res, next) => {
   try {
-    const purchase = await purchaseService.getPurchaseById(req.params.id);
-    if (!purchase) {
+    const result = await purchaseService.getPurchaseById(req.params.id);
+    if (!result) {
       return res.status(404).json({
         success: false,
-        message: "Purchase not found",
+        message: "Purchase not found"
       });
     }
     res.json({
       success: true,
-      data: purchase,
+      data: result
     });
   } catch (error) {
-    next(error);
+    handlePurchaseError(error, res);
   }
 };
 
 exports.updatePurchase = async (req, res, next) => {
   try {
-    const purchase = await purchaseService.updatePurchase(
-      req.params.id,
-      req.body
-    );
+    const result = await purchaseService.updatePurchase(req.params.id, req.body);
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "Purchase not found"
+      });
+    }
     res.json({
       success: true,
-      message: "Purchase updated successfully",
-      data: purchase,
+      message: 'Purchase updated successfully',
+      data: result
     });
   } catch (error) {
-    next(error);
+    handlePurchaseError(error, res);
   }
 };
 
