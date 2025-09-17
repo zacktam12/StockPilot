@@ -149,16 +149,16 @@ router.post(
 
 router.get(
   "/",
-  authenticate,
   authorize("admin", "staff"),
+  searchLimiter,
   productController.getAllProducts
 );
 
 // Get low stock products (Admin and Staff)
 router.get(
   "/low-stock",
-  authenticate,
   authorize("admin", "staff"),
+  searchLimiter,
   productController.getLowStockProducts
 );
 
@@ -195,7 +195,7 @@ router.get(
  */
 router.get(
   "/:id",
-  authenticate,
+  validateProductId,
   authorize("admin", "staff"),
   productController.getProductById
 );
