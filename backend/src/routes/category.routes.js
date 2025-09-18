@@ -4,8 +4,13 @@ const categoryController = require("../controller/category.controller");
 const {
   validateCreateCategory,
   validateUpdateCategory,
+  validateCategoryId,
+  validateCategoryNameUniqueness,
+  validateSlugUniqueness,
+  validateParentCategory,
 } = require("../validators/category.validator");
 const { authenticate, authorize } = require("../middlewares/auth");
+const { generalLimiter, strictLimiter, searchLimiter } = require("../middlewares/rateLimiter");
 
 /**
  * @swagger
@@ -99,36 +104,45 @@ const { authenticate, authorize } = require("../middlewares/auth");
  *         description: Forbidden - Insufficient permissions
  */
 
+// All routes require authentication and rate limiting
+router.use(authenticate);
+router.use(generalLimiter);
+
 // Create category (Admin-only)
 router.post(
   "/",
-  authenticate,
   authorize("admin"),
   validateCreateCategory,
+  validateCategoryNameUniqueness,
+  validateSlugUniqueness,
+  validateParentCategory,
   categoryController.createCategory
 );
 
 // Update category (Admin and Staff)
 router.put(
   "/:id",
-  authenticate,
+  validateCategoryId,
   authorize("admin", "staff"),
   validateUpdateCategory,
+  validateCategoryNameUniqueness,
+  validateSlugUniqueness,
+  validateParentCategory,
   categoryController.updateCategory
 );
 
 // Get all categories (Admin and Staff)
 router.get(
   "/",
-  authenticate,
   authorize("admin", "staff"),
+  searchLimiter,
   categoryController.getAllCategories
 );
 
 // Get category by ID (Admin and Staff)
 router.get(
   "/:id",
-  authenticate,
+  validateCategoryId,
   authorize("admin", "staff"),
   categoryController.getCategoryById
 );
@@ -136,8 +150,9 @@ router.get(
 // Soft delete category (Admin-only)
 router.delete(
   "/:id",
-  authenticate,
+  validateCategoryId,
   authorize("admin"),
+  strictLimiter,
   categoryController.deleteCategory
 );
 
