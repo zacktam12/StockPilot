@@ -6,6 +6,65 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { sendMail } = require("../utils/mail.js");
 
+// Enhanced error handling function
+const handleUserError = (error, res) => {
+  console.error('User Controller Error:', error);
+  
+  // Handle specific Prisma errors
+  if (error.code === 'P2002') {
+    return res.status(409).json({
+      success: false,
+      message: 'User with this information already exists',
+      field: error.meta?.target?.[0] || 'unknown'
+    });
+  }
+  
+  if (error.code === 'P2025') {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+  
+  if (error.code === 'P2003') {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid role reference'
+    });
+  }
+  
+  // Handle validation errors
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: error.details || [error.message]
+    });
+  }
+  
+  // Handle authentication errors
+  if (error.message && error.message.includes('Invalid credentials')) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid email or password'
+    });
+  }
+  
+  // Handle account lockout errors
+  if (error.message && error.message.includes('Account locked')) {
+    return res.status(423).json({
+      success: false,
+      message: 'Account is locked due to too many failed attempts'
+    });
+  }
+  
+  // Default error response
+  return res.status(500).json({
+    success: false,
+    message: 'Internal server error'
+  });
+};
+
 function generateResetToken() {
   return crypto.randomBytes(32).toString("hex");
 }
@@ -152,58 +211,84 @@ exports.getAllUsers = async (req, res, next) => {
   try {
     const {
       page = 1,
-      limit = 5,
+      limit = 10,
       search = "",
       status = "",
       roleId = "",
-      sortField = "",
-      sortOrder = "",
+      department = "",
+      sortField = "createdAt",
+      sortOrder = "desc"
     } = req.query;
-    const result = await userService.getAllUsers(
-      Number(page),
-      Number(limit),
+
+    // Validate pagination parameters
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10));
+
+    const result = await userService.getAllUsers({
+      page: pageNum,
+      limit: limitNum,
       search,
       status,
       roleId,
+      department,
       sortField,
       sortOrder
-    );
+    });
 
-    res.json(result);
+    res.json({
+      success: true,
+      data: result.users,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(result.total / limitNum),
+        totalItems: result.total,
+        itemsPerPage: limitNum,
+        hasNext: pageNum < Math.ceil(result.total / limitNum),
+        hasPrev: pageNum > 1
+      },
+      summary: result.summary || {}
+    });
   } catch (error) {
-    next(error);
+    handleUserError(error, res);
   }
 };
 
 // 📍 Get by ID
 exports.getUserById = async (req, res, next) => {
   try {
-    const user = await userService.getUserById(req.params.id);
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    const result = await userService.getUserById(req.params.id);
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
     }
-
     res.json({
       success: true,
-      data: user,
+      data: result
     });
   } catch (error) {
-    next(error);
+    handleUserError(error, res);
   }
 };
 
 // 🔁 Update
 exports.updateUser = async (req, res, next) => {
   try {
-    console.log("Update user request - ID:", req.params.id);
-    console.log("Update user request - Body:", req.body);
     const result = await userService.updateUser(req.params.id, req.body);
-    res.json(result);
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      data: result
+    });
   } catch (error) {
-    console.error("Update user error:", error);
-    next(error);
+    handleUserError(error, res);
   }
 };
 
