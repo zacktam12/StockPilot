@@ -2,6 +2,13 @@ const express = require("express");
 const router = express.Router();
 const customerController = require("../controller/customer.controller");
 const { authenticate, authorize } = require("../middlewares/auth");
+const {
+  validateCreateCustomer,
+  validateUpdateCustomer,
+  validateCustomerId,
+  validateEmailUniqueness,
+} = require("../validators/customer.validator");
+const { generalLimiter, strictLimiter, uploadLimiter, searchLimiter } = require("../middlewares/rateLimiter");
 
 /**
  * @swagger
@@ -322,26 +329,31 @@ const { authenticate, authorize } = require("../middlewares/auth");
  *         description: Forbidden - Admin access required
  */
 
+// All routes require authentication and rate limiting
+router.use(authenticate);
+router.use(generalLimiter);
+
 // Create customer (Admin and Staff)
 router.post(
   "/",
-  authenticate,
   authorize("admin", "staff"),
+  validateCreateCustomer,
+  validateEmailUniqueness,
   customerController.create
 );
 
 // Get all customers (Admin and Staff)
 router.get(
   "/",
-  authenticate,
   authorize("admin", "staff"),
+  searchLimiter,
   customerController.getAll
 );
 
 // Get customer by ID (Admin and Staff)
 router.get(
   "/:id",
-  authenticate,
+  validateCustomerId,
   authorize("admin", "staff"),
   customerController.getById
 );
@@ -349,32 +361,35 @@ router.get(
 // Update customer (Admin and Staff)
 router.put(
   "/:id",
-  authenticate,
+  validateCustomerId,
   authorize("admin", "staff"),
+  validateUpdateCustomer,
+  validateEmailUniqueness,
   customerController.update
 );
 
 // Delete customer (Admin-only)
 router.delete(
   "/:id",
-  authenticate,
+  validateCustomerId,
   authorize("admin"),
+  strictLimiter,
   customerController.delete
 );
 
 // Bulk import customers (Admin-only)
 router.post(
   "/bulk",
-  authenticate,
   authorize("admin"),
+  uploadLimiter,
   customerController.bulkImportCustomers
 );
 
 // Bulk delete customers (Admin-only)
 router.delete(
   "/bulk",
-  authenticate,
   authorize("admin"),
+  strictLimiter,
   customerController.bulkDeleteCustomers
 );
 
