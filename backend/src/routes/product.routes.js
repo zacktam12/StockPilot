@@ -203,16 +203,17 @@ router.get(
 // Update product (Admin-only)
 router.put(
   "/:id",
-  authenticate,
+  validateProductId,
   authorize("admin"),
   validateUpdateProduct,
+  validateSKUUniqueness,
   productController.updateProduct
 );
 
 // Update stock (Admin and Staff)
 router.patch(
   "/:id/stock",
-  authenticate,
+  validateProductId,
   authorize("admin", "staff"),
   productController.updateStock
 );
@@ -220,7 +221,7 @@ router.patch(
 // Increment stock (Admin and Staff)
 router.patch(
   "/:id/stock/increment",
-  authenticate,
+  validateProductId,
   authorize("admin", "staff"),
   productController.incrementStock
 );
@@ -228,7 +229,7 @@ router.patch(
 // Decrement stock (Admin and Staff)
 router.patch(
   "/:id/stock/decrement",
-  authenticate,
+  validateProductId,
   authorize("admin", "staff"),
   productController.decrementStock
 );
@@ -236,24 +237,25 @@ router.patch(
 // Delete product (Admin-only)
 router.delete(
   "/:id",
-  authenticate,
+  validateProductId,
   authorize("admin"),
+  strictLimiter,
   productController.deleteProduct
 );
 
 // Bulk import products (Admin-only)
 router.post(
   "/bulk",
-  authenticate,
   authorize("admin"),
+  uploadLimiter,
   productController.bulkImportProducts
 );
 
 // Bulk delete products (Admin-only)
 router.delete(
   "/bulk",
-  authenticate,
   authorize("admin"),
+  strictLimiter,
   productController.bulkDeleteProducts
 );
 
