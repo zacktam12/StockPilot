@@ -1,24 +1,69 @@
 const customerRepository = require("../repositories/customer.repository");
+const cacheService = require("./cache.service");
 
 class CustomerService {
   async createCustomer(data) {
-    return customerRepository.create(data);
+    const result = await customerRepository.create(data);
+    
+    // Invalidate cache
+    await cacheService.deletePattern('customers:*');
+    
+    return result;
   }
 
-  async getCustomers(
-    page = 1,
-    limit = 5,
-    search = "",
-    sortField = "createdAt",
-    sortOrder = "desc"
-  ) {
-    return customerRepository.findCustomers(
+  async getCustomers(params = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      sortField = "createdAt",
+      sortOrder = "desc",
+      status = "",
+      customerType = "",
+      hasEmail = false,
+      hasPhone = false,
+      hasAddress = false
+    } = params;
+
+    // Generate cache key
+    const cacheKey = cacheService.generateKey(
+      'customers',
+      page.toString(),
+      limit.toString(),
+      search || '',
+      status || '',
+      customerType || '',
+      sortField,
+      sortOrder,
+      hasEmail ? 'true' : 'false',
+      hasPhone ? 'true' : 'false',
+      hasAddress ? 'true' : 'false'
+    );
+
+    // Try to get from cache first
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // If not in cache, fetch from database
+    const result = await customerRepository.findCustomers(
       page,
       limit,
       search,
       sortField,
-      sortOrder
+      sortOrder,
+      status,
+      customerType,
+      hasEmail,
+      hasPhone,
+      hasAddress
     );
+
+    // Cache the result for 5 minutes
+    await cacheService.set(cacheKey, result, 300);
+
+    return result;
   }
 
   async getCustomerById(id) {
@@ -26,11 +71,21 @@ class CustomerService {
   }
 
   async updateCustomer(id, data) {
-    return customerRepository.update({ id }, data);
+    const result = await customerRepository.update({ id }, data);
+    
+    // Invalidate cache
+    await cacheService.deletePattern('customers:*');
+    
+    return result;
   }
 
   async deleteCustomer(id) {
-    return customerRepository.delete({ id });
+    const result = await customerRepository.delete({ id });
+    
+    // Invalidate cache
+    await cacheService.deletePattern('customers:*');
+    
+    return result;
   }
 
   async bulkImportCustomers(customers) {
