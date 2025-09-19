@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const dashboardController = require("../controller/dashboard.controller");
 const { authenticate, authorize } = require("../middlewares/auth");
+const { generalLimiter, searchLimiter } = require("../middlewares/rateLimiter");
 
 /**
  * @swagger
@@ -222,22 +223,35 @@ const { authenticate, authorize } = require("../middlewares/auth");
  *         description: Unauthorized
  */
 
-// All dashboard endpoints require authentication
+// All dashboard endpoints require authentication and rate limiting
 router.use(authenticate);
+router.use(generalLimiter);
 
 // GET /api/dashboard/stats
 router.get("/stats", dashboardController.getStats);
 
 // GET /api/dashboard/activities
-router.get("/activities", dashboardController.getActivities);
+router.get("/activities", searchLimiter, dashboardController.getActivities);
 
 // GET /api/dashboard/low-stock-alerts
-router.get("/low-stock-alerts", dashboardController.getLowStockAlerts);
+router.get("/low-stock-alerts", searchLimiter, dashboardController.getLowStockAlerts);
 
 // GET /api/dashboard/revenue-data
-router.get("/revenue-data", dashboardController.getRevenueData);
+router.get("/revenue-data", searchLimiter, dashboardController.getRevenueData);
 
 // GET /api/dashboard/product-distribution
 router.get("/product-distribution", dashboardController.getProductDistribution);
+
+// GET /api/dashboard/sales-analytics
+router.get("/sales-analytics", searchLimiter, dashboardController.getSalesAnalytics);
+
+// GET /api/dashboard/customer-analytics
+router.get("/customer-analytics", searchLimiter, dashboardController.getCustomerAnalytics);
+
+// GET /api/dashboard/inventory-analytics
+router.get("/inventory-analytics", searchLimiter, dashboardController.getInventoryAnalytics);
+
+// GET /api/dashboard/performance-metrics
+router.get("/performance-metrics", searchLimiter, dashboardController.getPerformanceMetrics);
 
 module.exports = router;
