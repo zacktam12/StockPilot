@@ -4,9 +4,15 @@ const userController = require("../controller/user.controller");
 const {
   validateRegister,
   validateUpdateUser,
+  validatePasswordReset,
+  validatePasswordUpdate,
+  validateUserId,
+  validateEmailUniqueness,
+  validateEmployeeIdUniqueness,
 } = require("../validators/user.validator");
 const { authenticate, authorize } = require("../middlewares/auth");
 const upload = require("../services/upload.service");
+const { generalLimiter, strictLimiter, authLimiter, searchLimiter } = require("../middlewares/rateLimiter");
 
 /**
  * @swagger
@@ -412,33 +418,43 @@ const upload = require("../services/upload.service");
  *         description: Forbidden - Admin access required
  */
 
+// All routes require authentication and rate limiting
+router.use(authenticate);
+router.use(generalLimiter);
+
 // Register user (Admin-only)
 router.post(
   "/",
-  authenticate,
   authorize("admin"),
   validateRegister,
+  validateEmailUniqueness,
+  validateEmployeeIdUniqueness,
   userController.createUser
 );
 
 // Update user (Admin-only)
 router.put(
   "/:id",
-  authenticate,
+  validateUserId,
   authorize("admin"),
   validateUpdateUser,
+  validateEmailUniqueness,
+  validateEmployeeIdUniqueness,
   userController.updateUser
 );
 
 // Get current user profile (authenticated user)
-router.get("/me", authenticate, (req, res) => {
+router.get("/me", (req, res) => {
   // Remove sensitive fields if needed
   const { password, ...userWithoutPassword } = req.user;
   res.json({ success: true, data: userWithoutPassword });
 });
 
 // Update current user profile (authenticated user)
-router.put("/me", authenticate, userController.updateCurrentUser);
+router.put("/me", validateUpdateUser, userController.updateCurrentUser);
+
+// Change password (authenticated user)
+router.put("/me/change-password", validatePasswordUpdate, userController.changePassword);
 
 // Upload profile picture (authenticated user)
 router.post(
@@ -498,12 +514,17 @@ router.post(
 );
 
 // Get all users (Admin-only)
-router.get("/", authenticate, authorize("admin"), userController.getAllUsers);
+router.get(
+  "/",
+  authorize("admin"),
+  searchLimiter,
+  userController.getAllUsers
+);
 
 // Get user by ID (Admin-only)
 router.get(
   "/:id",
-  authenticate,
+  validateUserId,
   authorize("admin"),
   userController.getUserById
 );
@@ -511,15 +532,15 @@ router.get(
 // Soft delete user (Admin-only)
 router.delete(
   "/:id",
-  authenticate,
+  validateUserId,
   authorize("admin"),
+  strictLimiter,
   userController.deleteUser
 );
 
 // Import users from CSV (Admin-only)
 router.post(
   "/import",
-  authenticate,
   authorize("admin"),
   userController.importUsers
 );
