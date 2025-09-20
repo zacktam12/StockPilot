@@ -1,5 +1,48 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const cacheService = require("./cache.service");
+
+// Function to calculate sales summary statistics
+const calculateSalesSummary = async (where) => {
+  try {
+    const [totalSales, totalRevenue, avgOrderValue, statusCounts] = await Promise.all([
+      prisma.sale.count({ where }),
+      prisma.sale.aggregate({
+        where,
+        _sum: { totalPrice: true }
+      }),
+      prisma.sale.aggregate({
+        where,
+        _avg: { totalPrice: true }
+      }),
+      prisma.sale.groupBy({
+        by: ['status'],
+        where,
+        _count: { status: true }
+      })
+    ]);
+
+    const statusBreakdown = statusCounts.reduce((acc, item) => {
+      acc[item.status] = item._count.status;
+      return acc;
+    }, {});
+
+    return {
+      totalSales,
+      totalRevenue: totalRevenue._sum.totalPrice || 0,
+      avgOrderValue: avgOrderValue._avg.totalPrice || 0,
+      statusBreakdown
+    };
+  } catch (error) {
+    console.error('Error calculating sales summary:', error);
+    return {
+      totalSales: 0,
+      totalRevenue: 0,
+      avgOrderValue: 0,
+      statusBreakdown: {}
+    };
+  }
+};
 
 // Function to generate order number
 const generateOrderNumber = async () => {
@@ -119,6 +162,10 @@ const createSale = async (data) => {
     );
   }
 
+  // Invalidate cache
+  await cacheService.deletePattern('sales:*');
+  await cacheService.deletePattern('products:*'); // Invalidate product cache due to quantity changes
+
   // Return the sale with updated data
   return prisma.sale.findUnique({
     where: { id: sale.id },
@@ -140,44 +187,103 @@ const createSale = async (data) => {
 //     include: { user: true, customer: true, productSales: true },
 //   });
 
-const getAllSales = async (query) => {
-  const page = parseInt(query.page, 10) || 1;
-  const limit = parseInt(query.limit, 10) || 10;
-  const skip = (page - 1) * limit;
+const getAllSales = async (params = {}) => {
+  const {
+    page = 1,
+    limit = 10,
+    search = "",
+    status = "",
+    customerId = "",
+    paymentMethod = "",
+    startDate = "",
+    endDate = "",
+    sortField = "createdAt",
+    sortOrder = "desc"
+  } = params;
+
+  // Generate cache key
+  const cacheKey = cacheService.generateKey(
+    'sales',
+    page.toString(),
+    limit.toString(),
+    search || '',
+    status || '',
+    customerId || '',
+    paymentMethod || '',
+    startDate || '',
+    endDate || '',
+    sortField,
+    sortOrder
+  );
+
+  // Try to get from cache first
+  const cached = await cacheService.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const pageNum = parseInt(page, 10) || 1;
+  const limitNum = parseInt(limit, 10) || 10;
+  const skip = (pageNum - 1) * limitNum;
 
   const where = {
     isDeleted: false,
   };
 
   // Add search filter if provided
-  if (query.search) {
+  if (search) {
     where.OR = [
       {
         customer: {
           name: {
-            contains: query.search,
+            contains: search,
           },
         },
       },
       {
         orderNumber: {
-          contains: query.search,
+          contains: search,
         },
       },
     ];
   }
 
   // Add status filter if provided
-  if (query.status && query.status !== "all") {
-    where.status = query.status;
+  if (status && status !== "all") {
+    where.status = status;
   }
+
+  // Add customer filter if provided
+  if (customerId) {
+    where.customerId = customerId;
+  }
+
+  // Add payment method filter if provided
+  if (paymentMethod) {
+    where.paymentMethod = paymentMethod;
+  }
+
+  // Add date range filter if provided
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) {
+      where.createdAt.gte = new Date(startDate);
+    }
+    if (endDate) {
+      where.createdAt.lte = new Date(endDate);
+    }
+  }
+
+  // Build orderBy clause
+  const orderBy = {};
+  orderBy[sortField] = sortOrder;
 
   const [data, total] = await Promise.all([
     prisma.sale.findMany({
       where,
       skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
+      take: limitNum,
+      orderBy,
       include: {
         user: true,
         customer: true,
@@ -199,15 +305,19 @@ const getAllSales = async (query) => {
     orderNumber: sale.orderNumber, // Ensure orderNumber is included for frontend
   }));
 
-  return {
-    data: mappedData,
-    meta: {
-      total,
-      page,
-      limit,
-      pages: Math.ceil(total / limit),
-    },
+  // Calculate summary statistics
+  const summary = await calculateSalesSummary(where);
+
+  const result = {
+    sales: mappedData,
+    total,
+    summary
   };
+
+  // Cache the result for 3 minutes (shorter than other entities due to financial data)
+  await cacheService.set(cacheKey, result, 180);
+
+  return result;
 };
 
 const getSaleById = (id) =>
@@ -311,7 +421,7 @@ const updateSale = async (id, data) => {
     }
 
     // Return the updated sale with fresh data
-    return prisma.sale.findUnique({
+    const result = await prisma.sale.findUnique({
       where: { id: String(id) },
       include: {
         user: true,
@@ -323,6 +433,12 @@ const updateSale = async (id, data) => {
         },
       },
     });
+
+    // Invalidate cache after transaction
+    await cacheService.deletePattern('sales:*');
+    await cacheService.deletePattern('products:*'); // Invalidate product cache due to quantity changes
+
+    return result;
   });
 };
 
@@ -341,10 +457,15 @@ const deleteSale = async (id) => {
   }
 
   // Perform soft delete
-  return prisma.sale.update({
+  const result = await prisma.sale.update({
     where: { id: String(id) },
     data: { isDeleted: true },
   });
+
+  // Invalidate cache
+  await cacheService.deletePattern('sales:*');
+
+  return result;
 };
 
 const importSales = async (sales) => {

@@ -4,8 +4,11 @@ const saleController = require("../controller/sale.controller");
 const {
   validateCreateSale,
   validateUpdateSale,
+  validateSaleId,
+  validateSaleItems,
 } = require("../validators/sale.validator");
-const { authenticate } = require("../middlewares/auth");
+const { authenticate, authorize } = require("../middlewares/auth");
+const { generalLimiter, strictLimiter, searchLimiter } = require("../middlewares/rateLimiter");
 
 /**
  * @swagger
@@ -366,13 +369,74 @@ const { authenticate } = require("../middlewares/auth");
  *         description: Unauthorized
  */
 
-router.post("/", authenticate, validateCreateSale, saleController.createSale);
-router.get("/", authenticate, saleController.getAllSales);
-router.delete("/bulk", authenticate, saleController.bulkDeleteSales);
-router.get("/:id", authenticate, saleController.getSaleById);
-router.put("/:id", authenticate, validateUpdateSale, saleController.updateSale);
-router.put("/:id/status", authenticate, saleController.updateSaleStatus);
-router.delete("/:id", authenticate, saleController.deleteSale);
-router.post("/import", authenticate, saleController.importSales);
+// All routes require authentication and rate limiting
+router.use(authenticate);
+router.use(generalLimiter);
+
+// Create sale (Admin and Staff)
+router.post(
+  "/",
+  authorize("admin", "staff"),
+  validateCreateSale,
+  validateSaleItems,
+  saleController.createSale
+);
+
+// Get all sales (Admin and Staff)
+router.get(
+  "/",
+  authorize("admin", "staff"),
+  searchLimiter,
+  saleController.getAllSales
+);
+
+// Get sale by ID (Admin and Staff)
+router.get(
+  "/:id",
+  validateSaleId,
+  authorize("admin", "staff"),
+  saleController.getSaleById
+);
+
+// Update sale (Admin and Staff)
+router.put(
+  "/:id",
+  validateSaleId,
+  authorize("admin", "staff"),
+  validateUpdateSale,
+  saleController.updateSale
+);
+
+// Update sale status (Admin and Staff)
+router.put(
+  "/:id/status",
+  validateSaleId,
+  authorize("admin", "staff"),
+  saleController.updateSaleStatus
+);
+
+// Delete sale (Admin-only)
+router.delete(
+  "/:id",
+  validateSaleId,
+  authorize("admin"),
+  strictLimiter,
+  saleController.deleteSale
+);
+
+// Bulk delete sales (Admin-only)
+router.delete(
+  "/bulk",
+  authorize("admin"),
+  strictLimiter,
+  saleController.bulkDeleteSales
+);
+
+// Import sales (Admin-only)
+router.post(
+  "/import",
+  authorize("admin"),
+  saleController.importSales
+);
 
 module.exports = router;
