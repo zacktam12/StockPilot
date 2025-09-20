@@ -1,5 +1,48 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const cacheService = require("./cache.service");
+
+// Function to calculate purchase summary statistics
+const calculatePurchaseSummary = async (where) => {
+  try {
+    const [totalPurchases, totalCost, avgOrderValue, statusCounts] = await Promise.all([
+      prisma.purchase.count({ where }),
+      prisma.purchase.aggregate({
+        where,
+        _sum: { totalCost: true }
+      }),
+      prisma.purchase.aggregate({
+        where,
+        _avg: { totalCost: true }
+      }),
+      prisma.purchase.groupBy({
+        by: ['status'],
+        where,
+        _count: { status: true }
+      })
+    ]);
+
+    const statusBreakdown = statusCounts.reduce((acc, item) => {
+      acc[item.status] = item._count.status;
+      return acc;
+    }, {});
+
+    return {
+      totalPurchases,
+      totalCost: totalCost._sum.totalCost || 0,
+      avgOrderValue: avgOrderValue._avg.totalCost || 0,
+      statusBreakdown
+    };
+  } catch (error) {
+    console.error('Error calculating purchase summary:', error);
+    return {
+      totalPurchases: 0,
+      totalCost: 0,
+      avgOrderValue: 0,
+      statusBreakdown: {}
+    };
+  }
+};
 
 const createPurchase = async (data) => {
   const { items, ...purchaseData } = data;
@@ -52,7 +95,7 @@ const createPurchase = async (data) => {
     }
 
     // Return the purchase with updated data
-    return await tx.purchase.findUnique({
+    const result = await tx.purchase.findUnique({
       where: { id: purchase.id },
       include: {
         user: true,
@@ -66,20 +109,53 @@ const createPurchase = async (data) => {
         },
       },
     });
+
+    // Invalidate cache after transaction
+    await cacheService.deletePattern('purchases:*');
+    await cacheService.deletePattern('products:*'); // Invalidate product cache due to quantity changes
+
+    return result;
   });
 };
 
 const getAllPurchases = async (params = {}) => {
   const {
     page = 1,
-    limit = 5,
+    limit = 10,
     search = "",
+    status = "",
+    supplierId = "",
+    paymentMethod = "",
+    startDate = "",
+    endDate = "",
     sortField = "createdAt",
-    sortOrder = "desc",
+    sortOrder = "desc"
   } = params;
 
-  const skip = (page - 1) * limit;
-  const take = parseInt(limit);
+  // Generate cache key
+  const cacheKey = cacheService.generateKey(
+    'purchases',
+    page.toString(),
+    limit.toString(),
+    search || '',
+    status || '',
+    supplierId || '',
+    paymentMethod || '',
+    startDate || '',
+    endDate || '',
+    sortField,
+    sortOrder
+  );
+
+  // Try to get from cache first
+  const cached = await cacheService.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const pageNum = parseInt(page, 10) || 1;
+  const limitNum = parseInt(limit, 10) || 10;
+  const skip = (pageNum - 1) * limitNum;
 
   // Build where clause for search
   const where = {
@@ -103,6 +179,32 @@ const getAllPurchases = async (params = {}) => {
     ];
   }
 
+  // Add status filter if provided
+  if (status && status !== "all") {
+    where.status = status;
+  }
+
+  // Add supplier filter if provided
+  if (supplierId) {
+    where.supplierId = supplierId;
+  }
+
+  // Add payment method filter if provided
+  if (paymentMethod) {
+    where.paymentMethod = paymentMethod;
+  }
+
+  // Add date range filter if provided
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) {
+      where.createdAt.gte = new Date(startDate);
+    }
+    if (endDate) {
+      where.createdAt.lte = new Date(endDate);
+    }
+  }
+
   // Build orderBy clause
   let orderBy = {};
   if (sortField === "createdAt") {
@@ -121,7 +223,6 @@ const getAllPurchases = async (params = {}) => {
 
   // Get total count for pagination
   const totalItems = await prisma.purchase.count({ where });
-  const totalPages = Math.ceil(totalItems / take);
 
   // Get paginated results
   const purchases = await prisma.purchase.findMany({
@@ -139,18 +240,22 @@ const getAllPurchases = async (params = {}) => {
     },
     orderBy,
     skip,
-    take,
+    take: limitNum,
   });
 
-  return {
-    data: purchases,
-    pagination: {
-      currentPage: parseInt(page),
-      totalPages,
-      totalItems,
-      itemsPerPage: take,
-    },
+  // Calculate summary statistics
+  const summary = await calculatePurchaseSummary(where);
+
+  const result = {
+    purchases,
+    total: totalItems,
+    summary
   };
+
+  // Cache the result for 5 minutes
+  await cacheService.set(cacheKey, result, 300);
+
+  return result;
 };
 
 const getPurchaseById = (id) =>
@@ -169,8 +274,8 @@ const getPurchaseById = (id) =>
     },
   });
 
-const updatePurchase = (id, data) =>
-  prisma.purchase.update({
+const updatePurchase = async (id, data) => {
+  const result = await prisma.purchase.update({
     where: { id: String(id) },
     data,
     include: {
@@ -186,11 +291,23 @@ const updatePurchase = (id, data) =>
     },
   });
 
-const deletePurchase = (id) =>
-  prisma.purchase.update({
+  // Invalidate cache
+  await cacheService.deletePattern('purchases:*');
+
+  return result;
+};
+
+const deletePurchase = async (id) => {
+  const result = await prisma.purchase.update({
     where: { id: String(id) },
     data: { isDeleted: true },
   });
+
+  // Invalidate cache
+  await cacheService.deletePattern('purchases:*');
+
+  return result;
+};
 
 const linkProductToPurchase = async (purchaseId, item) => {
   return prisma.productPurchase.create({

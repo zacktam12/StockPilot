@@ -4,7 +4,11 @@ const purchaseController = require("../controller/purchase.controller");
 const {
   validateCreatePurchase,
   validateUpdatePurchase,
+  validatePurchaseId,
+  validatePurchaseItems,
 } = require("../validators/purchase.validator");
+const { authenticate, authorize } = require("../middlewares/auth");
+const { generalLimiter, strictLimiter, searchLimiter } = require("../middlewares/rateLimiter");
 
 /**
  * @swagger
@@ -336,12 +340,66 @@ const {
  *         description: Unauthorized
  */
 
-router.post("/", validateCreatePurchase, purchaseController.createPurchase);
-router.get("/", purchaseController.getAllPurchases);
-router.get("/:id", purchaseController.getPurchaseById);
-router.put("/:id", validateUpdatePurchase, purchaseController.updatePurchase);
-router.delete("/:id", purchaseController.deletePurchase);
-router.post("/import", purchaseController.importPurchases);
-router.patch("/:id/status", purchaseController.updatePurchaseStatus);
+// All routes require authentication and rate limiting
+router.use(authenticate);
+router.use(generalLimiter);
+
+// Create purchase (Admin and Staff)
+router.post(
+  "/",
+  authorize("admin", "staff"),
+  validateCreatePurchase,
+  validatePurchaseItems,
+  purchaseController.createPurchase
+);
+
+// Get all purchases (Admin and Staff)
+router.get(
+  "/",
+  authorize("admin", "staff"),
+  searchLimiter,
+  purchaseController.getAllPurchases
+);
+
+// Get purchase by ID (Admin and Staff)
+router.get(
+  "/:id",
+  validatePurchaseId,
+  authorize("admin", "staff"),
+  purchaseController.getPurchaseById
+);
+
+// Update purchase (Admin and Staff)
+router.put(
+  "/:id",
+  validatePurchaseId,
+  authorize("admin", "staff"),
+  validateUpdatePurchase,
+  purchaseController.updatePurchase
+);
+
+// Update purchase status (Admin and Staff)
+router.patch(
+  "/:id/status",
+  validatePurchaseId,
+  authorize("admin", "staff"),
+  purchaseController.updatePurchaseStatus
+);
+
+// Delete purchase (Admin-only)
+router.delete(
+  "/:id",
+  validatePurchaseId,
+  authorize("admin"),
+  strictLimiter,
+  purchaseController.deletePurchase
+);
+
+// Import purchases (Admin-only)
+router.post(
+  "/import",
+  authorize("admin"),
+  purchaseController.importPurchases
+);
 
 module.exports = router;
