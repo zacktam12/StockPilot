@@ -1,5 +1,31 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const cacheService = require("./cache.service");
+
+// Helper function to generate date ranges
+const getDateRange = (period) => {
+  const now = new Date();
+  let startDate;
+  
+  switch (period) {
+    case '7d':
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case '30d':
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case '90d':
+      startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    case '1y':
+      startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      break;
+    default:
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  }
+  
+  return { startDate, endDate: now };
+};
 
 // Helper function to get low stock threshold from settings
 const getLowStockThreshold = async () => {
@@ -17,6 +43,14 @@ const getLowStockThreshold = async () => {
 
 // Dashboard stats (products, sales, revenue, customers, suppliers, low stock, etc.)
 exports.getStats = async () => {
+  // Generate cache key
+  const cacheKey = cacheService.generateKey('dashboard', 'stats');
+  
+  // Try to get from cache first (short TTL for real-time data)
+  const cached = await cacheService.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
   // Get current month and previous month for trend calculations
   const now = new Date();
   const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -157,7 +191,7 @@ exports.getStats = async () => {
   // After filtering lowStockProducts:
   const lowStockItems = lowStockProducts.length;
 
-  return {
+  const result = {
     stats: {
       totalProducts,
       totalSales,
@@ -175,10 +209,41 @@ exports.getStats = async () => {
     },
     lowStockItems: lowStockProducts,
   };
+
+  // Cache the result for 2 minutes (short TTL for real-time dashboard data)
+  await cacheService.set(cacheKey, result, 120);
+
+  return result;
 };
 
 // Dashboard activities (recent sales/purchases) with proper pagination
-exports.getActivities = async (page = 1, limit = 10) => {
+exports.getActivities = async (params = {}) => {
+  const {
+    page = 1,
+    limit = 10,
+    type = "",
+    startDate = "",
+    endDate = "",
+    userId = ""
+  } = params;
+
+  // Generate cache key
+  const cacheKey = cacheService.generateKey(
+    'dashboard',
+    'activities',
+    page.toString(),
+    limit.toString(),
+    type || '',
+    startDate || '',
+    endDate || '',
+    userId || ''
+  );
+  
+  // Try to get from cache first
+  const cached = await cacheService.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
   // Get total counts for proper pagination
   const [totalSales, totalPurchases] = await Promise.all([
     prisma.sale.count({ where: { isDeleted: false } }),
@@ -232,13 +297,18 @@ exports.getActivities = async (page = 1, limit = 10) => {
   // Apply pagination
   const paginatedActivities = allActivities.slice(offset, offset + limit);
 
-  return {
-    data: paginatedActivities,
+  const result = {
+    activities: paginatedActivities,
+    total: totalItems,
     currentPage: page,
     totalPages,
-    totalItems,
     limit,
   };
+
+  // Cache the result for 3 minutes
+  await cacheService.set(cacheKey, result, 180);
+
+  return result;
 };
 
 // Low stock alerts (paginated) with configurable threshold
@@ -348,6 +418,506 @@ exports.getProductDistribution = async () => {
     return distribution;
   } catch (error) {
     console.error("Error fetching product distribution:", error);
+    return {};
+  }
+};
+
+// Sales Analytics with advanced metrics
+exports.getSalesAnalytics = async (params = {}) => {
+  const {
+    period = "30d",
+    startDate = "",
+    endDate = "",
+    groupBy = "day"
+  } = params;
+
+  // Generate cache key
+  const cacheKey = cacheService.generateKey(
+    'dashboard',
+    'sales-analytics',
+    period,
+    startDate || '',
+    endDate || '',
+    groupBy
+  );
+  
+  // Try to get from cache first
+  const cached = await cacheService.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    let dateRange;
+    if (startDate && endDate) {
+      dateRange = {
+        startDate: new Date(startDate),
+        endDate: new Date(endDate)
+      };
+    } else {
+      dateRange = getDateRange(period);
+    }
+
+    // Get sales data grouped by time period
+    const salesData = await prisma.sale.groupBy({
+      by: ['createdAt'],
+      where: {
+        isDeleted: false,
+        createdAt: {
+          gte: dateRange.startDate,
+          lte: dateRange.endDate
+        }
+      },
+      _sum: {
+        totalPrice: true
+      },
+      _count: {
+        id: true
+      },
+      orderBy: {
+        createdAt: 'asc'
+      }
+    });
+
+    // Get top selling products
+    const topProducts = await prisma.productSale.groupBy({
+      by: ['productId'],
+      where: {
+        sale: {
+          isDeleted: false,
+          createdAt: {
+            gte: dateRange.startDate,
+            lte: dateRange.endDate
+          }
+        }
+      },
+      _sum: {
+        quantity: true,
+        price: true
+      },
+      orderBy: {
+        _sum: {
+          quantity: 'desc'
+        }
+      },
+      take: 10
+    });
+
+    // Get sales by payment method
+    const salesByPaymentMethod = await prisma.sale.groupBy({
+      by: ['paymentMethod'],
+      where: {
+        isDeleted: false,
+        createdAt: {
+          gte: dateRange.startDate,
+          lte: dateRange.endDate
+        }
+      },
+      _sum: {
+        totalPrice: true
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    // Get sales by status
+    const salesByStatus = await prisma.sale.groupBy({
+      by: ['status'],
+      where: {
+        isDeleted: false,
+        createdAt: {
+          gte: dateRange.startDate,
+          lte: dateRange.endDate
+        }
+      },
+      _sum: {
+        totalPrice: true
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    // Calculate metrics
+    const totalRevenue = salesData.reduce((sum, sale) => sum + (sale._sum.totalPrice || 0), 0);
+    const totalOrders = salesData.reduce((sum, sale) => sum + sale._count.id, 0);
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    const result = {
+      timeSeries: salesData,
+      topProducts,
+      salesByPaymentMethod,
+      salesByStatus,
+      metrics: {
+        totalRevenue,
+        totalOrders,
+        averageOrderValue,
+        period: period,
+        dateRange
+      }
+    };
+
+    // Cache the result for 5 minutes
+    await cacheService.set(cacheKey, result, 300);
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching sales analytics:", error);
+    return {};
+  }
+};
+
+// Customer Analytics
+exports.getCustomerAnalytics = async (params = {}) => {
+  const {
+    period = "30d",
+    startDate = "",
+    endDate = ""
+  } = params;
+
+  // Generate cache key
+  const cacheKey = cacheService.generateKey(
+    'dashboard',
+    'customer-analytics',
+    period,
+    startDate || '',
+    endDate || ''
+  );
+  
+  // Try to get from cache first
+  const cached = await cacheService.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    let dateRange;
+    if (startDate && endDate) {
+      dateRange = {
+        startDate: new Date(startDate),
+        endDate: new Date(endDate)
+      };
+    } else {
+      dateRange = getDateRange(period);
+    }
+
+    // Get customer acquisition data
+    const customerAcquisition = await prisma.customer.groupBy({
+      by: ['createdAt'],
+      where: {
+        isDeleted: false,
+        createdAt: {
+          gte: dateRange.startDate,
+          lte: dateRange.endDate
+        }
+      },
+      _count: {
+        id: true
+      },
+      orderBy: {
+        createdAt: 'asc'
+      }
+    });
+
+    // Get top customers by revenue
+    const topCustomers = await prisma.customer.findMany({
+      where: {
+        isDeleted: false,
+        sales: {
+          some: {
+            isDeleted: false,
+            createdAt: {
+              gte: dateRange.startDate,
+              lte: dateRange.endDate
+            }
+          }
+        }
+      },
+      include: {
+        sales: {
+          where: {
+            isDeleted: false,
+            createdAt: {
+              gte: dateRange.startDate,
+              lte: dateRange.endDate
+            }
+          }
+        }
+      },
+      orderBy: {
+        sales: {
+          _count: 'desc'
+        }
+      },
+      take: 10
+    });
+
+    // Calculate customer metrics
+    const totalNewCustomers = customerAcquisition.reduce((sum, day) => sum + day._count.id, 0);
+    const totalCustomers = await prisma.customer.count({ where: { isDeleted: false } });
+
+    const result = {
+      customerAcquisition,
+      topCustomers: topCustomers.map(customer => ({
+        ...customer,
+        totalSpent: customer.sales.reduce((sum, sale) => sum + sale.totalPrice, 0),
+        orderCount: customer.sales.length
+      })),
+      metrics: {
+        totalNewCustomers,
+        totalCustomers,
+        customerGrowthRate: totalCustomers > 0 ? (totalNewCustomers / totalCustomers) * 100 : 0,
+        period: period,
+        dateRange
+      }
+    };
+
+    // Cache the result for 10 minutes
+    await cacheService.set(cacheKey, result, 600);
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching customer analytics:", error);
+    return {};
+  }
+};
+
+// Inventory Analytics
+exports.getInventoryAnalytics = async (params = {}) => {
+  const {
+    categoryId = "",
+    includeZeroStock = false
+  } = params;
+
+  // Generate cache key
+  const cacheKey = cacheService.generateKey(
+    'dashboard',
+    'inventory-analytics',
+    categoryId || '',
+    includeZeroStock.toString()
+  );
+  
+  // Try to get from cache first
+  const cached = await cacheService.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const where = { isDeleted: false };
+    
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+    
+    if (!includeZeroStock) {
+      where.quantity = { gt: 0 };
+    }
+
+    // Get inventory overview
+    const inventoryStats = await prisma.product.groupBy({
+      by: ['categoryId'],
+      where,
+      _sum: {
+        quantity: true,
+        costPrice: true
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    // Get low stock products
+    const lowStockThreshold = await getLowStockThreshold();
+    const lowStockProducts = await prisma.product.findMany({
+      where: {
+        ...where,
+        quantity: {
+          lte: lowStockThreshold,
+          gt: 0
+        }
+      },
+      include: {
+        category: true
+      },
+      orderBy: {
+        quantity: 'asc'
+      },
+      take: 20
+    });
+
+    // Get out of stock products
+    const outOfStockProducts = await prisma.product.findMany({
+      where: {
+        ...where,
+        quantity: 0
+      },
+      include: {
+        category: true
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      take: 20
+    });
+
+    // Calculate total inventory value
+    const totalInventoryValue = await prisma.product.aggregate({
+      where,
+      _sum: {
+        costPrice: true
+      }
+    });
+
+    const result = {
+      inventoryStats,
+      lowStockProducts,
+      outOfStockProducts,
+      metrics: {
+        totalInventoryValue: totalInventoryValue._sum.costPrice || 0,
+        lowStockCount: lowStockProducts.length,
+        outOfStockCount: outOfStockProducts.length,
+        totalProducts: await prisma.product.count({ where })
+      }
+    };
+
+    // Cache the result for 15 minutes (inventory changes less frequently)
+    await cacheService.set(cacheKey, result, 900);
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching inventory analytics:", error);
+    return {};
+  }
+};
+
+// Performance Metrics
+exports.getPerformanceMetrics = async (params = {}) => {
+  const {
+    period = "30d",
+    startDate = "",
+    endDate = ""
+  } = params;
+
+  // Generate cache key
+  const cacheKey = cacheService.generateKey(
+    'dashboard',
+    'performance-metrics',
+    period,
+    startDate || '',
+    endDate || ''
+  );
+  
+  // Try to get from cache first
+  const cached = await cacheService.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    let dateRange;
+    if (startDate && endDate) {
+      dateRange = {
+        startDate: new Date(startDate),
+        endDate: new Date(endDate)
+      };
+    } else {
+      dateRange = getDateRange(period);
+    }
+
+    // Get sales performance
+    const salesPerformance = await prisma.sale.aggregate({
+      where: {
+        isDeleted: false,
+        createdAt: {
+          gte: dateRange.startDate,
+          lte: dateRange.endDate
+        }
+      },
+      _sum: {
+        totalPrice: true
+      },
+      _count: {
+        id: true
+      },
+      _avg: {
+        totalPrice: true
+      }
+    });
+
+    // Get purchase performance
+    const purchasePerformance = await prisma.purchase.aggregate({
+      where: {
+        isDeleted: false,
+        createdAt: {
+          gte: dateRange.startDate,
+          lte: dateRange.endDate
+        }
+      },
+      _sum: {
+        totalCost: true
+      },
+      _count: {
+        id: true
+      },
+      _avg: {
+        totalCost: true
+      }
+    });
+
+    // Calculate profit margin
+    const totalRevenue = salesPerformance._sum.totalPrice || 0;
+    const totalCost = purchasePerformance._sum.totalCost || 0;
+    const profitMargin = totalRevenue > 0 ? ((totalRevenue - totalCost) / totalRevenue) * 100 : 0;
+
+    // Get conversion metrics
+    const totalCustomers = await prisma.customer.count({ where: { isDeleted: false } });
+    const activeCustomers = await prisma.customer.count({
+      where: {
+        isDeleted: false,
+        sales: {
+          some: {
+            isDeleted: false,
+            createdAt: {
+              gte: dateRange.startDate,
+              lte: dateRange.endDate
+            }
+          }
+        }
+      }
+    });
+
+    const result = {
+      sales: {
+        totalRevenue,
+        totalOrders: salesPerformance._count.id || 0,
+        averageOrderValue: salesPerformance._avg.totalPrice || 0
+      },
+      purchases: {
+        totalCost,
+        totalOrders: purchasePerformance._count.id || 0,
+        averageOrderValue: purchasePerformance._avg.totalCost || 0
+      },
+      profitability: {
+        profitMargin,
+        grossProfit: totalRevenue - totalCost
+      },
+      conversion: {
+        totalCustomers,
+        activeCustomers,
+        customerActivationRate: totalCustomers > 0 ? (activeCustomers / totalCustomers) * 100 : 0
+      },
+      period: period,
+      dateRange
+    };
+
+    // Cache the result for 5 minutes
+    await cacheService.set(cacheKey, result, 300);
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching performance metrics:", error);
     return {};
   }
 };
