@@ -18,7 +18,7 @@ const createCustomerSchema = Joi.object({
     .trim()
     .email({ tlds: { allow: false } })
     .max(255)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'string.email': 'Please enter a valid email address',
       'string.max': 'Email cannot exceed 255 characters'
@@ -28,7 +28,7 @@ const createCustomerSchema = Joi.object({
     .trim()
     .pattern(/^[\+]?[1-9][\d]{0,15}$/)
     .max(20)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'string.pattern.base': 'Please enter a valid phone number (international format supported)',
       'string.max': 'Phone number cannot exceed 20 characters'
@@ -37,7 +37,7 @@ const createCustomerSchema = Joi.object({
   address: Joi.string()
     .trim()
     .max(500)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'string.max': 'Address cannot exceed 500 characters'
     }),
@@ -45,7 +45,7 @@ const createCustomerSchema = Joi.object({
   company: Joi.string()
     .trim()
     .max(100)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'string.max': 'Company name cannot exceed 100 characters'
     }),
@@ -53,7 +53,7 @@ const createCustomerSchema = Joi.object({
   city: Joi.string()
     .trim()
     .max(50)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'string.max': 'City name cannot exceed 50 characters'
     }),
@@ -61,7 +61,7 @@ const createCustomerSchema = Joi.object({
   state: Joi.string()
     .trim()
     .max(50)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'string.max': 'State name cannot exceed 50 characters'
     }),
@@ -69,7 +69,7 @@ const createCustomerSchema = Joi.object({
   zipCode: Joi.string()
     .trim()
     .pattern(/^[0-9]{5}(-[0-9]{4})?$/)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'string.pattern.base': 'ZIP code must be in format 12345 or 12345-6789'
     }),
@@ -77,7 +77,7 @@ const createCustomerSchema = Joi.object({
   country: Joi.string()
     .trim()
     .max(50)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'string.max': 'Country name cannot exceed 50 characters'
     }),
@@ -94,7 +94,7 @@ const createCustomerSchema = Joi.object({
     .min(0)
     .max(999999.99)
     .precision(2)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'number.min': 'Credit limit cannot be negative',
       'number.max': 'Credit limit cannot exceed $999,999.99'
@@ -104,14 +104,14 @@ const createCustomerSchema = Joi.object({
     .trim()
     .pattern(/^[0-9\-]+$/)
     .max(20)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'string.pattern.base': 'Tax ID can only contain numbers and hyphens'
     }),
   
   dateOfBirth: Joi.date()
     .max('now')
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'date.max': 'Date of birth cannot be in the future'
     }),
@@ -119,7 +119,7 @@ const createCustomerSchema = Joi.object({
   notes: Joi.string()
     .trim()
     .max(1000)
-    .allow(null, "")
+    .allow(null).allow("")
     .messages({
       'string.max': 'Notes cannot exceed 1000 characters'
     }),
@@ -127,7 +127,7 @@ const createCustomerSchema = Joi.object({
   tags: Joi.array()
     .items(Joi.string().trim().max(50))
     .max(10)
-    .allow(null, [])
+    .allow(null).optional()
     .messages({
       'array.max': 'Cannot have more than 10 tags'
     }),
