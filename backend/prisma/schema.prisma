@@ -60,14 +60,29 @@ model Role {
 }
 
 model Category {
-  id          String    @id @default(uuid()) @db.VarChar(36)
-  name        String    @unique
-  description String?
-  isDeleted   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String    @id @default(uuid()) @db.VarChar(36)
+  name            String    @unique
+  description     String?
+  slug            String?   @unique
+  parentId        String?   @db.VarChar(36)
+  icon            String?
+  color           String?
+  sortOrder       Int       @default(0)
+  isActive        Boolean   @default(true)
+  isVisible       Boolean   @default(true)
+  metaTitle       String?
+  metaDescription String?
+  tags            String?   @db.Text
+  image           String?
+  customFields    Json?
+  isDeleted       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  products    Product[]
+  // Relations
+  products        Product[]
+  parent          Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children        Category[] @relation("CategoryHierarchy")
 }
 
 model Product {
