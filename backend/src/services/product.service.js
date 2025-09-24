@@ -1,5 +1,6 @@
 const productRepository = require("../repositories/product.repository");
 const { generateProductIdentifiers } = require("../utils/generators");
+const cacheService = require("./cache.service");
 
 // Helper function to get low stock threshold from settings
 const getLowStockThreshold = async () => {
@@ -78,6 +79,10 @@ const createProduct = async (data) => {
     };
 
     const product = await productRepository.create(productData);
+    
+    // Invalidate cache
+    await cacheService.deletePattern('products:*');
+    
     return { success: true, data: product };
   } catch (error) {
     // Handle Prisma unique constraint errors
@@ -112,7 +117,31 @@ const getAllProducts = async (query = {}) => {
       hasSku,
       sortField = "createdAt",
       sortOrder = "desc",
+      minPrice,
+      maxPrice,
+      lowStock
     } = query;
+
+    // Generate cache key
+    const cacheKey = cacheService.generateKey(
+      'products',
+      page.toString(),
+      limit.toString(),
+      search || '',
+      categoryId || '',
+      status || '',
+      sortField,
+      sortOrder,
+      minPrice || '',
+      maxPrice || '',
+      lowStock ? 'true' : 'false'
+    );
+
+    // Try to get from cache first
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     // Coerce string booleans to real booleans for checkbox filters
     const coerceBoolean = (val) => {
@@ -190,9 +219,9 @@ const getAllProducts = async (query = {}) => {
       updated_at: product.updatedAt,
     }));
 
-    return {
-      success: true,
-      data: transformedData,
+    const finalResult = {
+      products: transformedData,
+      total: result.pagination.total,
       pagination: {
         page: result.pagination.page,
         limit: result.pagination.limit,
@@ -200,6 +229,11 @@ const getAllProducts = async (query = {}) => {
         pages: result.pagination.pages,
       },
     };
+
+    // Cache the result for 5 minutes
+    await cacheService.set(cacheKey, finalResult, 300);
+
+    return finalResult;
   } catch (error) {
     throw new Error(`Failed to fetch products: ${error.message}`);
   }
@@ -306,6 +340,9 @@ const updateProduct = async (id, data) => {
       updated_at: updatedProduct.updatedAt,
     };
 
+    // Invalidate cache
+    await cacheService.deletePattern('products:*');
+    
     return { success: true, data: transformedProduct };
   } catch (error) {
     console.error("Error updating product:", error);
@@ -318,6 +355,10 @@ const deleteProduct = async (id) => {
     // Convert id to string since it's a UUID
     const productId = String(id);
     await productRepository.update({ id: productId }, { isDeleted: true });
+    
+    // Invalidate cache
+    await cacheService.deletePattern('products:*');
+    
     return { success: true, message: "Product deleted successfully" };
   } catch (error) {
     throw new Error(`Failed to delete product: ${error.message}`);
