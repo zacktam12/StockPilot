@@ -31,10 +31,15 @@ import {
 const EnhancedSupplierModal = () => {
   const dispatch = useDispatch();
   const {
-    modal: { isOpen, mode, formData },
+    isModalOpen,
+    editingSupplier,
+    formData,
     loading: saveLoading,
     error: saveError,
   } = useSelector((state) => state.supplier);
+  
+  const isOpen = isModalOpen;
+  const mode = editingSupplier ? "edit" : "create";
 
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
