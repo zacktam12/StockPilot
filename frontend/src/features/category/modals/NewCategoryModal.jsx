@@ -14,9 +14,17 @@ import { useOutsideClick } from "../../../hooks/useOutsideClick";
 const NewCategoryModal = () => {
   const dispatch = useDispatch();
   const {
-    modal: { isOpen, mode, currentCategory, isLoading },
+    modal,
     error,
   } = useSelector((state) => state.category);
+  
+  // Safely destructure modal properties with fallbacks
+  const {
+    isOpen = false,
+    mode = "create",
+    currentCategory = null,
+    isLoading = false,
+  } = modal || {};
 
   const [formData, setFormData] = useState({
     name: "",
