@@ -19,6 +19,11 @@ class BaseRepository {
 
   // Helper method to build where clause
   buildWhereClause(where = {}) {
+    // Handle nested where objects (common mistake)
+    if (where.where) {
+      where = where.where;
+    }
+    
     if (this.hasIsDeletedField()) {
       return { isDeleted: false, ...where };
     }
