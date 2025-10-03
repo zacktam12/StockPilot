@@ -315,7 +315,7 @@ const NewProductModal = ({ product, onClose }) => {
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 shadow-sm p-2 min-h-[100px]"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 shadow-sm p-2 min-h-[100px]"
               placeholder="Enter product description"
             />
           </div>
@@ -329,7 +329,7 @@ const NewProductModal = ({ product, onClose }) => {
               onChange={(e) =>
                 setFormData({ ...formData, categoryId: e.target.value })
               }
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white shadow-sm p-2"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white shadow-sm p-2"
               required
             >
               <option value="">Select a category</option>
@@ -412,14 +412,14 @@ const NewProductModal = ({ product, onClose }) => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Product Image
             </label>
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
               <div className="space-y-1 text-center">
                 {formData.image_url ? (
                   <div className="relative">
                     <img
                       src={formData.image_url}
                       alt="Product"
-                      className="mx-auto h-32 w-32 object-cover rounded-md"
+                      className="mx-auto h-32 w-32 object-cover rounded-lg"
                     />
                     <button
                       type="button"
@@ -435,7 +435,7 @@ const NewProductModal = ({ product, onClose }) => {
                   <div className="flex flex-col items-center">
                     <Image size={24} className="text-gray-400" />
                     <div className="flex text-sm text-gray-600">
-                      <label className="relative cursor-pointer rounded-md font-medium text-indigo-600 hover:text-indigo-500">
+                      <label className="relative cursor-pointer rounded-lg font-medium text-indigo-600 hover:text-indigo-500">
                         <span>Upload a file</span>
                         <input
                           type="file"
@@ -453,7 +453,7 @@ const NewProductModal = ({ product, onClose }) => {
 
           {/* Error Display */}
           {(error || categoriesError) && (
-            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
+            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
               {error || categoriesError}
             </div>
           )}

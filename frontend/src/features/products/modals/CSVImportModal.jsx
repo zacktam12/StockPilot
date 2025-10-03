@@ -149,7 +149,7 @@ const CSVImportModal = ({ isOpen, onClose }) => {
         <div className="p-6 space-y-6">
           {/* Success Message */}
           {importedCount > 0 && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-center gap-2">
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
               <CheckCircle size={16} />
               Successfully imported {importedCount} products!
             </div>
@@ -157,7 +157,7 @@ const CSVImportModal = ({ isOpen, onClose }) => {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
               <AlertCircle size={16} />
               {error}
             </div>
@@ -200,7 +200,7 @@ const CSVImportModal = ({ isOpen, onClose }) => {
               />
 
               {file && (
-                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <div className="flex items-center gap-2">
                     <FileText size={16} className="text-blue-600" />
                     <span className="text-sm font-medium">{file.name}</span>
@@ -215,7 +215,7 @@ const CSVImportModal = ({ isOpen, onClose }) => {
 
           {/* Validation Errors */}
           {validationErrors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <h4 className="font-medium text-red-800 mb-2">
                 Validation Errors:
               </h4>
@@ -232,7 +232,7 @@ const CSVImportModal = ({ isOpen, onClose }) => {
 
           {/* Data Preview */}
           {csvData && (
-            <div className="border border-gray-200 dark:border-gray-700 rounded-md">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                 <h4 className="font-medium text-gray-900 dark:text-white">
                   Data Preview ({csvData.data.length} products)
