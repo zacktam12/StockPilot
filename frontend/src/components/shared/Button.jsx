@@ -21,7 +21,7 @@ const Button = React.forwardRef(
 
     const variantStyles = {
       primary:
-        "bg-[#3f51b5] hover:bg-[#303f9f] text-white font-bold rounded-xl px-4 py-2 transition",
+        "bg-[#3f51b5] hover:bg-[#303f9f] text-white font-bold rounded-lg px-4 py-2 transition",
       secondary:
         "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500",
       outline:
@@ -35,9 +35,9 @@ const Button = React.forwardRef(
     };
 
     const sizeStyles = {
-      sm: "text-xs py-1.5 px-3 rounded-md",
-      md: "text-sm py-2 px-4 rounded-md",
-      lg: "text-base py-2.5 px-5 rounded-md",
+      sm: "text-xs py-1.5 px-3 rounded-lg",
+      md: "text-sm py-2 px-4 rounded-lg",
+      lg: "text-base py-2.5 px-5 rounded-lg",
     };
 
     const styles = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
