@@ -1,5 +1,5 @@
 import React from "react";
-import { TableHead, TableHeader, TableRow } from "../../../components/shared/Table";
+import { TableHead, TableHeader, TableRow } from "../../../components/shared/table";
 
 const ProductTableHeader = ({
   selectAll,
@@ -10,25 +10,25 @@ const ProductTableHeader = ({
   return (
     <TableHeader>
       <TableRow>
-        <TableHead className="w-12">
+        <TableHead className="w-8 pr-2">
           <input
             type="checkbox"
             checked={selectAll}
             onChange={onToggleSelectAll}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded-none border-gray-300 text-blue-600 focus:ring-gray-400"
           />
         </TableHead>
         <TableHead
-          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+          className="cursor-pointer hover:bg-gray-100 flex-1 pl-2"
           onClick={() => onSort("name")}
         >
           <div className="flex items-center gap-1">
-            Product
+            Product Name
             {getSortIcon("name")}
           </div>
         </TableHead>
         <TableHead
-          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 hidden md:table-cell"
+          className="cursor-pointer hover:bg-gray-100 hidden md:table-cell flex-1"
           onClick={() => onSort("category.name")}
         >
           <div className="flex items-center gap-1">
@@ -37,7 +37,7 @@ const ProductTableHeader = ({
           </div>
         </TableHead>
         <TableHead
-          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+          className="cursor-pointer hover:bg-gray-100 flex-1"
           onClick={() => onSort("price")}
         >
           <div className="flex items-center gap-1">
@@ -46,7 +46,7 @@ const ProductTableHeader = ({
           </div>
         </TableHead>
         <TableHead
-          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 hidden lg:table-cell"
+          className="cursor-pointer hover:bg-gray-100 hidden lg:table-cell flex-1"
           onClick={() => onSort("cost")}
         >
           <div className="flex items-center gap-1">
@@ -55,7 +55,7 @@ const ProductTableHeader = ({
           </div>
         </TableHead>
         <TableHead
-          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+          className="cursor-pointer hover:bg-gray-100 flex-1"
           onClick={() => onSort("quantity")}
         >
           <div className="flex items-center gap-1">
@@ -63,8 +63,7 @@ const ProductTableHeader = ({
             {getSortIcon("quantity")}
           </div>
         </TableHead>
-        <TableHead className="hidden sm:table-cell">Status</TableHead>
-        <TableHead className="text-right w-16">Actions</TableHead>
+        <TableHead className="hidden sm:table-cell w-24">Status</TableHead>
       </TableRow>
     </TableHeader>
   );

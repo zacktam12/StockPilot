@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertCircle } from "lucide-react";
-import { TableBody, TableCell, TableRow } from "../../../components/shared/Table";
+import { TableBody, TableCell, TableRow } from "../../../components/shared/table";
 import LoadingContainer from "../../../components/shared/LoadingContainer";
 import ProductTableRow from "./ProductTableRow";
 import ProductEmptyState from "./ProductEmptyState";
@@ -12,7 +12,6 @@ const ProductTableBody = ({
   selectedItems,
   onToggleItemSelection,
   getStatusBadge,
-  getActionMenu,
   searchTerm,
   onClearSearch,
 }) => {
@@ -20,7 +19,7 @@ const ProductTableBody = ({
     return (
       <TableBody>
         <TableRow>
-          <TableCell colSpan={7} className="text-center py-8">
+          <TableCell colSpan={6} className="text-center py-8">
             <LoadingContainer />
           </TableCell>
         </TableRow>
@@ -32,7 +31,7 @@ const ProductTableBody = ({
     return (
       <TableBody>
         <TableRow>
-          <TableCell colSpan={7} className="text-center py-8">
+          <TableCell colSpan={6} className="text-center py-8">
             <ProductEmptyState searchTerm={searchTerm} onClearSearch={onClearSearch} />
           </TableCell>
         </TableRow>
@@ -49,7 +48,6 @@ const ProductTableBody = ({
           isSelected={selectedItems.includes(product.id)}
           onToggleSelection={onToggleItemSelection}
           getStatusBadge={getStatusBadge}
-          getActionMenu={getActionMenu}
         />
       ))}
     </TableBody>
