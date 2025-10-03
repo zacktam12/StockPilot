@@ -1,21 +1,23 @@
-// Table.jsx
+// table.jsx
 import React from "react";
 
 export const Table = ({ children, className = "" }) => (
   <table
-    className={`min-w-full divide-y divide-gray-200 bg-white text-gray-800 dark:divide-gray-700 dark:bg-gray-800 dark:text-gray-200 ${className}`}
+    className={`min-w-full bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-200 border-spacing-0 border-collapse ${className}`}
   >
     {children}
   </table>
 );
 
 export const TableHeader = ({ children, className = "" }) => (
-  <thead className={className}>{children}</thead>
+  <thead className={`${className}`}>{children}</thead>
 );
 
-export const TableRow = ({ children, className = "" }) => (
+export const TableRow = ({ children, className = "", onClick, ...props }) => (
   <tr
-    className={`border-b border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700 ${className}`}
+    className={`${className}`}
+    onClick={onClick}
+    {...props}
   >
     {children}
   </tr>
@@ -23,7 +25,7 @@ export const TableRow = ({ children, className = "" }) => (
 
 export const TableHead = ({ children, className = "" }) => (
   <th
-    className={`px-2 py-2 bg-white text-left text-xs font-medium text-[#3f51b5] uppercase tracking-wider dark:bg-gray-800 dark:text-blue-100 ${className}`}
+    className={`px-3 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 ${className}`}
   >
     {children}
   </th>
@@ -34,7 +36,7 @@ export const TableBody = ({ children, className = "" }) => (
 );
 
 export const TableCell = ({ children, className = "" }) => (
-  <td className={`px-2 py-2 whitespace-nowrap text-xs ${className}`}>
+  <td className={`px-3 py-3 text-sm text-gray-900 whitespace-nowrap ${className}`}>
     {children}
   </td>
 );

@@ -110,60 +110,42 @@ export default function Pagination({ sliceName = "product" }) {
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="w-full flex items-center justify-between py-6">
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Showing{" "}
-        <span className="font-semibold text-gray-900 dark:text-white">
-          {startItem}
-        </span>{" "}
-        to{" "}
-        <span className="font-semibold text-gray-900 dark:text-white">
-          {endItem}
-        </span>{" "}
-        of{" "}
-        <span className="font-semibold text-gray-900 dark:text-white">
-          {totalItems}
-        </span>{" "}
-        results
-      </p>
-
+    <div className="flex justify-center py-6">
       <div className="flex items-center gap-2">
-        {/* Previous Page Arrow */}
+        {/* Previous Page Button */}
         <button
           onClick={prevPage}
           disabled={currentPage === 1}
-          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
+          className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all duration-200 ${
             currentPage === 1
-              ? "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-              : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 hover:scale-105 shadow-soft"
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-white border border-gray-200 text-gray-600 hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 shadow-sm"
           }`}
           aria-label="Previous page"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
-        {/* Page Indicator */}
-        <div className="flex items-center gap-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <span className="text-sm font-medium text-gray-900 dark:text-white">
-            {currentPage}
-          </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            of {totalPages}
-          </span>
-        </div>
+        {/* Current Page Button */}
+        <button
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm bg-blue-600 text-white font-medium"
+          aria-label={`Page ${currentPage}`}
+        >
+          {currentPage}
+        </button>
 
-        {/* Next Page Arrow */}
+        {/* Next Page Button */}
         <button
           onClick={nextPage}
           disabled={currentPage === totalPages}
-          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
+          className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all duration-200 ${
             currentPage === totalPages
-              ? "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-              : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 hover:scale-105 shadow-soft"
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-white border border-gray-200 text-gray-600 hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 shadow-sm"
           }`}
           aria-label="Next page"
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>

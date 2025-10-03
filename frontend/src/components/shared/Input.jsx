@@ -9,7 +9,7 @@ const Input = ({ label, error, icon, className = "", ...props }) => {
       {label && (
         <label
           htmlFor={id}
-          className="block text-sm font-medium text-white-700 mb-1"
+          className="block text-sm font-medium text-gray-700 mb-1"
         >
           {label}
         </label>
@@ -25,15 +25,15 @@ const Input = ({ label, error, icon, className = "", ...props }) => {
         <input
           id={id}
           className={`
-            w-full rounded-md border 
+            w-full rounded-lg border 
             ${
               error
                 ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                : "bg-gray-100 text-gray-800 border-gray-300 placeholder-gray-400 focus:ring-[#3f51b5] focus:border-[#3f51b5] dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:border-gray-600"
+                : "bg-white text-gray-800 border-gray-300 placeholder-gray-400 hover:border-gray-600 focus:outline-none dark:bg-white dark:text-gray-800 dark:placeholder-gray-400 dark:border-gray-300 dark:hover:border-gray-600"
             } 
-            shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50
+            shadow-sm focus:outline-none
             ${icon ? "pl-10" : "pl-4"} 
-            py-2 pr-4 text-sm
+            py-3 pr-4 text-sm
             transition duration-150 ease-in-out
             ${className}
           `}
