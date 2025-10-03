@@ -28,7 +28,7 @@ const MobilePagination = ({
   if (totalItems === 0) return null;
 
   return (
-    <div className={`flex items-center justify-between w-full px-4 py-3 bg-white border-t border-gray-200 ${className}`}>
+    <div className={`flex items-center justify-between w-full px-4 py-3 bg-white ${className}`}>
       <div className="flex items-center gap-4">
         {/* Previous button */}
         <button

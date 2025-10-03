@@ -121,7 +121,30 @@ const UnifiedPagination = ({
     totalPages = sliceState.totalPages || 0;
     totalItems = sliceState.totalItems || 0;
     itemsPerPage = sliceState.itemsPerPage || 10;
+    
+    // Fallback: if pagination data is missing but we have items, calculate it
+    if (totalItems === 0 && sliceState.items && sliceState.items.length > 0) {
+      totalItems = sliceState.items.length;
+      totalPages = Math.ceil(totalItems / itemsPerPage);
+    }
   }
+
+  // Debug logging
+  console.log('UnifiedPagination Debug:', {
+    sliceName,
+    sliceState: {
+      currentPage: sliceState.currentPage,
+      totalPages: sliceState.totalPages,
+      totalItems: sliceState.totalItems,
+      itemsPerPage: sliceState.itemsPerPage,
+      items: sliceState.items?.length,
+      filteredItems: sliceState.filteredItems?.length
+    },
+    currentPage,
+    totalPages,
+    totalItems,
+    itemsPerPage
+  });
 
   const handlePageChange = (page) => {
     dispatch(setCurrentPage(page));
@@ -131,8 +154,9 @@ const UnifiedPagination = ({
     dispatch(setItemsPerPage(newPageSize));
   };
 
-  // Always show pagination if there are items, even if only one page
-  if (totalItems === 0) return null;
+  // Show pagination if there are items or if we have items in the state
+  const hasItems = totalItems > 0 || (sliceState.items && sliceState.items.length > 0);
+  if (!hasItems) return null;
 
   // Use mobile pagination for small screens
   if (isMobile) {

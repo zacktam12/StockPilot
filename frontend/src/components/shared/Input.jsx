@@ -29,7 +29,7 @@ const Input = ({ label, error, icon, className = "", ...props }) => {
             ${
               error
                 ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                : "bg-white text-gray-800 border-gray-300 placeholder-gray-400 hover:border-gray-600 focus:outline-none dark:bg-white dark:text-gray-800 dark:placeholder-gray-400 dark:border-gray-300 dark:hover:border-gray-600"
+                : "bg-white text-gray-800 border-gray-300 placeholder-gray-400 hover:border-gray-400 focus:border-gray-400 focus:outline-none dark:bg-white dark:text-gray-800 dark:placeholder-gray-400 dark:border-gray-300 dark:hover:border-gray-400 dark:focus:border-gray-400"
             } 
             shadow-sm focus:outline-none
             ${icon ? "pl-10" : "pl-4"} 

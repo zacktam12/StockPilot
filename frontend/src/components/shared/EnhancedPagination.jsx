@@ -108,22 +108,22 @@ const EnhancedPagination = ({
   if (totalItems === 0) return null;
 
   return (
-    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-4 bg-white border-t border-gray-200 ${className}`}>
+    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-4 bg-white ${className}`}>
       {/* Left side - Item count and page size selector */}
       <div className="flex flex-col sm:flex-row items-center gap-4">
         {showItemCount && (
           <div className="text-sm text-gray-600">
-            Showing {startItem} - {endItem} of {totalItems} entries
+            <span className="font-medium text-gray-900">{startItem}-{endItem}</span> of <span className="font-medium text-gray-900">{totalItems}</span>
           </div>
         )}
         
         {showPageSizeSelector && (
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Show:</label>
+            <span className="text-sm text-gray-500">Rows per page:</span>
             <select
               value={itemsPerPage}
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-gray-400 bg-white"
             >
               {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
@@ -131,7 +131,6 @@ const EnhancedPagination = ({
                 </option>
               ))}
             </select>
-            <span className="text-sm text-gray-600">per page</span>
           </div>
         )}
       </div>
