@@ -3,11 +3,11 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts, setSearchTerm } from "../../../store/slices/productSlice";
 import ProductHeader from "../components/ProductHeader";
-import ProductSearch from "../components/ProductSearch";
+import ProductStats from "../components/ProductStats";
 import ProductTable from "../components/ProductTable";
 import ProductActions from "../components/ProductActions";
 import ProductErrorState from "../components/ProductErrorState";
-import Pagination from "../../../components/shared/Pagination";
+import UnifiedPagination from "../../../components/shared/UnifiedPagination";
 import { exportProductsToCSV } from "../../../utils/csvUtils";
 
 const ProductsPage = () => {
@@ -63,33 +63,40 @@ const ProductsPage = () => {
   };
 
   // Handle CSV export
-  const handleExportCSV = () => {
-    exportProductsToCSV(filteredItems);
+  const handleExportCSV = (products = filteredItems) => {
+    exportProductsToCSV(products);
   };
 
   return (
-    <div className="space-y-6 bg-white text-gray-900 dark:bg-background dark:text-text min-h-screen p-4 sm:p-6">
-      {/* Header and Action Buttons */}
-      <ProductHeader onExportCSV={handleExportCSV} />
+    <div className="space-y-8 bg-white text-gray-900 dark:bg-background dark:text-text min-h-screen p-4 sm:p-6">
+      {/* Header with integrated search */}
+      <ProductHeader 
+        onExportCSV={handleExportCSV} 
+        searchTerm={searchTerm} 
+        onSearchChange={handleSearch} 
+      />
 
       {/* Error Message */}
       <ProductErrorState error={error} />
 
+      {/* Product Statistics Cards */}
+      <ProductStats />
+
       {/* Bulk Actions and Modals */}
       <ProductActions />
 
-      {/* Search and Filters */}
-      <ProductSearch searchTerm={searchTerm} onSearchChange={handleSearch} />
-
       {/* Products Table */}
-      <ProductTable />
+      <div className="mt-15">
+        <ProductTable />
+      </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center">
-          <Pagination />
-        </div>
-      )}
+      <UnifiedPagination
+        sliceName="product"
+        showPageSizeSelector={true}
+        showItemCount={true}
+        pageSizeOptions={[5, 10, 25, 50, 100]}
+      />
     </div>
   );
 };
