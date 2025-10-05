@@ -4,7 +4,7 @@ import { Plus, Download, Upload, Search, FileCog, Users, FileText, AlertCircle }
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
 import CustomerFilters from "./CustomerFilters";
-import { openCreateModal, importCustomers } from "../../../store/slices/customerSlice";
+import { openCreateDrawer, importCustomers } from "../../../store/slices/customerSlice";
 import { useOutsideClick } from "../../../hooks/useOutsideClick";
 import { parseCSV, validateCSVData, convertCSVToCustomers, REQUIRED_CUSTOMER_CSV_FIELDS } from "../../../utils/csvUtils";
 import { showToast } from "../../../store/slices/uiSlice";
@@ -117,7 +117,7 @@ const CustomerHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
             variant="primary"
             size="md"
             icon={<Plus size={18} />}
-            onClick={() => dispatch(openCreateModal())}
+            onClick={() => dispatch(openCreateDrawer())}
             className="px-4 py-3 rounded-lg flex items-center justify-center focus:outline-none focus:ring-0 focus:shadow-none active:shadow-none"
             style={{
               backgroundColor: '#3b82f6',
