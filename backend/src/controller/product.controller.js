@@ -50,7 +50,7 @@ exports.createProduct = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'Product created successfully',
-      data: result
+      data: result.data
     });
   } catch (error) {
     handleProductError(error, res);
@@ -109,7 +109,7 @@ exports.getAllProducts = async (req, res, next) => {
 exports.getProductById = async (req, res, next) => {
   try {
     const result = await productService.getProductById(req.params.id);
-    if (!result) {
+    if (!result || !result.success) {
       return res.status(404).json({
         success: false,
         message: "Product not found"
@@ -117,7 +117,7 @@ exports.getProductById = async (req, res, next) => {
     }
     res.json({
       success: true,
-      data: result
+      data: result.data
     });
   } catch (error) {
     handleProductError(error, res);
@@ -127,7 +127,7 @@ exports.getProductById = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
   try {
     const result = await productService.updateProduct(req.params.id, req.body);
-    if (!result) {
+    if (!result || !result.success) {
       return res.status(404).json({
         success: false,
         message: "Product not found"
@@ -136,7 +136,7 @@ exports.updateProduct = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Product updated successfully',
-      data: result
+      data: result.data
     });
   } catch (error) {
     handleProductError(error, res);
@@ -263,5 +263,82 @@ exports.bulkDeleteProducts = async (req, res, next) => {
     res.json(result);
   } catch (error) {
     next(error);
+  }
+};
+
+exports.uploadProductImage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    console.log("Upload product image request:", { id, file: req.file });
+
+    if (!req.file) {
+      console.log("No file uploaded");
+      return res.status(400).json({
+        success: false,
+        message: "No image file uploaded"
+      });
+    }
+
+    // First, let's verify the product exists
+    console.log("Verifying product exists with id:", id);
+    const { prisma } = require("../config/db");
+    const productExists = await prisma.product.findUnique({
+      where: { id: String(id) },
+      select: { id: true, name: true, isDeleted: true }
+    });
+    console.log("Product exists check:", productExists);
+
+    if (!productExists) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    if (productExists.isDeleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Product has been deleted"
+      });
+    }
+
+    // Construct the full URL for the uploaded image
+    const baseUrl = process.env.BACKEND_URL || "http://localhost:5000";
+    const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    console.log("Image URL:", imageUrl);
+
+    // Update the product with the new image URL
+    console.log("Calling updateProduct with:", { id, image_url: imageUrl });
+    const result = await productService.updateProduct(id, { image_url: imageUrl });
+    console.log("Update result:", result);
+    
+    if (!result || !result.success) {
+      console.log("Product update failed:", result);
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Product image uploaded successfully",
+      data: result.data,
+      imageUrl: imageUrl
+    });
+  } catch (error) {
+    console.error("Upload error details:", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      meta: error.meta
+    });
+    
+    // Return more specific error information
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to upload product image",
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };

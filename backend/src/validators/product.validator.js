@@ -147,14 +147,78 @@ const createProductSchema = Joi.object({
     .allow("")
     .messages({
       'string.max': 'Notes cannot exceed 500 characters'
+    }),
+  
+  // Add snake_case field names for frontend compatibility
+  min_stock: Joi.number()
+    .integer()
+    .min(0)
+    .max(999999)
+    .allow(null).allow("")
+    .messages({
+      'number.min': 'Minimum stock cannot be negative',
+      'number.max': 'Minimum stock cannot exceed 999,999'
+    }),
+  
+  max_stock: Joi.number()
+    .integer()
+    .min(0)
+    .max(999999)
+    .allow(null).allow("")
+    .messages({
+      'number.min': 'Maximum stock cannot be negative',
+      'number.max': 'Maximum stock cannot exceed 999,999'
+    }),
+  
+  category_id: Joi.string()
+    .uuid()
+    .allow(null).allow("")
+    .messages({
+      'string.guid': 'Category ID must be a valid UUID'
     })
 });
 
 // Update schema with same validation as create but all fields optional
+// Also include snake_case field names for frontend compatibility
 const updateProductSchema = createProductSchema.fork(
   Object.keys(createProductSchema.describe().keys),
   (schema) => schema.optional()
-);
+).keys({
+  // Add snake_case field names for frontend compatibility
+  min_stock: Joi.number()
+    .integer()
+    .min(0)
+    .max(999999)
+    .allow(null).allow("")
+    .messages({
+      'number.min': 'Minimum stock cannot be negative',
+      'number.max': 'Minimum stock cannot exceed 999,999'
+    }),
+  
+  max_stock: Joi.number()
+    .integer()
+    .min(0)
+    .max(999999)
+    .allow(null).allow("")
+    .messages({
+      'number.min': 'Maximum stock cannot be negative',
+      'number.max': 'Maximum stock cannot exceed 999,999'
+    }),
+  
+  category_id: Joi.string()
+    .uuid()
+    .allow(null).allow("")
+    .messages({
+      'string.guid': 'Category ID must be a valid UUID'
+    }),
+  
+  image_url: Joi.string()
+    .uri()
+    .allow(null).allow("")
+    .messages({
+      'string.uri': 'Image URL must be a valid URL'
+    })
+});
 
 // Input sanitization function
 const sanitizeInput = (data) => {

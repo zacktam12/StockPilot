@@ -72,18 +72,48 @@ const createProduct = async (data) => {
       price: parseFloat(data.price),
       cost: data.cost ? parseFloat(data.cost) : null,
       quantity: parseInt(data.quantity) || 0,
-      minStock: data.minStock ? parseInt(data.minStock) : null,
-      maxStock: data.maxStock ? parseInt(data.maxStock) : null,
+      minStock: data.min_stock !== null && data.min_stock !== "" ? parseInt(data.min_stock) : null,
+      maxStock: data.max_stock !== null && data.max_stock !== "" ? parseInt(data.max_stock) : null,
       categoryId: data.categoryId,
       image: data.image_url || data.image, // Prioritize image_url from frontend
     };
 
     const product = await productRepository.create(productData);
     
+    // Fetch the complete product with category information
+    const completeProduct = await productRepository.findUnique(
+      { id: product.id },
+      { category: true }
+    );
+    
+    // Transform the data to match frontend expectations
+    const transformedProduct = {
+      id: completeProduct.id,
+      name: completeProduct.name,
+      description: completeProduct.description,
+      sku: completeProduct.sku,
+      barcode: completeProduct.barcode,
+      price: parseFloat(completeProduct.price),
+      cost: parseFloat(completeProduct.cost || 0),
+      quantity: parseInt(completeProduct.quantity),
+      min_stock: parseInt(completeProduct.minStock || 0),
+      max_stock: parseInt(completeProduct.maxStock || 0),
+      image_url: completeProduct.image || "",
+      category_id: completeProduct.categoryId || (completeProduct.category ? completeProduct.category.id : ""),
+      category: completeProduct.category
+        ? {
+            id: completeProduct.category.id,
+            name: completeProduct.category.name,
+          }
+        : null,
+      created_at: completeProduct.createdAt || new Date(),
+      updated_at: completeProduct.updatedAt || new Date(),
+    };
+    
     // Invalidate cache
     await cacheService.deletePattern('products:*');
     
-    return { success: true, data: product };
+    return { success: true, data: transformedProduct };
   } catch (error) {
     // Handle Prisma unique constraint errors
     if (error.code === "P2002") {
@@ -205,8 +235,8 @@ const getAllProducts = async (query = {}) => {
       price: parseFloat(product.price),
       cost: parseFloat(product.cost || 0),
       quantity: parseInt(product.quantity),
-      minStock: parseInt(product.minStock || 0),
-      maxStock: parseInt(product.maxStock || 0),
+      min_stock: parseInt(product.minStock || 0),
+      max_stock: parseInt(product.maxStock || 0),
       image_url: product.image,
       category_id: product.categoryId,
       category: product.category
@@ -248,7 +278,42 @@ const getProductById = async (id) => {
     if (!product) {
       throw new Error("Product not found");
     }
-    return { success: true, data: product };
+    
+    // Debug: Check what we're getting from the repository
+    console.log("getProductById - Product keys:", Object.keys(product));
+    console.log("getProductById - createdAt:", product.createdAt, "updatedAt:", product.updatedAt);
+    console.log("getProductById - categoryId:", product.categoryId, "image:", product.image);
+    
+    // Transform the data to match frontend expectations
+    const transformedProduct = {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      sku: product.sku,
+      barcode: product.barcode,
+      price: parseFloat(product.price),
+      cost: parseFloat(product.cost || 0),
+      quantity: parseInt(product.quantity),
+      min_stock: parseInt(product.minStock || 0),
+      max_stock: parseInt(product.maxStock || 0),
+      image_url: product.image || "",
+      category_id: product.categoryId || (product.category ? product.category.id : ""),
+      category: product.category
+        ? {
+            id: product.category.id,
+            name: product.category.name,
+          }
+        : null,
+      created_at: product.createdAt || new Date(),
+      updated_at: product.updatedAt || new Date(),
+    };
+    
+    console.log("getProductById - Final transformed product keys:", Object.keys(transformedProduct));
+    console.log("getProductById - Final created_at:", transformedProduct.created_at);
+    console.log("getProductById - Final updated_at:", transformedProduct.updated_at);
+    console.log("getProductById - Final category_id:", transformedProduct.category_id);
+    
+    return { success: true, data: transformedProduct };
   } catch (error) {
     throw new Error(`Failed to fetch product: ${error.message}`);
   }
@@ -256,8 +321,6 @@ const getProductById = async (id) => {
 
 const updateProduct = async (id, data) => {
   try {
-    console.log("Update product called with id:", id);
-    console.log("Update product data:", data);
 
     // Get existing product to check current SKU and barcode
     const existingProduct = await productRepository.findUnique(
@@ -266,49 +329,52 @@ const updateProduct = async (id, data) => {
     );
 
     if (!existingProduct) {
+      console.log("Product not found for id:", id);
       throw new Error("Product not found");
     }
 
-    // Auto-generate SKU if not provided and doesn't exist
-    if ((!data.sku || data.sku.trim() === "") && !existingProduct.sku) {
+    console.log("Existing product found:", existingProduct.id);
+
+    // Auto-generate SKU if not provided and doesn't exist (only if we're updating name or sku)
+    if (data.name !== undefined && data.sku !== undefined && (!data.sku || data.sku.trim() === "") && !existingProduct.sku) {
       const { sku } = await generateProductIdentifiers(data.name);
       data.sku = sku;
       console.log(`Auto-generated SKU for existing product: ${sku}`);
     }
 
-    // Auto-generate barcode if not provided and doesn't exist
-    if (
-      (!data.barcode || data.barcode.trim() === "") &&
-      !existingProduct.barcode
-    ) {
+    // Auto-generate barcode if not provided and doesn't exist (only if we're updating name or barcode)
+    if (data.name !== undefined && data.barcode !== undefined && (!data.barcode || data.barcode.trim() === "") && !existingProduct.barcode) {
       const { barcode } = await generateProductIdentifiers(data.name);
       data.barcode = barcode;
       console.log(`Auto-generated barcode for existing product: ${barcode}`);
     }
 
     // Map frontend field names to backend field names
-    const productData = {
-      name: data.name,
-      description: data.description,
-      sku: data.sku,
-      barcode: data.barcode,
-      price: parseFloat(data.price),
-      cost: data.cost ? parseFloat(data.cost) : null,
-      quantity: parseInt(data.quantity) || 0,
-      minStock: data.minStock ? parseInt(data.minStock) : null,
-      maxStock: data.maxStock ? parseInt(data.maxStock) : null,
-      categoryId: data.categoryId,
-      image: data.image_url || data.image, // Prioritize image_url from frontend
-    };
+    // Only include fields that are provided and not undefined
+    const productData = {};
+    
+    if (data.name !== undefined) productData.name = data.name;
+    if (data.description !== undefined) productData.description = data.description;
+    if (data.sku !== undefined) productData.sku = data.sku;
+    if (data.barcode !== undefined) productData.barcode = data.barcode;
+    if (data.price !== undefined) productData.price = parseFloat(data.price);
+    if (data.cost !== undefined) productData.cost = data.cost ? parseFloat(data.cost) : null;
+    if (data.quantity !== undefined) productData.quantity = parseInt(data.quantity) || 0;
+    if (data.min_stock !== undefined) productData.minStock = data.min_stock !== null && data.min_stock !== "" ? parseInt(data.min_stock) : null;
+    if (data.max_stock !== undefined) productData.maxStock = data.max_stock !== null && data.max_stock !== "" ? parseInt(data.max_stock) : null;
+    if (data.category_id !== undefined || data.categoryId !== undefined) productData.categoryId = data.category_id || data.categoryId;
+    if (data.image_url !== undefined || data.image !== undefined) productData.image = data.image_url || data.image;
 
-    console.log("Mapped product data:", productData);
+    // Ensure we have at least one field to update
+    if (Object.keys(productData).length === 0) {
+      throw new Error("No valid fields provided for update");
+    }
 
     const product = await productRepository.update(
       { id: String(id) },
       productData
     );
 
-    console.log("Updated product result:", product);
 
     // Fetch the updated product with category information
     const updatedProduct = await productRepository.findUnique(
@@ -326,18 +392,18 @@ const updateProduct = async (id, data) => {
       price: parseFloat(updatedProduct.price),
       cost: parseFloat(updatedProduct.cost || 0),
       quantity: parseInt(updatedProduct.quantity),
-      minStock: parseInt(updatedProduct.minStock || 0),
-      maxStock: parseInt(updatedProduct.maxStock || 0),
-      image_url: updatedProduct.image,
-      category_id: updatedProduct.categoryId,
+      min_stock: parseInt(updatedProduct.minStock || 0),
+      max_stock: parseInt(updatedProduct.maxStock || 0),
+      image_url: updatedProduct.image || "",
+      category_id: updatedProduct.categoryId || (updatedProduct.category ? updatedProduct.category.id : ""),
       category: updatedProduct.category
         ? {
             id: updatedProduct.category.id,
             name: updatedProduct.category.name,
           }
         : null,
-      created_at: updatedProduct.createdAt,
-      updated_at: updatedProduct.updatedAt,
+      created_at: updatedProduct.createdAt || new Date(),
+      updated_at: updatedProduct.updatedAt || new Date(),
     };
 
     // Invalidate cache
@@ -434,8 +500,8 @@ const bulkImportProducts = async (products) => {
           price: product.price || product.Price || 0,
           cost: product.cost || product.Cost || null,
           quantity: product.quantity || product.Quantity || 0,
-          minStock: product.minStock || product["Min Stock"] || null,
-          maxStock: product.maxStock || product["Max Stock"] || null,
+          minStock: product.min_stock || product.minStock || product["Min Stock"] || null,
+          maxStock: product.max_stock || product.maxStock || product["Max Stock"] || null,
           categoryId: product.categoryId || product["Category ID"] || null,
           image_url: product.image_url || product["Image URL"] || "",
         };
