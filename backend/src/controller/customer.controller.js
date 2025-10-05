@@ -84,13 +84,13 @@ class CustomerController {
 
       res.json({
         success: true,
-        data: result.customers,
+        data: result.data,
         pagination: {
           currentPage: pageNum,
-          totalPages: Math.ceil(result.total / limitNum),
-          totalItems: result.total,
+          totalPages: Math.ceil(result.pagination.total / limitNum),
+          totalItems: result.pagination.total,
           itemsPerPage: limitNum,
-          hasNext: pageNum < Math.ceil(result.total / limitNum),
+          hasNext: pageNum < Math.ceil(result.pagination.total / limitNum),
           hasPrev: pageNum > 1
         }
       });
@@ -101,18 +101,23 @@ class CustomerController {
 
   async getById(req, res, next) {
     try {
+      console.log('CustomerController.getById - ID:', req.params.id);
       const result = await customerService.getCustomerById(req.params.id);
+      console.log('CustomerController.getById - Result:', result);
+      
       if (!result) {
         return res.status(404).json({
           success: false,
           message: "Customer not found"
         });
       }
+      
       res.json({
         success: true,
         data: result
       });
     } catch (error) {
+      console.error('CustomerController.getById - Error:', error);
       handleCustomerError(error, res);
     }
   }

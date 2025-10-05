@@ -67,7 +67,15 @@ class CustomerService {
   }
 
   async getCustomerById(id) {
-    return customerRepository.findById(id);
+    console.log('CustomerService.getCustomerById - ID:', id);
+    try {
+      const result = await customerRepository.findById(id);
+      console.log('CustomerService.getCustomerById - Result:', result);
+      return result;
+    } catch (error) {
+      console.error('CustomerService.getCustomerById - Error:', error);
+      throw error;
+    }
   }
 
   async updateCustomer(id, data) {
