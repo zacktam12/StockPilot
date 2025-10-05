@@ -21,5 +21,6 @@ router.get("/purchase-trends", reportsController.purchaseTrends);
 router.get("/user-activity", reportsController.userActivity);
 router.get("/role-distribution", reportsController.roleDistribution);
 router.get("/notifications", reportsController.notifications);
+router.get("/cost-analysis", reportsController.costAnalysis);
 
 module.exports = router;

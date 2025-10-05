@@ -11,19 +11,40 @@ const reportService = {
     const { startDate, endDate } = query;
     const start = startDate
       ? new Date(startDate)
-      : new Date(new Date().setHours(0, 0, 0, 0));
+      : new Date('2024-01-01');
     const end = endDate
       ? new Date(endDate)
-      : new Date(new Date().setHours(23, 59, 59, 999));
+      : new Date();
 
     try {
-      const { sales } = await saleRepository.getSalesReport(start, end);
+      // Fetch sales data with proper includes
+      const sales = await saleRepository.findMany({
+        where: {
+          isDeleted: false,
+          createdAt: { gte: start, lte: end },
+        },
+        include: { 
+          customer: true,
+          user: true 
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      console.log("Daily Sales - Found sales:", sales.length);
+      console.log("Daily Sales - Sample sale:", sales[0]);
+
       return sales.map((sale) => ({
         id: sale.id,
+        date: sale.createdAt,
         created_at: sale.createdAt,
-        customer_name: sale.customer?.name || "Unknown",
-        total_amount: sale.totalPrice,
+        customer: sale.customer?.name || sale.customer?.firstName || "Unknown",
+        customer_name: sale.customer?.name || sale.customer?.firstName || "Unknown",
+        amount: sale.totalPrice || sale.total_amount || sale.amount || 0,
+        total_amount: sale.totalPrice || sale.total_amount || sale.amount || 0,
         status: sale.status || "completed",
+        payment_method: sale.paymentMethod || sale.payment_method || "Cash",
+        order_id: sale.orderNumber || sale.order_number || sale.id,
+        user_name: sale.user ? `${sale.user.firstName || ''} ${sale.user.lastName || ''}`.trim() || sale.user.name : "Unknown"
       }));
     } catch (error) {
       console.error("Error in dailySales report:", error);
@@ -31,16 +52,58 @@ const reportService = {
     }
   },
 
-  async inventory() {
+  async inventory(query) {
+    const { category, sortBy, sortOrder } = query;
+    
+    // Build where clause
+    const whereClause = { isDeleted: false };
+    if (category) {
+      whereClause.category = { name: category };
+    }
+    
+    // Build orderBy clause
+    let orderByClause = { name: 'asc' };
+    if (sortBy) {
+      const order = sortOrder === 'desc' ? 'desc' : 'asc';
+      switch (sortBy) {
+        case 'name':
+          orderByClause = { name: order };
+          break;
+        case 'quantity':
+          orderByClause = { quantity: order };
+          break;
+        case 'price':
+          orderByClause = { price: order };
+          break;
+        case 'status':
+          orderByClause = { quantity: order };
+          break;
+        default:
+          orderByClause = { name: order };
+      }
+    }
+    
     const products = await productRepository.findMany({
-      where: { isDeleted: false },
+      where: whereClause,
       include: { category: true },
+      orderBy: orderByClause
     });
+    
+    console.log("Inventory - Found products:", products.length);
+    console.log("Inventory - Sample product:", products[0]);
+    
     return products.map((product) => ({
       name: product.name,
+      product_name: product.name,
+      category: product.category?.name || "Uncategorized",
       category_name: product.category?.name || "Uncategorized",
-      quantity: product.quantity,
-      price: product.price,
+      quantity: product.quantity || 0,
+      price: product.price || 0,
+      status: product.quantity > 20 ? "In Stock" : 
+              product.quantity > 10 ? "Low Stock" : 
+              product.quantity > 0 ? "Critical" : "Out of Stock",
+      last_updated: product.updatedAt,
+      total_value: (product.quantity || 0) * (product.price || 0)
     }));
   },
 
@@ -48,42 +111,112 @@ const reportService = {
     const { startDate, endDate } = query;
     const start = startDate
       ? new Date(startDate)
-      : new Date(new Date().setHours(0, 0, 0, 0));
+      : new Date('2024-01-01');
     const end = endDate
       ? new Date(endDate)
-      : new Date(new Date().setHours(23, 59, 59, 999));
+      : new Date();
 
     const purchases = await purchaseRepository.findMany({
       where: {
         isDeleted: false,
         createdAt: { gte: start, lte: end },
       },
-      include: { supplier: true },
+      include: { 
+        supplier: true,
+        user: true,
+        productPurchases: {
+          include: {
+            product: {
+              include: {
+                category: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
     });
+
+    console.log("Purchase Orders - Found purchases:", purchases.length);
+    if (purchases.length > 0) {
+      console.log("Purchase Orders - Sample purchase:", {
+        id: purchases[0].id,
+        poNumber: purchases[0].poNumber,
+        totalCost: purchases[0].totalCost,
+        status: purchases[0].status
+      });
+    }
 
     return purchases.map((purchase) => ({
       id: purchase.id,
+      date: purchase.createdAt,
       created_at: purchase.createdAt,
+      supplier: purchase.supplier?.name || "Unknown",
       supplier_name: purchase.supplier?.name || "Unknown",
+      amount: purchase.totalCost,
       total_amount: purchase.totalCost,
       status: purchase.status,
+      order_number: purchase.poNumber || purchase.id,
+      expected_delivery: purchase.expectedDeliveryDate || (() => {
+        const createdDate = new Date(purchase.createdAt);
+        const expectedDate = new Date(createdDate.getTime() + (7 * 24 * 60 * 60 * 1000)); // Add 7 days
+        return expectedDate.toISOString();
+      })(),
+      user_name: purchase.user ? `${purchase.user.firstName} ${purchase.user.lastName}` : "Unknown",
+      product_count: purchase.productPurchases?.length || 0,
+      supplier_contact: purchase.supplier?.email || "N/A"
     }));
   },
 
-  async monthlyRevenue() {
+  async monthlyRevenue(query) {
+    const { startDate, endDate, status } = query;
+    
+    // Build where clause
+    const whereClause = { isDeleted: false };
+    if (startDate && endDate) {
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      };
+    }
+    if (status) {
+      whereClause.status = status;
+    }
+    
     const sales = await saleRepository.findMany({
-      where: { isDeleted: false },
+      where: whereClause,
+      include: { customer: true }
     });
+    
     const revenueByMonth = {};
+    const orderCountByMonth = {};
+    
     sales.forEach((sale) => {
       const month = sale.createdAt.toISOString().slice(0, 7); // YYYY-MM
-      if (!revenueByMonth[month]) revenueByMonth[month] = 0;
+      if (!revenueByMonth[month]) {
+        revenueByMonth[month] = 0;
+        orderCountByMonth[month] = 0;
+      }
       revenueByMonth[month] += sale.totalPrice;
+      orderCountByMonth[month] += 1;
     });
-    return Object.entries(revenueByMonth).map(([month, total]) => ({
-      month,
-      total,
-    }));
+    
+    // Calculate growth percentage
+    const months = Object.keys(revenueByMonth).sort();
+    const result = months.map((month, index) => {
+      const currentRevenue = revenueByMonth[month];
+      const previousRevenue = index > 0 ? revenueByMonth[months[index - 1]] : 0;
+      const growth = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+      
+      return {
+        month,
+        total: currentRevenue,
+        growth: Math.round(growth * 100) / 100,
+        orders_count: orderCountByMonth[month]
+      };
+    });
+    
+    return result;
   },
 
   async topProducts(query) {
@@ -94,65 +227,228 @@ const reportService = {
     const end = endDate ? new Date(endDate) : new Date();
 
     try {
-      const topProducts = await saleRepository.getTopSellingProducts(
-        start,
-        end,
-        10
-      );
-      return topProducts.map((item) => ({
-        product_name: item.product?.name || "Unknown Product",
-        total_sold: item.totalQuantitySold || 0,
-        total_revenue: item.totalRevenue || 0,
-      }));
+      // Get sales with product sales included
+      const sales = await saleRepository.findMany({
+        where: {
+          isDeleted: false,
+          createdAt: { gte: start, lte: end },
+        },
+        include: {
+          productSales: {
+            include: {
+              product: {
+                include: {
+                  category: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Aggregate product sales
+      const productStats = {};
+      
+      sales.forEach(sale => {
+        sale.productSales.forEach(ps => {
+          const productName = ps.product?.name || "Unknown Product";
+          const category = ps.product?.category?.name || "Uncategorized";
+          
+          if (!productStats[productName]) {
+            productStats[productName] = {
+              product_name: productName,
+              category: category,
+              total_sold: 0,
+              total_revenue: 0
+            };
+          }
+          
+          productStats[productName].total_sold += ps.sale_quantity || 0;
+          productStats[productName].total_revenue += (ps.sale_quantity || 0) * (ps.unit_price || 0);
+        });
+      });
+
+      // Convert to array and sort by total sold
+      const result = Object.values(productStats)
+        .sort((a, b) => b.total_sold - a.total_sold)
+        .slice(0, 10)
+        .map(item => ({
+          product_name: item.product_name,
+          category: item.category,
+          total_sold: item.total_sold,
+          revenue: item.total_revenue,
+          total_revenue: item.total_revenue,
+          total_amount: item.total_revenue,
+          total_value: item.total_revenue
+        }));
+
+      return result;
     } catch (error) {
       console.error("Error in topProducts report:", error);
       return [];
     }
   },
 
-  async lowStock() {
+  async lowStock(query) {
+    const { category, sortBy, sortOrder } = query;
+    
+    // Build where clause
+    const whereClause = { isDeleted: false, quantity: { lt: 10 } };
+    if (category) {
+      whereClause.category = { name: category };
+    }
+    
+    // Build orderBy clause
+    let orderByClause = { quantity: 'asc' };
+    if (sortBy) {
+      const order = sortOrder === 'desc' ? 'desc' : 'asc';
+      switch (sortBy) {
+        case 'name':
+          orderByClause = { name: order };
+          break;
+        case 'quantity':
+          orderByClause = { quantity: order };
+          break;
+        case 'price':
+          orderByClause = { price: order };
+          break;
+        case 'urgency':
+          orderByClause = { quantity: order };
+          break;
+        default:
+          orderByClause = { quantity: order };
+      }
+    }
+    
     const products = await productRepository.findMany({
-      where: { isDeleted: false, quantity: { lt: 10 } },
+      where: whereClause,
       include: { category: true },
-    });
-    return products.map((product) => ({
-      name: product.name,
-      category_name: product.category?.name || "Uncategorized",
-      quantity: product.quantity,
-    }));
-  },
-
-  async inventoryValue() {
-    const products = await productRepository.findMany({
-      where: { isDeleted: false },
-      include: { category: true },
+      orderBy: orderByClause
     });
     return products.map((product) => ({
       name: product.name,
       category_name: product.category?.name || "Uncategorized",
       quantity: product.quantity,
       price: product.price,
+      min_stock: 10, // Default minimum stock level
+      urgency: product.quantity === 0 ? "Critical" : 
+               product.quantity < 5 ? "High" : "Medium",
+      last_updated: product.updatedAt,
+      total_value: product.quantity * product.price
+    }));
+  },
+
+  async inventoryValue(query) {
+    const { category, sortBy, sortOrder } = query;
+    
+    // Build where clause
+    const whereClause = { isDeleted: false };
+    if (category) {
+      whereClause.category = { name: category };
+    }
+    
+    // Build orderBy clause
+    let orderByClause = { name: 'asc' };
+    if (sortBy) {
+      const order = sortOrder === 'desc' ? 'desc' : 'asc';
+      switch (sortBy) {
+        case 'name':
+          orderByClause = { name: order };
+          break;
+        case 'quantity':
+          orderByClause = { quantity: order };
+          break;
+        case 'price':
+          orderByClause = { price: order };
+          break;
+        case 'value':
+          orderByClause = { name: order }; // Will be sorted by calculated value later
+          break;
+        default:
+          orderByClause = { name: order };
+      }
+    }
+    
+    const products = await productRepository.findMany({
+      where: whereClause,
+      include: { category: true },
+      orderBy: orderByClause
+    });
+    
+    // Calculate category totals
+    const categoryTotals = {};
+    products.forEach(product => {
+      const category = product.category?.name || "Uncategorized";
+      const value = product.price * product.quantity;
+      
+      if (!categoryTotals[category]) {
+        categoryTotals[category] = { total_value: 0, total_quantity: 0, product_count: 0 };
+      }
+      
+      categoryTotals[category].total_value += value;
+      categoryTotals[category].total_quantity += product.quantity;
+      categoryTotals[category].product_count += 1;
+    });
+    
+    return products.map((product) => ({
+      name: product.name,
+      product_name: product.name,
+      category: product.category?.name || "Uncategorized",
+      category_name: product.category?.name || "Uncategorized",
+      quantity: product.quantity,
+      price: product.price,
+      unit_price: product.price,
       total_value: product.price * product.quantity,
+      last_updated: product.updatedAt,
+      category_total_value: categoryTotals[product.category?.name || "Uncategorized"]?.total_value || 0,
+      category_product_count: categoryTotals[product.category?.name || "Uncategorized"]?.product_count || 0
     }));
   },
 
   async supplierAnalysis() {
     const purchases = await purchaseRepository.findMany({
       where: { isDeleted: false },
-      include: { supplier: true },
+      include: { 
+        supplier: true,
+        productPurchases: {
+          include: {
+            product: true
+          }
+        }
+      },
     });
+    
     const analysis = {};
     purchases.forEach((purchase) => {
       const supplier = purchase.supplier?.name || "Unknown";
-      if (!analysis[supplier])
-        analysis[supplier] = { total_orders: 0, total_spent: 0 };
+      if (!analysis[supplier]) {
+        analysis[supplier] = { 
+          total_orders: 0, 
+          total_spent: 0,
+          total_products: 0,
+          average_order_value: 0,
+          last_order_date: null,
+          supplier_contact: purchase.supplier?.email || "N/A"
+        };
+      }
       analysis[supplier].total_orders += 1;
       analysis[supplier].total_spent += purchase.totalCost;
+      analysis[supplier].total_products += purchase.productPurchases?.length || 0;
+      analysis[supplier].average_order_value = analysis[supplier].total_spent / analysis[supplier].total_orders;
+      
+      if (!analysis[supplier].last_order_date || purchase.createdAt > analysis[supplier].last_order_date) {
+        analysis[supplier].last_order_date = purchase.createdAt;
+      }
     });
+    
     return Object.entries(analysis).map(([supplier_name, stats]) => ({
       supplier_name,
       total_orders: stats.total_orders,
       total_spent: stats.total_spent,
+      total_products: stats.total_products,
+      average_order_value: Math.round(stats.average_order_value * 100) / 100,
+      last_order_date: stats.last_order_date,
+      supplier_contact: stats.supplier_contact
     }));
   },
 
@@ -403,6 +699,192 @@ const reportService = {
     // This would require a notification repository
     // For now, return empty array as placeholder
     return [];
+  },
+
+  async supplierAnalysis(query) {
+    const { startDate, endDate, status } = query;
+    
+    // Build where clause
+    const whereClause = { isDeleted: false };
+    if (startDate && endDate) {
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      };
+    }
+    if (status) {
+      whereClause.status = status;
+    }
+    
+    const purchases = await purchaseRepository.findMany({
+      where: whereClause,
+      include: {
+        supplier: true,
+        productPurchases: {
+          include: {
+            product: true
+          }
+        }
+      }
+    });
+    
+    // Aggregate supplier data
+    const supplierStats = {};
+    purchases.forEach(purchase => {
+      const supplierName = purchase.supplier?.name || "Unknown";
+      if (!supplierStats[supplierName]) {
+        supplierStats[supplierName] = {
+          supplier_name: supplierName,
+          total_orders: 0,
+          total_spent: 0,
+          total_products: 0,
+          average_order_value: 0,
+          last_order_date: null,
+          supplier_contact: purchase.supplier?.email || "N/A"
+        };
+      }
+      
+      supplierStats[supplierName].total_orders += 1;
+      supplierStats[supplierName].total_spent += purchase.totalCost;
+      supplierStats[supplierName].total_products += purchase.productPurchases?.length || 0;
+      supplierStats[supplierName].last_order_date = purchase.createdAt;
+    });
+    
+    // Calculate average order values
+    Object.values(supplierStats).forEach(supplier => {
+      supplier.average_order_value = supplier.total_orders > 0 
+        ? supplier.total_spent / supplier.total_orders 
+        : 0;
+    });
+    
+    return Object.values(supplierStats);
+  },
+
+  // Cost Analysis Report
+  async costAnalysis(query) {
+    const { startDate, endDate } = query;
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+    const end = endDate ? new Date(endDate) : new Date();
+
+    try {
+      // Get purchases with product details
+      const purchases = await purchaseRepository.findMany({
+        where: {
+          isDeleted: false,
+          createdAt: { gte: start, lte: end },
+        },
+        include: {
+          productPurchases: {
+            include: {
+              product: {
+                include: {
+                  category: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      console.log("Cost Analysis - Found purchases:", purchases.length);
+      console.log("Cost Analysis - Date range:", { start, end });
+      if (purchases.length > 0) {
+        console.log("Cost Analysis - Sample purchase:", purchases[0]);
+        console.log("Cost Analysis - Sample productPurchases:", purchases[0].productPurchases);
+      }
+
+      // Aggregate cost data by product
+      const costAnalysis = {};
+      
+      purchases.forEach(purchase => {
+        purchase.productPurchases.forEach(pp => {
+          const productName = pp.product?.name || "Unknown Product";
+          const category = pp.product?.category?.name || "Uncategorized";
+          const unitCost = pp.unit_cost || pp.purchase_price || 0;
+          const quantity = pp.purchase_quantity || pp.quantity || 0;
+          const totalCost = unitCost * quantity;
+          
+          console.log("Processing product purchase:", {
+            productName,
+            category,
+            unitCost,
+            quantity,
+            totalCost,
+            pp
+          });
+          
+          if (!costAnalysis[productName]) {
+            costAnalysis[productName] = {
+              product_name: productName,
+              category: category,
+              total_purchased: 0,
+              total_cost: 0,
+              avg_cost: 0,
+              purchase_count: 0,
+              cost_history: []
+            };
+          }
+          
+          costAnalysis[productName].total_purchased += quantity;
+          costAnalysis[productName].total_cost += totalCost;
+          costAnalysis[productName].purchase_count += 1;
+          costAnalysis[productName].cost_history.push({
+            date: purchase.createdAt,
+            unit_cost: unitCost,
+            quantity: quantity,
+            total_cost: totalCost
+          });
+        });
+      });
+
+      // Calculate average costs and trends
+      const result = Object.values(costAnalysis).map(item => {
+        item.avg_cost = item.total_cost / item.total_purchased;
+        
+        // Calculate trend based on cost history
+        if (item.cost_history.length >= 2) {
+          const sortedHistory = item.cost_history.sort((a, b) => new Date(a.date) - new Date(b.date));
+          const firstHalf = sortedHistory.slice(0, Math.floor(sortedHistory.length / 2));
+          const secondHalf = sortedHistory.slice(Math.floor(sortedHistory.length / 2));
+          
+          const firstHalfAvg = firstHalf.reduce((sum, h) => sum + h.unit_cost, 0) / firstHalf.length;
+          const secondHalfAvg = secondHalf.reduce((sum, h) => sum + h.unit_cost, 0) / secondHalf.length;
+          
+          const trendPercentage = ((secondHalfAvg - firstHalfAvg) / firstHalfAvg) * 100;
+          
+          if (trendPercentage > 5) {
+            item.trend = "Increasing";
+          } else if (trendPercentage < -5) {
+            item.trend = "Decreasing";
+          } else {
+            item.trend = "Stable";
+          }
+        } else {
+          item.trend = "Stable";
+        }
+        
+        return {
+          product_name: item.product_name,
+          category: item.category,
+          total_purchased: item.total_purchased,
+          total_cost: Math.round(item.total_cost * 100) / 100,
+          avg_cost: Math.round(item.avg_cost * 100) / 100,
+          trend: item.trend,
+          purchase_count: item.purchase_count
+        };
+      });
+
+      // Sort by total cost descending
+      const finalResult = result.sort((a, b) => b.total_cost - a.total_cost);
+      console.log("Cost Analysis - Final result:", finalResult.length, "items");
+      console.log("Cost Analysis - Sample result:", finalResult[0]);
+      return finalResult;
+    } catch (error) {
+      console.error("Error in costAnalysis report:", error);
+      return [];
+    }
   },
 };
 

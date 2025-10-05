@@ -7,7 +7,7 @@ const reportsController = {
   },
 
   async inventory(req, res) {
-    const data = await reportService.inventory();
+    const data = await reportService.inventory(req.query);
     res.json(data);
   },
 
@@ -17,7 +17,7 @@ const reportsController = {
   },
 
   async monthlyRevenue(req, res) {
-    const data = await reportService.monthlyRevenue();
+    const data = await reportService.monthlyRevenue(req.query);
     res.json(data);
   },
 
@@ -27,17 +27,17 @@ const reportsController = {
   },
 
   async lowStock(req, res) {
-    const data = await reportService.lowStock();
+    const data = await reportService.lowStock(req.query);
     res.json(data);
   },
 
   async inventoryValue(req, res) {
-    const data = await reportService.inventoryValue();
+    const data = await reportService.inventoryValue(req.query);
     res.json(data);
   },
 
   async supplierAnalysis(req, res) {
-    const data = await reportService.supplierAnalysis();
+    const data = await reportService.supplierAnalysis(req.query);
     res.json(data);
   },
 
@@ -80,6 +80,20 @@ const reportsController = {
   async notifications(req, res) {
     const data = await reportService.notifications();
     res.json(data);
+  },
+
+  async costAnalysis(req, res) {
+    const data = await reportService.costAnalysis(req.query);
+    res.json(data);
+  },
+
+  // Test endpoint to verify API is working
+  async test(req, res) {
+    res.json({
+      success: true,
+      message: "Reports API is working",
+      timestamp: new Date().toISOString()
+    });
   },
 };
 
