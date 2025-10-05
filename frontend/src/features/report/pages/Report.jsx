@@ -1,505 +1,441 @@
-import React, { useState } from "react";
-import { format } from "date-fns";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../../components/shared/Card";
-import { TrendingUp, Package, ShoppingCart, Download } from "lucide-react";
-import Button from "../../../components/shared/Button";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { 
+  BarChart3, 
+  TrendingUp, 
+  Calendar, 
+  Filter, 
+  Download, 
+  Share2, 
+  RefreshCw,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  Settings,
+  Zap,
+  ArrowLeft
+} from "lucide-react";
+import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { toast } from "react-hot-toast";
+
+// Enhanced Components
+import EnhancedReportHeader from "../components/EnhancedReportHeader";
+import InteractiveReportCards from "../components/InteractiveReportCards";
+import AdvancedReportTable from "../components/AdvancedReportTable";
+import ReportFilters from "../components/ReportFilters";
+import ReportVisualizations from "../components/ReportVisualizations";
+import ReportExportPanel from "../components/ReportExportPanel";
+import ReportInsights from "../components/ReportInsights";
 import LoadingOverlay from "../../../components/shared/LoadingOverlay";
 import { API_URL } from "../../../config";
 
 const ReportsPage = () => {
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(null);
-  const [isLoading, setIsLoading] = useState(false); // new
+  const [isLoading, setIsLoading] = useState(false);
   const [currentReport, setCurrentReport] = useState(null);
-  const generateReport = async (reportType) => {
-    setLoading(reportType);
-    setIsLoading(true); // show overlay
-    try {
-      let endpoint, columns, title;
+  const [reportData, setReportData] = useState(null);
+  const [filters, setFilters] = useState({
+    dateRange: {
+      start: '2024-01-01',
+      end: format(new Date(), 'yyyy-MM-dd')
+    },
+    category: '',
+    status: '',
+    sortBy: 'date',
+    sortOrder: 'desc'
+  });
+  const [viewMode, setViewMode] = useState('table'); // table, chart, insights
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState(null);
 
-      switch (reportType) {
-        case "daily-sales":
-          endpoint = `${API_URL}/sales-orders`;
-          columns = ["Date", "Order ID", "Customer", "Amount", "Status"];
-          title = "Daily Sales Report";
-          break;
+  // Auto-refresh functionality
+  useEffect(() => {
+    if (autoRefresh && currentReport) {
+      const interval = setInterval(() => {
+        generateReport(currentReport.type, true);
+      }, 30000); // Refresh every 30 seconds
+      setRefreshInterval(interval);
+      return () => clearInterval(interval);
+    } else if (refreshInterval) {
+      clearInterval(refreshInterval);
+      setRefreshInterval(null);
+    }
+  }, [autoRefresh, currentReport]);
 
-        case "inventory":
-          endpoint = `${API_URL}/reports/inventory`;
-          columns = ["Product Name", "Category", "Quantity", "Price", "Status"];
-          title = "Inventory Status Report";
-          break;
 
-        case "purchase-orders":
-          endpoint = `${API_URL}/reports/purchases`;
-          columns = ["Date", "Order ID", "Supplier", "Amount", "Status"];
-          title = "Purchase Orders Report";
-          break;
-
-        case "monthly-revenue":
-          endpoint = `${API_URL}/reports/monthly-revenue`;
-          columns = ["Month", "Total Revenue"];
-          title = "Monthly Revenue Report";
-          break;
-
-        case "top-products":
-          endpoint = `${API_URL}/reports/top-products`;
-          columns = ["Product Name", "Units Sold"];
-          title = "Top Selling Products Report";
-          break;
-
-        case "low-stock":
-          endpoint = `${API_URL}/reports/low-stock`;
-          columns = ["Product Name", "Category", "Quantity", "Status"];
-          title = "Low Stock Items Report";
-          break;
-
-        case "inventory-value":
-          endpoint = `${API_URL}/reports/inventory-value`;
-          columns = [
-            "Product Name",
-            "Category",
-            "Quantity",
-            "Price",
-            "Total Value",
-          ];
-          title = "Inventory Valuation Report";
-          break;
-
-        case "supplier-analysis":
-          endpoint = `${API_URL}/reports/supplier-analysis`;
-          columns = ["Supplier", "Total Orders", "Total Spent"];
-          title = "Supplier Analysis Report";
-          break;
-
-        case "cost-analysis":
-          endpoint = `${API_URL}/reports/cost-analysis`;
-          columns = ["Product Name", "Total Purchased", "Total Cost"];
-          title = "Cost Analysis Report";
-          break;
-
-        default:
-          throw new Error("Invalid report type");
-      }
-
-      // Replace the existing fetch call with this enhanced version
-      const response = await fetch(endpoint);
-      const contentType = response.headers.get("content-type");
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Server error:", errorText);
-        throw new Error(
-          `HTTP error ${response.status}: ${response.statusText}`
-        );
-      }
-
-      if (!contentType || !contentType.includes("application/json")) {
-        const errorText = await response.text();
-        console.error("Expected JSON but got:", errorText);
-        throw new Error("Received non-JSON response");
-      }
-
-      const data = await response.json();
-      setCurrentReport({ title, data, columns });
-    } catch (error) {
-      console.error("Error generating report:", error.message);
-      alert(`Failed to generate report: ${error.message}`);
-    } finally {
-      setLoading(null);
-      setIsLoading(false); // hide overlay
+  // Enhanced report configurations with more detailed metadata
+  const reportConfigs = {
+    "daily-sales": {
+      endpoint: `${API_URL}/reports/daily-sales`,
+      columns: ["Date", "Order ID", "Customer", "Amount", "Status", "Payment Method"],
+      title: "Daily Sales Report",
+      type: "sales",
+      chartType: "line",
+      insights: ["totalRevenue", "averageOrderValue", "topCustomers"]
+    },
+    "inventory": {
+      endpoint: `${API_URL}/reports/inventory`,
+      columns: ["Product Name", "Category", "Quantity", "Price", "Status", "Total Value", "Last Updated"],
+      title: "Inventory Status Report",
+      type: "inventory",
+      chartType: "bar",
+      insights: ["totalValue", "lowStockCount", "categoryDistribution"]
+    },
+    "purchase-orders": {
+      endpoint: `${API_URL}/reports/purchase-orders`,
+      columns: ["Date", "Order Number", "Supplier", "Amount", "Status", "Expected Delivery", "Product Count"],
+      title: "Purchase Orders Report",
+      type: "purchases",
+      chartType: "bar",
+      insights: ["totalSpent", "averageOrderValue", "topSuppliers"]
+    },
+    "monthly-revenue": {
+      endpoint: `${API_URL}/reports/monthly-revenue`,
+      columns: ["Month", "Total Revenue", "Growth %", "Orders Count"],
+      title: "Monthly Revenue Report",
+      type: "revenue",
+      chartType: "line",
+      insights: ["revenueGrowth", "bestMonth", "trendAnalysis"]
+    },
+    "top-products": {
+      endpoint: `${API_URL}/reports/top-products`,
+      columns: ["Product Name", "Units Sold", "Revenue", "Growth %", "Category"],
+      title: "Top Selling Products Report",
+      type: "products",
+      chartType: "pie",
+      insights: ["topPerformer", "categoryBreakdown", "growthTrends"]
+    },
+    "low-stock": {
+      endpoint: `${API_URL}/reports/low-stock`,
+      columns: ["Product Name", "Category", "Quantity", "Price", "Urgency", "Total Value", "Last Updated"],
+      title: "Low Stock Items Report",
+      type: "alerts",
+      chartType: "bar",
+      insights: ["criticalItems", "reorderSuggestions", "stockTrends"]
+    },
+    "inventory-value": {
+      endpoint: `${API_URL}/reports/inventory-value`,
+      columns: ["Product Name", "Category", "Quantity", "Unit Price", "Total Value", "Last Updated"],
+      title: "Inventory Valuation Report",
+      type: "valuation",
+      chartType: "bar",
+      insights: ["totalValue", "categoryValue", "valueTrends"]
+    },
+    "supplier-analysis": {
+      endpoint: `${API_URL}/reports/supplier-analysis`,
+      columns: ["Supplier", "Total Orders", "Total Spent", "Average Order Value", "Total Products", "Last Order Date", "Supplier Contact"],
+      title: "Supplier Analysis Report",
+      type: "suppliers",
+      chartType: "bar",
+      insights: ["topSuppliers", "costAnalysis", "performanceMetrics"]
+    },
+    "cost-analysis": {
+      endpoint: `${API_URL}/reports/cost-analysis`,
+      columns: ["Product Name", "Total Purchased", "Total Cost", "Avg Cost", "Category", "Trend"],
+      title: "Cost Analysis Report",
+      type: "costs",
+      chartType: "line",
+      insights: ["costTrends", "expensiveItems", "categoryCosts"]
     }
   };
 
-  const downloadPDF = () => {
-    if (!currentReport) return;
-
-    const doc = new jsPDF();
-    const title = currentReport.title;
-    const date = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-
-    doc.setFontSize(18);
-    doc.text(title, 14, 20);
-    doc.setFontSize(12);
-    doc.text(`Generated on: ${date}`, 14, 30);
-
-    autoTable(doc, {
-      head: [currentReport.columns],
-      body: currentReport.data.map((item) => {
-        switch (currentReport.title) {
-          case "Daily Sales Report":
-            return [
-              format(new Date(item.created_at), "yyyy-MM-dd"),
-              item.id,
-              item.customer?.name || item.customer_name || "Unknown",
-              `$${Number(item.total_amount).toFixed(2)}`,
-              item.status,
-            ];
-          case "Inventory Status Report":
-            return [
-              item.name,
-              item.category_name || "Uncategorized",
-              item.quantity,
-              `$${Number(item.price).toFixed(2)}`,
-              item.quantity < 10 ? "Low Stock" : "In Stock",
-            ];
-          case "Purchase Orders Report":
-            return [
-              format(new Date(item.created_at), "yyyy-MM-dd"),
-              item.id,
-              item.supplier_name || "Unknown",
-              `$${Number(item.total_amount).toFixed(2)}`,
-              item.status,
-            ];
-          case "Monthly Revenue Report":
-            return [
-              format(new Date(item.month), "yyyy-MM"),
-              `$${Number(item.total).toFixed(2)}`,
-            ];
-          case "Top Selling Products Report":
-            return [item.product_name, item.total_sold];
-          case "Low Stock Items Report":
-            return [
-              item.name,
-              item.category_name || "Uncategorized",
-              item.quantity,
-              "Low Stock",
-            ];
-          case "Inventory Valuation Report":
-            return [
-              item.name,
-              item.category_name || "Uncategorized",
-              item.quantity,
-              `$${item.price.toFixed(2)}`,
-              `$${item.total_value.toFixed(2)}`,
-            ];
-          case "Supplier Analysis Report":
-            return [
-              item.supplier_name,
-              item.total_orders,
-              `$${item.total_spent.toFixed(2)}`,
-            ];
-          case "Cost Analysis Report":
-            return [
-              item.product_name,
-              item.total_purchased,
-              `$${item.total_cost.toFixed(2)}`,
-            ];
-          default:
-            return [];
+  // Test backend connectivity
+  const testBackendConnection = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const testUrl = `${API_URL}/reports/test`;
+      
+      console.log("Testing backend connection to:", testUrl);
+      
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
-      }),
-
-      startY: 40,
-    });
-
-    doc.save(`${title.toLowerCase().replace(/\s+/g, "-")}-${date}.pdf`);
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Backend test successful:", data);
+        return true;
+      } else {
+        console.error("Backend test failed:", response.status, response.statusText);
+        return false;
+      }
+    } catch (error) {
+      console.error("Backend test error:", error);
+      return false;
+    }
   };
 
-  const reports = [
-    {
-      title: "Sales Reports",
-      description: "View detailed sales analytics and trends",
-      icon: <TrendingUp size={24} className="text-indigo-600" />,
-      options: [
-        { name: "Daily Sales", id: "daily-sales" },
-        { name: "Monthly Revenue", id: "monthly-revenue" },
-        { name: "Top Selling Products", id: "top-products" },
-      ],
-    },
-    {
-      title: "Inventory Reports",
-      description: "Monitor stock levels and product movement",
-      icon: <Package size={24} className="text-blue-600" />,
-      options: [
-        { name: "Stock Status", id: "inventory" },
-        { name: "Low Stock Items", id: "low-stock" },
-        { name: "Inventory Valuation", id: "inventory-value" },
-      ],
-    },
-    {
-      title: "Purchase Reports",
-      description: "Track purchase orders and supplier performance",
-      icon: <ShoppingCart size={24} className="text-orange-600" />,
-      options: [
-        { name: "Purchase Orders", id: "purchase-orders" },
-        { name: "Supplier Analysis", id: "supplier-analysis" },
-        { name: "Cost Analysis", id: "cost-analysis" },
-      ],
-    },
-  ];
+  const generateReport = async (reportType, isRefresh = false) => {
+    console.log("Generating report:", reportType, "isRefresh:", isRefresh);
+    
+    if (!isRefresh) {
+      setLoading(reportType);
+      setIsLoading(true);
+    }
+
+    // Test backend connection first
+    const isBackendConnected = await testBackendConnection();
+    if (!isBackendConnected) {
+      console.warn("Backend not accessible");
+      toast.error("Backend server not accessible. Please check your connection.");
+      setLoading(null);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      let endpoint, columns, title, type;
+
+      const config = reportConfigs[reportType];
+      if (!config) throw new Error("Invalid report type");
+
+      endpoint = config.endpoint;
+      columns = config.columns;
+      title = config.title;
+      type = config.type;
+
+      // Add filters to the request
+      const queryParams = new URLSearchParams({
+        startDate: filters.dateRange.start,
+        endDate: filters.dateRange.end,
+        category: filters.category,
+        status: filters.status,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
+      });
+
+      let data;
+      
+      try {
+        // Get authentication token from localStorage
+        const token = localStorage.getItem('authToken');
+        
+        console.log("Making API call to:", `${endpoint}?${queryParams}`);
+        console.log("Using token:", token ? "Present" : "Missing");
+        
+        const response = await fetch(`${endpoint}?${queryParams}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        console.log("API Response Status:", response.status);
+        console.log("API Response Headers:", response.headers);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("API Error Response:", errorText);
+          throw new Error(`HTTP error ${response.status}: ${response.statusText} - ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        
+        console.log("Report API Response:", responseData);
+        
+        // Handle different response formats from backend
+        if (responseData.success && responseData.data) {
+          data = responseData.data;
+        } else if (Array.isArray(responseData)) {
+          data = responseData;
+        } else {
+          data = responseData;
+        }
+        
+        console.log("Processed data:", data);
+      } catch (apiError) {
+        console.error("API call failed with error:", apiError);
+        console.warn("API call failed:", apiError.message);
+        toast.error(`Failed to fetch data: ${apiError.message}`);
+        setLoading(null);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Enhanced report object with metadata
+      const enhancedReport = {
+        title,
+        type,
+        data,
+        columns,
+        config,
+        generatedAt: new Date(),
+        filters: { ...filters },
+        metadata: {
+          totalRecords: data.length,
+          dateRange: filters.dateRange,
+          hasCharts: true,
+          hasInsights: true
+        }
+      };
+
+      setCurrentReport(enhancedReport);
+      setReportData(data);
+      
+      if (!isRefresh) {
+        toast.success(`${title} generated successfully!`);
+      }
+    } catch (error) {
+      console.error("Error generating report:", error.message);
+      toast.error(`Failed to generate report: ${error.message}`);
+    } finally {
+      setLoading(null);
+      setIsLoading(false);
+    }
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    if (currentReport) {
+      generateReport(currentReport.type, true);
+    }
+  };
+
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+  };
+
+  const handleAutoRefreshToggle = () => {
+    setAutoRefresh(!autoRefresh);
+  };
+
+  const handleBackToReports = () => {
+    setCurrentReport(null);
+    setReportData(null);
+    setViewMode('table'); // Reset to default view mode
+  };
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <LoadingOverlay title="Reports" description="Loading report data..." />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <LoadingOverlay 
+          title="Generating Report" 
+          description="Processing your data and creating visualizations..." 
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-          Reports
-        </h1>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Enhanced Header */}
+      <EnhancedReportHeader 
+        onViewModeChange={handleViewModeChange}
+        viewMode={viewMode}
+        onAutoRefreshToggle={handleAutoRefreshToggle}
+        autoRefresh={autoRefresh}
+        currentReport={currentReport}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {reports.map((report, index) => (
-          <Card
-            key={index}
-            className="hover:shadow-lg transition-shadow duration-200 bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-          >
-            <CardHeader className="flex flex-row items-center gap-4 bg-white dark:bg-gray-800">
-              <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900">
-                {report.icon}
-              </div>
+      {/* Main Content */}
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Interactive Report Cards - Only show when no report is active */}
+        {!currentReport && (
+          <InteractiveReportCards 
+            onGenerateReport={generateReport} 
+            loading={loading}
+            currentReport={currentReport}
+          />
+        )}
+
+
+        {/* View Mode Info - Only show when report is active */}
+        {currentReport && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleBackToReports}
+                className="h-12 w-12 p-0 bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-center border-2"
+                style={{
+                  borderColor: '#3b82f6',
+                  color: '#3b82f6',
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  borderRadius: '8px',
+                  backgroundColor: '#f0f9ff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0,
+                  lineHeight: 1,
+                  textAlign: 'center',
+                  verticalAlign: 'middle',
+                }}
+              >
+                <ArrowLeft
+                  size={24}
+                  style={{
+                    margin: 0,
+                    padding: 0,
+                    lineHeight: 1,
+                    fontWeight: 'bold',
+                    fontSize: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                />
+              </button>
               <div>
-                <CardTitle className="text-lg text-gray-800 dark:text-white">
-                  {report.title}
-                </CardTitle>
-                <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
-                  {report.description}
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                  {viewMode === 'table' && 'Table View'}
+                  {viewMode === 'chart' && 'Chart View'}
+                  {viewMode === 'insights' && 'Insights View'}
+                </h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  {viewMode === 'table' && 'View detailed data in a sortable table format'}
+                  {viewMode === 'chart' && 'Visualize data with interactive charts and graphs'}
+                  {viewMode === 'insights' && 'Get key insights and analytics from your data'}
                 </p>
               </div>
-            </CardHeader>
-
-            <CardContent>
-              <div className="space-y-2">
-                {report.options.map((option) => (
-                  <Button
-                    key={option.id}
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={() => generateReport(option.id)}
-                    isLoading={loading === option.id}
-                  >
-                    {option.name}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {currentReport && (
-        <Card className="mt-6 bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-          <CardHeader className="flex flex-row items-center justify-between bg-white dark:bg-gray-800">
-            <CardTitle className="text-gray-800 dark:text-white">
-              {currentReport.title}
-            </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<Download size={16} />}
-              onClick={downloadPDF}
-            >
-              Download PDF
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    {currentReport.columns.map((column, index) => (
-                      <th
-                        key={index}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider"
-                      >
-                        {column}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                  {currentReport.data.map((item, index) => (
-                    <tr key={index}>
-                      {currentReport.title === "Daily Sales Report" && (
-                        <>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {format(new Date(item.created_at), "yyyy-MM-dd")}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.id}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.customer?.name ||
-                              item.customer_name ||
-                              "Unknown"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            ${Number(item.total_amount).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full ${
-                                item.status === "completed"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {item.status}
-                            </span>
-                          </td>
-                        </>
-                      )}
-                      {currentReport.title === "Inventory Status Report" && (
-                        <>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.category_name || "Uncategorized"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.quantity}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            ${Number(item.price).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.quantity < 10 ? (
-                              <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
-                                Low Stock
-                              </span>
-                            ) : (
-                              <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                                In Stock
-                              </span>
-                            )}
-                          </td>
-                        </>
-                      )}
-                      {currentReport.title === "Purchase Orders Report" && (
-                        <>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {format(new Date(item.created_at), "yyyy-MM-dd")}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.id}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.supplier_name || "Unknown"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            ${Number(item.total_amount).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full ${
-                                item.status === "completed"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {item.status}
-                            </span>
-                          </td>
-                        </>
-                      )}
-                      {currentReport.title === "Monthly Revenue Report" && (
-                        <>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.month}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            ${Number(item.total).toFixed(2)}
-                          </td>
-                        </>
-                      )}
-                      {currentReport.title ===
-                        "Top Selling Products Report" && (
-                        <>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.product_name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.total_sold}
-                          </td>
-                        </>
-                      )}
-                      {currentReport.title === "Low Stock Items Report" && (
-                        <>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.category_name || "Uncategorized"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.quantity}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
-                              Low Stock
-                            </span>
-                          </td>
-                        </>
-                      )}
-                      {currentReport.title === "Inventory Valuation Report" && (
-                        <>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.category_name || "Uncategorized"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.quantity}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            ${item.price.toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            ${item.total_value.toFixed(2)}
-                          </td>
-                        </>
-                      )}
-                      {currentReport.title === "Supplier Analysis Report" && (
-                        <>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.supplier_name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.total_orders}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            ${item.total_spent.toFixed(2)}
-                          </td>
-                        </>
-                      )}
-                      {currentReport.title === "Cost Analysis Report" && (
-                        <>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.product_name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.total_purchased}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            ${item.total_cost.toFixed(2)}
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+
+        {/* Report Content */}
+        {currentReport && (
+          <div className="space-y-6">
+            {/* Report Insights - Only show in insights view mode */}
+            {viewMode === 'insights' && (
+              <ReportInsights 
+                report={currentReport}
+                data={reportData}
+              />
+            )}
+
+            {/* Report Visualizations - Only show in chart view mode */}
+            {viewMode === 'chart' && (
+              <ReportVisualizations 
+                report={currentReport}
+                data={reportData}
+              />
+            )}
+
+            {/* Report Table - Only show in table view mode */}
+            {viewMode === 'table' && (
+              <AdvancedReportTable 
+                report={currentReport}
+                data={reportData}
+                onSort={(field, order) => handleFilterChange({ sortBy: field, sortOrder: order })}
+              />
+            )}
+
+            {/* Export Panel - Always show when report is available */}
+            <ReportExportPanel 
+              report={currentReport}
+              data={reportData}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
