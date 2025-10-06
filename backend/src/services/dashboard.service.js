@@ -42,21 +42,60 @@ const getLowStockThreshold = async () => {
 };
 
 // Dashboard stats (products, sales, revenue, customers, suppliers, low stock, etc.)
-exports.getStats = async () => {
-  // Generate cache key
-  const cacheKey = cacheService.generateKey('dashboard', 'stats');
+exports.getStats = async (params = {}) => {
+  const { range = "monthly" } = params;
+  // Generate cache key with range
+  const cacheKey = cacheService.generateKey('dashboard', 'stats', range);
   
   // Try to get from cache first (short TTL for real-time data)
   const cached = await cacheService.get(cacheKey);
   if (cached) {
     return cached;
   }
-  // Get current month and previous month for trend calculations
+  // Get current period and previous period for trend calculations based on range
   const now = new Date();
-  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+  let currentPeriod, previousPeriod, currentPeriodEnd, previousPeriodEnd;
+  
+  switch (range) {
+    case "7d":
+      currentPeriod = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      previousPeriod = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      currentPeriodEnd = now;
+      previousPeriodEnd = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case "30d":
+      currentPeriod = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      previousPeriod = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+      currentPeriodEnd = now;
+      previousPeriodEnd = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case "90d":
+      currentPeriod = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      previousPeriod = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+      currentPeriodEnd = now;
+      previousPeriodEnd = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    case "1y":
+      currentPeriod = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      previousPeriod = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+      currentPeriodEnd = now;
+      previousPeriodEnd = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      break;
+    case "all":
+      // For all time, compare current year vs previous year
+      currentPeriod = new Date(now.getFullYear(), 0, 1); // Start of current year
+      previousPeriod = new Date(now.getFullYear() - 1, 0, 1); // Start of previous year
+      currentPeriodEnd = now;
+      previousPeriodEnd = new Date(now.getFullYear(), 0, 1); // Start of current year
+      break;
+    case "monthly":
+    default:
+      currentPeriod = new Date(now.getFullYear(), now.getMonth(), 1);
+      previousPeriod = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      currentPeriodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      previousPeriodEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      break;
+  }
 
   // Get low stock threshold from settings
   const lowStockThreshold = await getLowStockThreshold();
@@ -85,82 +124,82 @@ exports.getStats = async () => {
     // Fix: Count from Customer table, not User table
     prisma.customer.count(),
     prisma.supplier.count({ where: { isDeleted: false } }),
-    // Current month sales count
+    // Current period sales count
     prisma.sale.count({
       where: {
         isDeleted: false,
-        createdAt: { gte: currentMonth, lte: currentMonthEnd },
+        createdAt: { gte: currentPeriod, lte: currentPeriodEnd },
       },
     }),
-    // Current month revenue
+    // Current period revenue
     prisma.sale.aggregate({
       where: {
         isDeleted: false,
-        createdAt: { gte: currentMonth, lte: currentMonthEnd },
+        createdAt: { gte: currentPeriod, lte: currentPeriodEnd },
       },
       _sum: { totalPrice: true },
     }),
-    // Current month products count
+    // Current period products count
     prisma.product.count({
       where: {
         isDeleted: false,
-        createdAt: { gte: currentMonth, lte: currentMonthEnd },
+        createdAt: { gte: currentPeriod, lte: currentPeriodEnd },
       },
     }),
-    // Previous month sales count
+    // Previous period sales count
     prisma.sale.count({
       where: {
         isDeleted: false,
-        createdAt: { gte: previousMonth, lte: previousMonthEnd },
+        createdAt: { gte: previousPeriod, lte: previousPeriodEnd },
       },
     }),
-    // Previous month revenue
+    // Previous period revenue
     prisma.sale.aggregate({
       where: {
         isDeleted: false,
-        createdAt: { gte: previousMonth, lte: previousMonthEnd },
+        createdAt: { gte: previousPeriod, lte: previousPeriodEnd },
       },
       _sum: { totalPrice: true },
     }),
-    // Previous month products count
+    // Previous period products count
     prisma.product.count({
       where: {
         isDeleted: false,
-        createdAt: { gte: previousMonth, lte: previousMonthEnd },
+        createdAt: { gte: previousPeriod, lte: previousPeriodEnd },
       },
     }),
   ]);
 
-  // Calculate trends
+  // Calculate trends (return as numbers, not strings)
   const salesChange =
     previousMonthSales > 0
-      ? (
-          ((currentMonthSales - previousMonthSales) / previousMonthSales) *
-          100
-        ).toFixed(1)
+      ? parseFloat(
+          (((currentMonthSales - previousMonthSales) / previousMonthSales) *
+          100).toFixed(1)
+        )
       : currentMonthSales > 0
       ? 100
       : 0;
 
   const revenueChange =
     (previousMonthRevenue._sum.totalPrice || 0) > 0
-      ? (
-          (((currentMonthRevenue._sum.totalPrice || 0) -
+      ? parseFloat(
+          ((((currentMonthRevenue._sum.totalPrice || 0) -
             (previousMonthRevenue._sum.totalPrice || 0)) /
             (previousMonthRevenue._sum.totalPrice || 0)) *
-          100
-        ).toFixed(1)
+          100).toFixed(1)
+        )
       : (currentMonthRevenue._sum.totalPrice || 0) > 0
       ? 100
       : 0;
 
   const productChange =
     previousMonthProducts > 0
-      ? (
-          ((currentMonthProducts - previousMonthProducts) /
+      ? parseFloat(
+          (((currentMonthProducts - previousMonthProducts) /
             previousMonthProducts) *
-          100
-        ).toFixed(1)
+          100).toFixed(1)
+        )
       : currentMonthProducts > 0
       ? 100
       : 0;
@@ -199,10 +238,10 @@ exports.getStats = async () => {
       totalCustomers,
       totalSuppliers,
       lowStockItems,
-      // Add trend data
-      salesChange: parseFloat(salesChange),
-      revenueChange: parseFloat(revenueChange),
-      productChange: parseFloat(productChange),
+      // Add trend data (already parsed as numbers above)
+      salesChange: salesChange,
+      revenueChange: revenueChange,
+      productChange: productChange,
       // Add current month data
       currentMonthSales,
       currentMonthRevenue: currentMonthRevenue._sum.totalPrice || 0,
@@ -312,7 +351,9 @@ exports.getActivities = async (params = {}) => {
 };
 
 // Low stock alerts (paginated) with configurable threshold
-exports.getLowStockAlerts = async (page = 1, limit = 10) => {
+exports.getLowStockAlerts = async (params = {}) => {
+  const { page = 1, limit = 10, severity = "", categoryId = "" } = params;
+  
   // Get low stock threshold from settings
   const lowStockThreshold = await getLowStockThreshold();
 
@@ -331,15 +372,37 @@ exports.getLowStockAlerts = async (page = 1, limit = 10) => {
   });
 
   // Filter in JS for low stock
-  const filtered = allProducts.filter((p) => {
+  let filtered = allProducts.filter((p) => {
     if (p.quantity === 0) return true; // Out of stock
     const minStock = p.minStock != null ? p.minStock : lowStockThreshold;
     return p.quantity > 0 && p.quantity <= minStock;
   });
 
+  // Apply additional filters
+  if (severity) {
+    filtered = filtered.filter((p) => {
+      const productSeverity = p.quantity === 0 ? 'critical' : p.quantity <= 5 ? 'high' : 'medium';
+      return productSeverity === severity;
+    });
+  }
+
+  if (categoryId) {
+    filtered = filtered.filter((p) => p.categoryId === categoryId);
+  }
+
   // Pagination
   const total = filtered.length;
   const paginated = filtered.slice((page - 1) * limit, page * limit);
+
+  console.log('🚨 Low Stock Alerts Service Debug:', {
+    totalProducts: allProducts.length,
+    filteredCount: filtered.length,
+    paginatedCount: paginated.length,
+    page,
+    limit,
+    threshold: lowStockThreshold,
+    firstAlert: paginated[0]
+  });
 
   return {
     data: paginated.map((p) => ({
@@ -355,35 +418,203 @@ exports.getLowStockAlerts = async (page = 1, limit = 10) => {
 };
 
 // Revenue data for chart (monthly/yearly)
-exports.getRevenueData = async (range = "monthly") => {
-  if (range === "monthly") {
-    // Group sales by month for the last 12 months
+exports.getRevenueData = async (params = {}) => {
+  const { range = "monthly", startDate = "", endDate = "", groupBy = "day" } = params;
+  
+  // Debug logging for revenue data (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 getRevenueData called with params:', { range, startDate, endDate, groupBy });
+  }
+  
+  // Handle different time ranges
+  if (range === "7d" || range === "30d" || range === "90d" || range === "1y" || range === "monthly" || range === "all") {
     const now = new Date();
-    const months = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
+    let periods = [];
+    
+    // Calculate date range based on selection
+    let startDate, endDate, periodType;
+    
+    switch (range) {
+      case "7d":
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        endDate = now;
+        periodType = "day";
+        break;
+      case "30d":
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        endDate = now;
+        periodType = "day";
+        break;
+      case "90d":
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        endDate = now;
+        periodType = "week";
+        break;
+      case "1y":
+        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        endDate = now;
+        periodType = "month";
+        break;
+      case "all":
+        // Get the very first sale date to show all time data
+        const allTimeFirstSale = await prisma.sale.findFirst({
+          where: { isDeleted: false },
+          select: { createdAt: true },
+          orderBy: { createdAt: 'asc' }
+        });
+        
+        if (allTimeFirstSale) {
+          startDate = new Date(allTimeFirstSale.createdAt);
+          endDate = now;
+          // Use monthly grouping for all-time data to keep it manageable
+          periodType = "month";
+        } else {
+          // Fallback to last year if no sales found
+          startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+          endDate = now;
+          periodType = "month";
+        }
+        break;
+      case "monthly":
+      default:
+        // Use existing logic for monthly - from first sale to current month
+        const monthlyFirstSale = await prisma.sale.findFirst({
+          where: { isDeleted: false },
+          select: { createdAt: true },
+          orderBy: { createdAt: 'asc' }
+        });
+        
+        if (monthlyFirstSale) {
+          const firstSaleDate = new Date(monthlyFirstSale.createdAt);
+          startDate = new Date(firstSaleDate.getFullYear(), firstSaleDate.getMonth(), 1);
+          endDate = now;
+          periodType = "month";
+        } else {
+          startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+          endDate = now;
+          periodType = "month";
+        }
+        break;
+    }
+    
+    // Generate periods based on type
+    if (periodType === "day") {
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        periods.push({
+          year: d.getFullYear(),
+          month: d.getMonth() + 1,
+          day: d.getDate(),
+          date: new Date(d)
+        });
+      }
+    } else if (periodType === "week") {
+      // Group by weeks
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 7)) {
+        periods.push({
+          year: d.getFullYear(),
+          month: d.getMonth() + 1,
+          week: Math.ceil(d.getDate() / 7),
+          date: new Date(d)
+        });
+      }
+    } else if (periodType === "month") {
+      // Group by months
+      for (let d = new Date(startDate); d <= endDate; d.setMonth(d.getMonth() + 1)) {
+        periods.push({
+          year: d.getFullYear(),
+          month: d.getMonth() + 1,
+          date: new Date(d)
+        });
+      }
+    }
+    
+    // Debug logging for revenue data (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📅 Generated ${periods.length} ${periodType} periods from ${startDate.toISOString()} to ${endDate.toISOString()}`);
     }
 
     const data = await Promise.all(
-      months.map(async ({ year, month }) => {
-        const start = new Date(year, month - 1, 1);
-        const end = new Date(year, month, 1);
-        const sum = await prisma.sale.aggregate({
+      periods.map(async (period) => {
+        let start, end, label;
+        
+        if (periodType === "day") {
+          start = new Date(period.year, period.month - 1, period.day);
+          end = new Date(period.year, period.month - 1, period.day + 1);
+          label = `${String(period.month).padStart(2, "0")}-${String(period.day).padStart(2, "0")}`;
+        } else if (periodType === "week") {
+          start = new Date(period.date);
+          end = new Date(period.date.getTime() + 7 * 24 * 60 * 60 * 1000);
+          label = `Week ${period.week}`;
+        } else if (periodType === "month") {
+          start = new Date(period.year, period.month - 1, 1);
+          end = new Date(period.year, period.month, 1);
+          label = `${period.year}-${String(period.month).padStart(2, "0")}`;
+        }
+        
+        const [sum, count] = await Promise.all([
+          prisma.sale.aggregate({
           where: {
             isDeleted: false,
             createdAt: { gte: start, lt: end },
           },
           _sum: { totalPrice: true },
-        });
-        return {
-          month: `${year}-${String(month).padStart(2, "0")}`,
+          }),
+          prisma.sale.count({
+            where: {
+              isDeleted: false,
+              createdAt: { gte: start, lt: end },
+            },
+          })
+        ]);
+        
+        const result = {
+          month: label,
           revenue: sum._sum.totalPrice || 0,
+          sales: count,
         };
+        
+        // Debug logging for revenue data (only in development)
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`📊 Revenue for ${result.month}:`, {
+            revenue: result.revenue,
+            sales: result.sales,
+            dateRange: { start: start.toISOString(), end: end.toISOString() }
+          });
+        }
+        
+        return result;
       })
     );
+    
+    // Debug logging for revenue data (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📈 Total revenue data points:', data.length);
+      console.log('📈 Revenue data sample:', data.slice(0, 3));
+      console.log('📈 Revenue data with values > 0:', data.filter(item => item.revenue > 0));
+    }
+    
     return data;
   }
+  
+  // If no data found for monthly range, try to get any sales data
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 No monthly data found, checking for any sales...');
+    const anySales = await prisma.sale.findFirst({
+      where: { isDeleted: false }, // Use same format as dashboard stats
+      select: { createdAt: true, totalPrice: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    if (anySales) {
+      console.log('📊 Found sales in database:', {
+        latestSale: anySales.createdAt,
+        totalPrice: anySales.totalPrice
+      });
+    } else {
+      console.log('❌ No sales found in database');
+    }
+  }
+  
   // Add yearly or other ranges as needed
   return [];
 };

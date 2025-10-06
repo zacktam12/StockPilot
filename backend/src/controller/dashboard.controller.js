@@ -31,7 +31,8 @@ const handleDashboardError = (error, res) => {
 // GET /api/dashboard/stats
 exports.getStats = async (req, res, next) => {
   try {
-    const result = await dashboardService.getStats();
+    const { range = "monthly" } = req.query;
+    const result = await dashboardService.getStats({ range });
     res.json({
       success: true,
       data: result
@@ -69,14 +70,10 @@ exports.getActivities = async (req, res, next) => {
     res.json({
       success: true,
       data: result.activities,
-      pagination: {
-        currentPage: pageNum,
-        totalPages: Math.ceil(result.total / limitNum),
-        totalItems: result.total,
-        itemsPerPage: limitNum,
-        hasNext: pageNum < Math.ceil(result.total / limitNum),
-        hasPrev: pageNum > 1
-      }
+      currentPage: pageNum,
+      totalPages: Math.ceil(result.total / limitNum),
+      totalItems: result.total,
+      limit: limitNum
     });
   } catch (error) {
     handleDashboardError(error, res);
@@ -106,15 +103,11 @@ exports.getLowStockAlerts = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: result.alerts,
-      pagination: {
-        currentPage: pageNum,
-        totalPages: Math.ceil(result.total / limitNum),
-        totalItems: result.total,
-        itemsPerPage: limitNum,
-        hasNext: pageNum < Math.ceil(result.total / limitNum),
-        hasPrev: pageNum > 1
-      }
+      data: result.data,
+      currentPage: pageNum,
+      totalPages: Math.ceil(result.totalItems / limitNum),
+      totalItems: result.totalItems,
+      limit: limitNum
     });
   } catch (error) {
     handleDashboardError(error, res);
@@ -137,6 +130,15 @@ exports.getRevenueData = async (req, res, next) => {
       endDate,
       groupBy
     });
+    
+    // Debug logging for revenue data
+    if (process.env.NODE_ENV === 'development') {
+      console.log('💰 Revenue controller result:', {
+        result,
+        resultLength: result?.length || 0,
+        resultType: typeof result
+      });
+    }
     
     res.json({
       success: true,
