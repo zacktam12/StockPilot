@@ -240,7 +240,6 @@ model Settings {
   twoFactorAuth      Boolean @default(false)
   autoBackup         Boolean @default(false)
   backupFrequency    String  @default("daily")
-  timezone           String  @default("UTC")
   dateFormat         String  @default("MM/DD/YYYY")
   timeFormat         String  @default("12")
   language           String  @default("en")
