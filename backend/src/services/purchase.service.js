@@ -258,21 +258,63 @@ const getAllPurchases = async (params = {}) => {
   return result;
 };
 
-const getPurchaseById = (id) =>
-  prisma.purchase.findUnique({
-    where: { id: String(id) },
-    include: {
-      user: true,
-      supplier: true,
-      productPurchases: {
-        include: {
-          product: {
-            select: { name: true, sku: true, barcode: true, image: true },
+const getPurchaseById = async (id) => {
+  try {
+    const purchase = await prisma.purchase.findUnique({
+      where: { id: String(id) },
+      include: {
+        user: true,
+        supplier: true,
+        productPurchases: {
+          include: {
+            product: {
+              select: { name: true, sku: true, barcode: true, image: true },
+            },
           },
         },
       },
-    },
-  });
+    });
+
+    if (!purchase) {
+      return null;
+    }
+
+    // Log the data structure for debugging
+    console.log('Purchase data structure:', {
+      id: purchase.id,
+      productPurchasesCount: purchase.productPurchases?.length || 0,
+      productPurchases: purchase.productPurchases?.map(pp => ({
+        id: pp.id,
+        productId: pp.productId,
+        product: pp.product,
+        productName: pp.product?.name,
+        productSku: pp.product?.sku,
+        quantity: pp.purchase_quantity,
+        price: pp.purchase_price
+      }))
+    });
+    
+    // Debug each product purchase individually
+    if (purchase.productPurchases && purchase.productPurchases.length > 0) {
+      purchase.productPurchases.forEach((pp, index) => {
+        console.log(`Backend Product Purchase ${index}:`, {
+          id: pp.id,
+          productId: pp.productId,
+          product: pp.product,
+          hasProduct: !!pp.product,
+          productName: pp.product?.name,
+          productSku: pp.product?.sku,
+          productKeys: pp.product ? Object.keys(pp.product) : 'No product object'
+        });
+      });
+    }
+
+    return purchase;
+  } catch (error) {
+    console.error('Error fetching purchase by ID:', error);
+    throw error;
+  }
+};
 
 const updatePurchase = async (id, data) => {
   const result = await prisma.purchase.update({
