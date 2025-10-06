@@ -212,7 +212,7 @@ model Supplier {
 
 model Settings {
   id                String   @id @default(uuid()) @db.VarChar(36)
-  appName           String   @default("Inventory Management System")
+  appName           String   @default("StockPilot")
   theme             String   @default("light")
   lowStockThreshold Int      @default(5)
   currency          String   @default("USD")
@@ -224,6 +224,29 @@ model Settings {
   passwordExpiry    Int      @default(90)
   sessionTimeout    Int      @default(30)
   loginAttempts     Int      @default(5)
+  
+  // Company Information
+  companyName       String?
+  companyEmail      String?
+  companyPhone      String?
+  companyAddress    String?
+  companyTaxId      String?
+  companyLogo       String?
+  companyWebsite    String?
+  
+  // Additional Settings
+  emailNotifications Boolean @default(true)
+  orderConfirmations Boolean @default(true)
+  twoFactorAuth      Boolean @default(false)
+  autoBackup         Boolean @default(false)
+  backupFrequency    String  @default("daily")
+  timezone           String  @default("UTC")
+  dateFormat         String  @default("MM/DD/YYYY")
+  timeFormat         String  @default("12")
+  language           String  @default("en")
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model Notification {
