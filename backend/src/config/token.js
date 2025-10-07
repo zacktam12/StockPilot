@@ -9,5 +9,3 @@ const payload = {
 };
 
 const token = jwt.sign(payload, secret, { expiresIn: "1h" });
-
-console.log("✅ Your new token:\nBearer " + token);
