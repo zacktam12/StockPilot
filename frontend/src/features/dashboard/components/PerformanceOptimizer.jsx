@@ -125,7 +125,6 @@ const PerformanceOptimizer = ({ onOptimize }) => {
   }, [generateOptimizations]);
 
   const handleOptimize = (optimizationId) => {
-    console.log('Applying optimization:', optimizationId);
     if (onOptimize) {
       onOptimize(optimizationId);
     }
