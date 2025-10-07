@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
+import NumericInput from "../../../components/shared/NumericInput";
 import { useOutsideClick } from "../../../hooks/useOutsideClick";
 import { productsAPI } from "../../../services/api";
 
@@ -45,6 +46,7 @@ const NewProductModal = ({ product, onClose }) => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
   const [imageFile, setImageFile] = useState(null);
 
   // Add outside click functionality
@@ -130,7 +132,6 @@ const NewProductModal = ({ product, onClose }) => {
       setError(
         "Error uploading image: " + (err.response?.data?.error || err.message)
       );
-      console.error("Image upload error:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -138,39 +139,99 @@ const NewProductModal = ({ product, onClose }) => {
   };
 
   const validateForm = () => {
+    const newErrors = {};
+    
+    // Validate name
     if (!formData.name.trim()) {
+      newErrors.name = "Product name is required";
       setError("Product name is required");
-      return false;
     }
-    if (!formData.price || parseFloat(formData.price) <= 0) {
-      setError("Price must be greater than 0");
-      return false;
+    
+    // Validate price
+    if (!formData.price) {
+      newErrors.price = "Price is required";
+      setError("Price is required");
+    } else {
+      const price = parseFloat(formData.price);
+      if (isNaN(price) || price <= 0) {
+        newErrors.price = "Price must be greater than 0";
+        setError("Price must be greater than 0");
+      }
     }
+    
+    // Validate cost (optional but must be valid if provided)
+    if (formData.cost) {
+      const cost = parseFloat(formData.cost);
+      if (isNaN(cost) || cost < 0) {
+        newErrors.cost = "Cost must be a non-negative number";
+        setError("Cost must be a non-negative number");
+      }
+    }
+    
+    // Validate category
     if (!formData.categoryId) {
-      setError("Category is required");
-      return false;
+      newErrors.categoryId = "Category is required";
+      if (!newErrors.name && !newErrors.price) {
+        setError("Category is required");
+      }
     }
-    if (formData.quantity && parseInt(formData.quantity) < 0) {
-      setError("Quantity cannot be negative");
-      return false;
+    
+    // Validate quantity (optional but must be valid if provided)
+    if (formData.quantity) {
+      const quantity = parseInt(formData.quantity);
+      if (isNaN(quantity) || quantity < 0) {
+        newErrors.quantity = "Quantity must be a non-negative integer";
+        setError("Quantity must be a non-negative integer");
+      }
     }
-    if (
-      formData.minStock &&
-      formData.maxStock &&
-      parseInt(formData.minStock) > parseInt(formData.maxStock)
-    ) {
-      setError("Minimum stock cannot be greater than maximum stock");
-      return false;
+    
+    // Validate min/max stock
+    if (formData.minStock) {
+      const minStock = parseInt(formData.minStock);
+      if (isNaN(minStock) || minStock < 0) {
+        newErrors.minStock = "Minimum stock must be a non-negative integer";
+        setError("Minimum stock must be a non-negative integer");
+      }
+      
+      // Cross-validation with max stock
+      if (formData.maxStock) {
+        const maxStock = parseInt(formData.maxStock);
+        if (!isNaN(minStock) && !isNaN(maxStock) && minStock > maxStock) {
+          newErrors.maxStock = "Maximum stock must be greater than or equal to minimum stock";
+          setError("Maximum stock must be greater than or equal to minimum stock");
+        }
+      }
     }
+    
+    if (formData.maxStock) {
+      const maxStock = parseInt(formData.maxStock);
+      if (isNaN(maxStock) || maxStock < 0) {
+        newErrors.maxStock = "Maximum stock must be a non-negative integer";
+        setError("Maximum stock must be a non-negative integer");
+      }
+      
+      // Cross-validation with minStock (check from max side too)
+      if (formData.minStock && !newErrors.maxStock) {
+        const minStock = parseInt(formData.minStock);
+        if (!isNaN(minStock) && !isNaN(maxStock) && maxStock < minStock) {
+          newErrors.maxStock = "Maximum stock must be greater than or equal to minimum stock";
+          setError("Maximum stock must be greater than or equal to minimum stock");
+        }
+      }
+    }
+    
+    // Validate SKU and Barcode
     if (formData.sku && formData.sku.trim().length === 0) {
+      newErrors.sku = "SKU cannot be empty if provided";
       setError("SKU cannot be empty if provided");
-      return false;
     }
     if (formData.barcode && formData.barcode.trim().length === 0) {
+      newErrors.barcode = "Barcode cannot be empty if provided";
       setError("Barcode cannot be empty if provided");
-      return false;
     }
-    return true;
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
@@ -344,66 +405,81 @@ const NewProductModal = ({ product, onClose }) => {
 
           {/* Pricing */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
+            <NumericInput
               label="Price"
-              type="number"
-              step="0.01"
               icon={<DollarSign size={18} />}
+              name="price"
               value={formData.price}
               onChange={(e) =>
                 setFormData({ ...formData, price: e.target.value })
               }
-              required
+              error={errors.price}
               placeholder="0.00"
+              min={0.01}
+              allowDecimal={true}
+              decimals={2}
+              required={true}
             />
 
-            <Input
+            <NumericInput
               label="Cost"
-              type="number"
-              step="0.01"
               icon={<DollarSign size={18} />}
+              name="cost"
               value={formData.cost}
               onChange={(e) =>
                 setFormData({ ...formData, cost: e.target.value })
               }
+              error={errors.cost}
               placeholder="0.00"
+              min={0}
+              allowDecimal={true}
+              decimals={2}
             />
           </div>
 
           {/* Stock Management */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
+            <NumericInput
               label="Quantity"
-              type="number"
               icon={<Hash size={18} />}
+              name="quantity"
               value={formData.quantity}
               onChange={(e) =>
                 setFormData({ ...formData, quantity: e.target.value })
               }
-              required
+              error={errors.quantity}
               placeholder="0"
+              min={0}
+              allowDecimal={false}
+              required={true}
             />
 
-            <Input
+            <NumericInput
               label="Min Stock"
-              type="number"
               icon={<AlertTriangle size={18} />}
+              name="minStock"
               value={formData.minStock}
               onChange={(e) =>
                 setFormData({ ...formData, minStock: e.target.value })
               }
+              error={errors.minStock}
               placeholder="0"
+              min={0}
+              allowDecimal={false}
             />
 
-            <Input
+            <NumericInput
               label="Max Stock"
-              type="number"
               icon={<Package size={18} />}
+              name="maxStock"
               value={formData.maxStock}
               onChange={(e) =>
                 setFormData({ ...formData, maxStock: e.target.value })
               }
+              error={errors.maxStock}
               placeholder="0"
+              min={0}
+              allowDecimal={false}
             />
           </div>
 

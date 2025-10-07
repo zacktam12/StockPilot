@@ -33,41 +33,43 @@ const ProductTableRow = ({
           className="rounded-none border-gray-300 text-blue-600 focus:ring-gray-400"
         />
       </TableCell>
-      <TableCell className="flex-1 pl-2 font-medium">
+      <TableCell className="min-w-[200px] pl-2 font-medium">
         <div className="flex items-center gap-3">
           {product.image_url && (
             <img
               src={product.image_url}
               alt={product.name}
-              className="h-10 w-10 rounded-lg object-cover"
+              className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg object-cover flex-shrink-0"
             />
           )}
-          <div>
-            <div className="font-medium text-gray-900">{product.name}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-gray-900 truncate">{product.name}</div>
             {product.sku && (
-              <div className="text-sm text-gray-500">
+              <div className="text-xs sm:text-sm text-gray-500 truncate">
                 SKU: {product.sku}
               </div>
             )}
           </div>
         </div>
       </TableCell>
-      <TableCell className="hidden md:table-cell flex-1 text-gray-900">
-        {product.category?.name || "Uncategorized"}
+      <TableCell className="min-w-[120px] text-gray-900">
+        <span className="truncate block">{product.category?.name || "Uncategorized"}</span>
       </TableCell>
-      <TableCell className="flex-1 text-gray-900">${product.price?.toFixed(2) || "0.00"}</TableCell>
-      <TableCell className="hidden lg:table-cell flex-1 text-gray-900">
-        ${product.cost?.toFixed(2) || "0.00"}
+      <TableCell className="min-w-[80px] text-gray-900">
+        <span className="font-medium">${product.price?.toFixed(2) || "0.00"}</span>
       </TableCell>
-      <TableCell className="flex-1 text-gray-900">
-        <div className="flex items-center gap-2">
-          <span>{product.quantity}</span>
+      <TableCell className="min-w-[80px] text-gray-900">
+        <span className="font-medium">${product.cost?.toFixed(2) || "0.00"}</span>
+      </TableCell>
+      <TableCell className="min-w-[80px] text-gray-900">
+        <div className="flex items-center gap-1">
+          <span className="font-medium">{product.quantity}</span>
           {product.quantity <= (product.minStock || 10) && (
-            <AlertCircle size={14} className="text-yellow-500" />
+            <AlertCircle size={12} className="text-yellow-500 flex-shrink-0" />
           )}
         </div>
       </TableCell>
-      <TableCell className="hidden sm:table-cell w-24">
+      <TableCell className="min-w-[80px]">
         {getStatusBadge(product.quantity, product.minStock)}
       </TableCell>
     </TableRow>

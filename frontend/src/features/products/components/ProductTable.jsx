@@ -52,19 +52,10 @@ const ProductTable = () => {
 
   // Handle pagination
   const handlePageChange = (page) => {
-    console.log('Changing page to:', page);
     dispatch(setCurrentPage(page));
   };
 
   // Debug pagination state
-  console.log('Pagination state:', {
-    currentPage,
-    totalPages,
-    totalItems,
-    itemsPerPage,
-    filteredItemsLength: filteredItems.length
-  });
-
   // Render status badge based on quantity
   const getStatusBadge = (quantity, minStock = 10) => {
     if (quantity === 0) return <StatusBadge variant="danger">Out of Stock</StatusBadge>;
@@ -74,25 +65,27 @@ const ProductTable = () => {
 
 
   return (
-    <div className="bg-white rounded-lg border-0 shadow-sm overflow-x-auto">
-      <Table>
-        <ProductTableHeader
-          selectAll={selectAll}
-          onToggleSelectAll={() => dispatch(toggleSelectAll())}
-          onSort={handleSort}
-          getSortIcon={getSortIcon}
-        />
-        <ProductTableBody
-          loading={loading}
-          items={items}
-          filteredItems={filteredItems}
-          selectedItems={selectedItems}
-          onToggleItemSelection={(id) => dispatch(toggleItemSelection(id))}
-          getStatusBadge={getStatusBadge}
-          searchTerm={searchTerm}
-          onClearSearch={() => dispatch(setSearchTerm(""))}
-        />
-      </Table>
+    <div className="bg-white rounded-lg border-0 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <Table className="min-w-[800px] w-full">
+          <ProductTableHeader
+            selectAll={selectAll}
+            onToggleSelectAll={() => dispatch(toggleSelectAll())}
+            onSort={handleSort}
+            getSortIcon={getSortIcon}
+          />
+          <ProductTableBody
+            loading={loading}
+            items={items}
+            filteredItems={filteredItems}
+            selectedItems={selectedItems}
+            onToggleItemSelection={(id) => dispatch(toggleItemSelection(id))}
+            getStatusBadge={getStatusBadge}
+            searchTerm={searchTerm}
+            onClearSearch={() => dispatch(setSearchTerm(""))}
+          />
+        </Table>
+      </div>
     </div>
   );
 };

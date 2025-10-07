@@ -15,7 +15,7 @@ const ProductHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
   const [isImporting, setIsImporting] = useState(false);
   const actionsRef = useRef(null);
   const fileInputRef = useRef(null);
-  const { filteredItems, selectedItems } = useSelector((state) => state.product);
+  const { items: products = [], selectedItems = [] } = useSelector((state) => state.product || {});
 
   // Close dropdown when clicking outside
   useOutsideClick(actionsRef, () => {
@@ -28,13 +28,13 @@ const ProductHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
   const handleExport = () => {
     if (selectedItems.length > 0) {
       // Export only selected items
-      const productsToExport = filteredItems.filter((product) => 
+      const productsToExport = products.filter((product) => 
         selectedItems.includes(product.id)
       );
       onExportCSV(productsToExport);
     } else {
-      // Export all filtered items
-      onExportCSV(filteredItems);
+      // Export all products
+      onExportCSV(products);
     }
     setIsActionsOpen(false);
   };
@@ -98,13 +98,13 @@ const ProductHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
   return (
     <div className="flex flex-col gap-4 mb-6">
       {/* Top row with title and create button */}
-      <div className="flex flex-row items-center justify-between gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
               <Package size={20} className="text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
               Products
             </h1>
           </div>
@@ -118,7 +118,7 @@ const ProductHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
             size="md"
             icon={<Plus size={18} />}
             onClick={() => dispatch(openProductModal())}
-            className="px-4 py-3 rounded-lg flex items-center justify-center focus:outline-none focus:ring-0 focus:shadow-none active:shadow-none"
+            className="px-4 py-3 rounded-lg flex items-center justify-center focus:outline-none focus:ring-0 focus:shadow-none active:shadow-none w-full sm:w-auto"
             style={{
               backgroundColor: '#3b82f6',
               borderColor: '#3b82f6',
@@ -136,15 +136,16 @@ const ProductHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
               e.currentTarget.style.borderColor = '#3b82f6';
             }}
           >
-            Create Product
+            <span className="hidden sm:inline">Create Product</span>
+            <span className="sm:hidden">Add Product</span>
           </Button>
         </div>
       </div>
 
       {/* Bottom row with search and action buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center sm:justify-between">
         {/* Search bar */}
-        <div className="relative w-96">
+        <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-md">
           <Input
             placeholder="Search products..."
             icon={<Search size={18} className="text-gray-400" />}
@@ -154,18 +155,20 @@ const ProductHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
           />
         </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-2">
-          <ProductFilters />
+        {/* Action buttons - mobile: 50% each, desktop: auto width on right */}
+        <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex-1 sm:flex-initial">
+            <ProductFilters />
+          </div>
           
           {/* Actions Dropdown */}
-          <div className="relative" ref={actionsRef}>
+          <div className="relative flex-1 sm:flex-initial" ref={actionsRef}>
             <Button
               variant="outline"
               size="md"
               icon={<FileCog size={16} />}
               onClick={() => setIsActionsOpen(!isActionsOpen)}
-              className="px-4 py-3 rounded-lg border-blue-300 !text-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:!text-blue-700 transition-colors"
+              className="w-full px-4 py-3 rounded-lg border-blue-300 !text-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:!text-blue-700 transition-colors"
             >
               Actions
             </Button>
@@ -210,7 +213,7 @@ const ProductHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
                     >
                       <Upload size={18} />
                       <span>
-                        Export Products ({selectedItems.length > 0 ? selectedItems.length : filteredItems?.length || 0})
+                        Export Products ({selectedItems.length > 0 ? selectedItems.length : products?.length || 0})
                       </span>
                     </button>
                   </div>

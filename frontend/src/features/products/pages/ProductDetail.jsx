@@ -24,6 +24,7 @@ import { fetchProductById, updateProduct, deleteProduct, fetchCategories, upload
 import { showToast } from "../../../store/slices/uiSlice";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
+import NumericInput from "../../../components/shared/NumericInput";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -42,13 +43,10 @@ const ProductDetail = () => {
   const [previewUrls, setPreviewUrls] = useState([]);
 
   useEffect(() => {
-    console.log("ProductDetail useEffect - id:", id, "selectedProduct:", selectedProduct);
     if (id) {
-      console.log("Dispatching fetchProductById with id:", id);
       dispatch(fetchProductById(id));
     }
     if (!categories || categories.length === 0) {
-      console.log("Dispatching fetchCategories");
       dispatch(fetchCategories());
     }
   }, [dispatch, id, categories]);
@@ -84,23 +82,99 @@ const ProductDetail = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: undefined }));
+    
+    // Real-time validation for min/max stock cross-validation
+    if (name === 'min_stock' || name === 'max_stock') {
+      const newFormData = { ...formData, [name]: value };
+      
+      if (newFormData.min_stock && newFormData.max_stock) {
+        const minStock = parseInt(newFormData.min_stock);
+        const maxStock = parseInt(newFormData.max_stock);
+        
+        if (!isNaN(minStock) && !isNaN(maxStock) && minStock > maxStock) {
+          setErrors((prev) => ({
+            ...prev,
+            max_stock: "Maximum stock must be greater than or equal to minimum stock"
+          }));
+        } else {
+          // Clear the error if values are now valid
+          setErrors((prev) => {
+            const newErrors = { ...prev };
+            if (newErrors.max_stock === "Maximum stock must be greater than or equal to minimum stock") {
+              delete newErrors.max_stock;
+            }
+            return newErrors;
+          });
+        }
+      }
+    }
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name?.trim()) newErrors.name = "Product name is required";
-    if (!formData.price || parseFloat(formData.price) <= 0)
-      newErrors.price = "Price must be a positive number";
-    if (!formData.quantity || parseInt(formData.quantity) < 0)
-      newErrors.quantity = "Quantity must be a non-negative number";
+    
+    // Validate name
+    if (!formData.name?.trim()) {
+      newErrors.name = "Product name is required";
+    }
+    
+    // Validate price
+    if (!formData.price) {
+      newErrors.price = "Price is required";
+    } else {
+      const price = parseFloat(formData.price);
+      if (isNaN(price) || price <= 0) {
+        newErrors.price = "Price must be a positive number";
+      }
+    }
+    
+    // Validate cost (optional but must be valid if provided)
+    if (formData.cost) {
+      const cost = parseFloat(formData.cost);
+      if (isNaN(cost) || cost < 0) {
+        newErrors.cost = "Cost must be a non-negative number";
+      }
+    }
+    
+    // Validate quantity
+    if (formData.quantity === "" || formData.quantity === null || formData.quantity === undefined) {
+      newErrors.quantity = "Quantity is required";
+    } else {
+      const quantity = parseInt(formData.quantity);
+      if (isNaN(quantity) || quantity < 0) {
+        newErrors.quantity = "Quantity must be a non-negative number";
+      }
+    }
     
     // Validate min/max stock values
-    if (formData.min_stock && formData.max_stock) {
+    if (formData.min_stock) {
       const minStock = parseInt(formData.min_stock);
+      if (isNaN(minStock) || minStock < 0) {
+        newErrors.min_stock = "Minimum stock must be a non-negative number";
+      }
+      
+      // Cross-validation: min stock should be less than or equal to max stock
+      if (formData.max_stock) {
+        const maxStock = parseInt(formData.max_stock);
+        if (!isNaN(minStock) && !isNaN(maxStock) && minStock > maxStock) {
+          newErrors.max_stock = "Maximum stock must be greater than or equal to minimum stock";
+        }
+      }
+    }
+    
+    if (formData.max_stock) {
       const maxStock = parseInt(formData.max_stock);
-      if (minStock < 0) newErrors.min_stock = "Minimum stock cannot be negative";
-      if (maxStock < 0) newErrors.max_stock = "Maximum stock cannot be negative";
-      if (minStock > maxStock) newErrors.max_stock = "Maximum stock must be greater than or equal to minimum stock";
+      if (isNaN(maxStock) || maxStock < 0) {
+        newErrors.max_stock = "Maximum stock must be a non-negative number";
+      }
+      
+      // Cross-validation with min_stock (check from max side too)
+      if (formData.min_stock && !newErrors.max_stock) {
+        const minStock = parseInt(formData.min_stock);
+        if (!isNaN(minStock) && !isNaN(maxStock) && maxStock < minStock) {
+          newErrors.max_stock = "Maximum stock must be greater than or equal to minimum stock";
+        }
+      }
     }
     
     setErrors(newErrors);
@@ -130,7 +204,6 @@ const ProductDetail = () => {
       const updatedProduct = await dispatch(updateProduct({ id, ...formData })).unwrap();
       // Update formData with the returned updated product data
       updateFormDataFromProduct(updatedProduct);
-      dispatch(showToast({ message: "Pricing updated successfully!", type: "success" }));
       setIsEditingPricing(false);
     } catch (err) {
       dispatch(showToast({ message: err, type: "error" }));
@@ -144,22 +217,11 @@ const ProductDetail = () => {
       dispatch(showToast({ message: "Please select an image to upload", type: "error" }));
       return;
     }
-
-    console.log("Starting image upload...", { productId: id, file: imageFiles[0] });
     setIsSubmitting(true);
     try {
       // Upload the first selected image
       const file = imageFiles[0];
-      console.log("File details:", {
-        name: file.name,
-        size: file.size,
-        type: file.type
-      });
-      
       const result = await dispatch(uploadProductImage({ productId: id, file })).unwrap();
-      
-      console.log("Upload result:", result);
-      
       if (result.success) {
         // Update formData with the returned updated product data
         updateFormDataFromProduct(result.data);
@@ -171,7 +233,6 @@ const ProductDetail = () => {
         throw new Error(result.message || "Failed to upload image");
       }
     } catch (err) {
-      console.error("Upload error:", err);
       console.error("Error details:", {
         message: err.message,
         stack: err.stack,
@@ -305,7 +366,6 @@ const ProductDetail = () => {
   }
 
   if (error || (!selectedProduct && !loading)) {
-    console.log("Error state - error:", error, "selectedProduct:", selectedProduct, "loading:", loading);
     return (
       <div className="bg-white rounded-lg">
         <div 
@@ -678,74 +738,69 @@ const ProductDetail = () => {
                 {isEditingPricing ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Price
-                        </label>
-                        <Input
-                          name="price"
-                          type="number"
-                          value={formData.price}
-                          onChange={handleInputChange}
-                          error={errors.price}
-                          placeholder="0.00"
-                        />
-                      </div>
+                      <NumericInput
+                        label="Price"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        error={errors.price}
+                        placeholder="0.00"
+                        min={0.01}
+                        allowDecimal={true}
+                        decimals={2}
+                        required={true}
+                        icon={<DollarSign size={18} />}
+                      />
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Cost
-                        </label>
-                        <Input
-                          name="cost"
-                          type="number"
-                          value={formData.cost}
-                          onChange={handleInputChange}
-                          placeholder="0.00"
-                        />
-                      </div>
+                      <NumericInput
+                        label="Cost"
+                        name="cost"
+                        value={formData.cost}
+                        onChange={handleInputChange}
+                        error={errors.cost}
+                        placeholder="0.00"
+                        min={0}
+                        allowDecimal={true}
+                        decimals={2}
+                        icon={<DollarSign size={18} />}
+                      />
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Quantity
-                        </label>
-                        <Input
-                          name="quantity"
-                          type="number"
-                          value={formData.quantity}
-                          onChange={handleInputChange}
-                          error={errors.quantity}
-                          placeholder="0"
-                        />
-                      </div>
+                      <NumericInput
+                        label="Quantity"
+                        name="quantity"
+                        value={formData.quantity}
+                        onChange={handleInputChange}
+                        error={errors.quantity}
+                        placeholder="0"
+                        min={0}
+                        allowDecimal={false}
+                        required={true}
+                        icon={<Package size={18} />}
+                      />
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Min Stock
-                        </label>
-                        <Input
-                          name="min_stock"
-                          type="number"
-                          value={formData.min_stock}
-                          onChange={handleInputChange}
-                          error={errors.min_stock}
-                          placeholder="0"
-                        />
-                      </div>
+                      <NumericInput
+                        label="Min Stock"
+                        name="min_stock"
+                        value={formData.min_stock}
+                        onChange={handleInputChange}
+                        error={errors.min_stock}
+                        placeholder="0"
+                        min={0}
+                        allowDecimal={false}
+                        icon={<AlertTriangle size={18} />}
+                      />
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Max Stock
-                        </label>
-                        <Input
-                          name="max_stock"
-                          type="number"
-                          value={formData.max_stock}
-                          onChange={handleInputChange}
-                          error={errors.max_stock}
-                          placeholder="0"
-                        />
-                      </div>
+                      <NumericInput
+                        label="Max Stock"
+                        name="max_stock"
+                        value={formData.max_stock}
+                        onChange={handleInputChange}
+                        error={errors.max_stock}
+                        placeholder="0"
+                        min={0}
+                        allowDecimal={false}
+                        icon={<AlertTriangle size={18} />}
+                      />
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
