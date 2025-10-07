@@ -1,9 +1,12 @@
 const rateLimit = require('express-rate-limit');
 
+// Check if we're in development mode
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 // General API rate limiter
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // More lenient in development
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.',
@@ -104,7 +107,7 @@ const uploadLimiter = rateLimit({
 // Search rate limiter (more lenient for search operations)
 const searchLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 30, // limit each IP to 30 search requests per minute
+  max: process.env.NODE_ENV === 'development' ? 200 : 30, // More lenient in development
   message: {
     success: false,
     message: 'Too many search requests from this IP, please try again later.',
@@ -121,12 +124,17 @@ const searchLimiter = rateLimit({
   }
 });
 
+// No-op rate limiter for development (completely bypasses rate limiting)
+const noOpLimiter = (req, res, next) => {
+  next();
+};
+
 module.exports = {
-  generalLimiter,
-  strictLimiter,
-  authLimiter,
-  passwordResetLimiter,
-  uploadLimiter,
-  searchLimiter
+  generalLimiter: isDevelopment ? noOpLimiter : generalLimiter,
+  strictLimiter: isDevelopment ? noOpLimiter : strictLimiter,
+  authLimiter: isDevelopment ? noOpLimiter : authLimiter,
+  passwordResetLimiter: isDevelopment ? noOpLimiter : passwordResetLimiter,
+  uploadLimiter: isDevelopment ? noOpLimiter : uploadLimiter,
+  searchLimiter: isDevelopment ? noOpLimiter : searchLimiter
 };
 

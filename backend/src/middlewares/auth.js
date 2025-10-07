@@ -3,14 +3,10 @@ const { prisma } = require("../config/db");
 async function authenticate(req, res, next) {
   try {
     const authHeader = req.header("Authorization");
-    // console.log("🪪 Authorization Header:", authHeader);
-
     const token = authHeader?.replace("Bearer ", "");
     if (!token) return res.status(401).json({ message: "No token provided" });
 
     const decoded = verifyToken(token);
-    // console.log("✅ Token Decoded:", decoded);
-
     // Convert id to string for Prisma
     const user = await prisma.user.findUnique({
       where: { id: String(decoded.id), status: "Active" },
@@ -25,7 +21,6 @@ async function authenticate(req, res, next) {
     req.user = user;
     next();
   } catch (err) {
-    console.error("❌ Token verification failed:", err);
     res.status(401).json({ message: "Invalid token" });
   }
 }
