@@ -142,13 +142,26 @@ export const getCategoryVisibilityDisplay = (isVisible) => {
 
 // Format date for display
 export const formatDate = (date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(date));
+  if (!date) {
+    return "No date available";
+  }
+  
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return "Invalid date";
+    }
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(dateObj);
+  } catch (error) {
+    console.error("Date formatting error:", error);
+    return "Invalid date";
+  }
 };
 
 // Format date for input
