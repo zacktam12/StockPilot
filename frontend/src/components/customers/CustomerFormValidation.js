@@ -119,20 +119,38 @@ export const formatPhoneNumber = (phoneNumber) => {
 };
 
 // Format currency
-export const formatCurrency = (amount) => {
+export const formatCurrency = (amount, currency = 'USD') => {
+  // Handle ETB with custom formatting since it's not widely supported by Intl.NumberFormat
+  if (currency === 'ETB') {
+    return `Br ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD'
+    currency: currency
   }).format(amount);
 };
 
 // Format date
 export const formatDate = (date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(new Date(date));
+  if (!date) {
+    return "No date available";
+  }
+  
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return "Invalid date";
+    }
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }).format(dateObj);
+  } catch (error) {
+    console.error("Date formatting error:", error);
+    return "Invalid date";
+  }
 };
 
 // Calculate age from date of birth
