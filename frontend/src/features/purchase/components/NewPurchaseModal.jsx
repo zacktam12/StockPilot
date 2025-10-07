@@ -10,6 +10,7 @@ import { fetchSuppliers } from "../../../store/slices/supplierSlice";
 import { fetchCategories } from "../../../store/slices/categorySlice";
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
+import NumericInput from "../../../components/shared/NumericInput";
 import { useOutsideClick } from "../../../hooks/useOutsideClick";
 import { productsAPI } from "../../../services/api";
 
@@ -96,7 +97,6 @@ const NewPurchaseModal = ({ isOpen, onClose, onSuccess }) => {
         throw new Error("Invalid response from server");
       }
     } catch (err) {
-      console.error("Image upload error:", err);
       alert(
         "Error uploading image: " + (err.response?.data?.error || err.message)
       );
@@ -105,22 +105,71 @@ const NewPurchaseModal = ({ isOpen, onClose, onSuccess }) => {
 
   const calculateTotal = () => {
     return selectedProducts.reduce(
-      (sum, item) => sum + item.price * item.quantity,
+      (sum, item) => sum + (parseFloat(item.price) || 0) * (parseInt(item.quantity) || 0),
       0
     );
+  };
+
+  const validateForm = () => {
+    // Validate supplier
+    if (!supplierId) {
+      setError("Please select a supplier");
+      return false;
+    }
+
+    // Validate products
+    if (selectedProducts.length === 0) {
+      setError("Please add at least one product");
+      return false;
+    }
+
+    // Validate each product
+    for (let i = 0; i < selectedProducts.length; i++) {
+      const product = selectedProducts[i];
+      
+      if (!product.name || product.name.trim() === "") {
+        setError(`Product ${i + 1}: Name is required`);
+        return false;
+      }
+      
+      if (!product.categoryId) {
+        setError(`Product ${i + 1}: Category is required`);
+        return false;
+      }
+      
+      if (!product.price) {
+        setError(`Product ${i + 1}: Price is required`);
+        return false;
+      } else {
+        const price = parseFloat(product.price);
+        if (isNaN(price) || price <= 0) {
+          setError(`Product ${i + 1}: Price must be a positive number`);
+          return false;
+        }
+      }
+      
+      if (!product.quantity) {
+        setError(`Product ${i + 1}: Quantity is required`);
+        return false;
+      } else {
+        const qty = parseInt(product.quantity);
+        if (isNaN(qty) || qty <= 0) {
+          setError(`Product ${i + 1}: Quantity must be a positive integer`);
+          return false;
+        }
+      }
+    }
+    
+    return true;
   };
 
   const handleSubmit = async () => {
     try {
       setError(null);
 
-      // Validate inputs
-      if (!supplierId) {
-        throw new Error("Please select a supplier");
-      }
-
-      if (selectedProducts.length === 0) {
-        throw new Error("Please add at least one product");
+      // Validate form
+      if (!validateForm()) {
+        return;
       }
 
       // Create products and purchase order
@@ -241,34 +290,38 @@ const NewPurchaseModal = ({ isOpen, onClose, onSuccess }) => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <Input
-                        type="number"
+                      <NumericInput
                         label="Price"
+                        name={`price_${index}`}
                         value={product.price}
                         onChange={(e) =>
                           handleProductChange(
                             index,
                             "price",
-                            parseFloat(e.target.value)
+                            e.target.value
                           )
                         }
-                        min="0"
-                        step="0.01"
-                        required
+                        placeholder="0.00"
+                        min={0.01}
+                        allowDecimal={true}
+                        decimals={2}
+                        required={true}
                       />
-                      <Input
-                        type="number"
+                      <NumericInput
                         label="Quantity"
+                        name={`quantity_${index}`}
                         value={product.quantity}
                         onChange={(e) =>
                           handleProductChange(
                             index,
                             "quantity",
-                            parseInt(e.target.value)
+                            e.target.value
                           )
                         }
-                        min="1"
-                        required
+                        placeholder="0"
+                        min={1}
+                        allowDecimal={false}
+                        required={true}
                       />
                     </div>
                   </div>
