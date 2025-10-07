@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { format } from "date-fns";
 import { ShoppingCart, Package } from "lucide-react";
+import { useSystemSettings } from "../../../hooks/useSystemSettings";
+import { formatDateTime } from "../../../utils/formatUtils";
 import {
   Card,
   CardContent,
@@ -18,6 +20,9 @@ const RecentActivityCard = ({ compact = false }) => {
   const { activities, activitiesLoading } = useSelector(
     (state) => state.dashboard
   );
+  
+  // System settings
+  const { dateFormat, timeFormat } = useSystemSettings();
 
   useEffect(() => {
     dispatch(
@@ -56,32 +61,11 @@ const RecentActivityCard = ({ compact = false }) => {
   };
 
   const formatTime = (timestamp) => {
-    return format(new Date(timestamp), "MMM d, yyyy h:mm a");
+    return formatDateTime(new Date(timestamp), dateFormat, timeFormat);
   };
 
-  // Mock data for demonstration when backend is not available
-  const mockActivities = [
-    {
-      id: 1,
-      type: "sale",
-      date: new Date().toISOString(),
-      amount: 1250.0,
-      relatedEntity: { name: "John Doe" },
-    },
-    {
-      id: 2,
-      type: "purchase",
-      date: new Date(Date.now() - 86400000).toISOString(),
-      amount: 850.0,
-      relatedEntity: { name: "ABC Suppliers" },
-    },
-  ];
-
-  // Use mock data if no real data is available
-  const displayData =
-    activities.data && activities.data.length > 0
-      ? activities.data
-      : mockActivities;
+  // Use only real data from the API
+  const displayData = activities.data || [];
 
   return (
     <Card className="h-full relative cursor-pointer transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] hover:bg-blue-50 dark:hover:bg-gray-800">

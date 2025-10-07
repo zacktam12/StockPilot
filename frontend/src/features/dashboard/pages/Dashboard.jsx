@@ -58,8 +58,8 @@ const DashboardPage = () => {
   return (
     <div className="h-full font-sans bg-white text-gray-900 dark:bg-background dark:text-text lg:max-h-screen lg:overflow-hidden">
       {/* Page header - responsive */}
-      <div className="flex items-center justify-between mb-3 sm:mb-4 px-2 sm:px-0">
-        <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white cursor-pointer transition-all duration-300 ease-in-out hover:text-blue-600 dark:hover:text-blue-400 hover:scale-105">
+      <div className="flex items-center justify-between mb-3 sm:mb-4 px-2 sm:px-0 overflow-hidden">
+        <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white cursor-pointer transition-all duration-300 ease-in-out hover:text-blue-600 dark:hover:text-blue-400 lg:hover:scale-105 truncate">
           Dashboard
         </h1>
       </div>

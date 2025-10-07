@@ -40,45 +40,8 @@ const ProductAlertCard = ({ compact = false }) => {
     dispatch(fetchLowStockAlerts({ page: newPage, limit: compact ? 6 : 10 }));
   };
 
-  // Mock data for demonstration when backend is not available
-  const mockLowStockProducts = [
-    {
-      id: 1,
-      name: "Laptop Charger",
-      status: "low-stock",
-      quantity: 3,
-      category: "Electronics",
-    },
-    {
-      id: 2,
-      name: "Wireless Mouse",
-      status: "out-of-stock",
-      quantity: 0,
-      category: "Electronics",
-    },
-    {
-      id: 3,
-      name: "USB Cable",
-      status: "low-stock",
-      quantity: 5,
-      category: "Accessories",
-    },
-    {
-      id: 4,
-      name: "Office Chair",
-      status: "low-stock",
-      quantity: 2,
-      category: "Furniture",
-    },
-  ];
-
-  // Use lowStockAlerts.data if available, otherwise fall back to lowStockProducts or mock data
-  const displayData =
-    lowStockAlerts.data && lowStockAlerts.data.length > 0
-      ? lowStockAlerts.data
-      : lowStockProducts && lowStockProducts.length > 0
-      ? lowStockProducts
-      : mockLowStockProducts;
+  // Use only real data from the API
+  const displayData = lowStockAlerts.data || [];
 
   const getStatusColor = (status) => {
     switch (status) {
