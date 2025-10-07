@@ -1,6 +1,7 @@
 // ThemeProvider.jsx
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 // Create context with default values
 const ThemeContext = createContext({
@@ -13,6 +14,8 @@ export const useTheme = () => useContext(ThemeContext);
 
 // Theme provider component
 export const ThemeProvider = ({ children }) => {
+  const settingsTheme = useSelector((state) => state.settings.settings?.theme);
+  
   const [theme, setTheme] = useState(() => {
     // Get stored theme or use system preference
     const storedTheme = localStorage.getItem("theme");
@@ -21,6 +24,14 @@ export const ThemeProvider = ({ children }) => {
       ? "dark"
       : "light";
   });
+
+  // Sync theme from settings
+  useEffect(() => {
+    if (settingsTheme && settingsTheme !== theme) {
+      setTheme(settingsTheme);
+      localStorage.setItem("theme", settingsTheme);
+    }
+  }, [settingsTheme, theme]);
 
   // Apply theme class to root element
   useEffect(() => {
