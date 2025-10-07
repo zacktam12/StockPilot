@@ -94,7 +94,7 @@ const getAllCategories = async (params = {}) => {
 
   const finalResult = {
     categories: result.data,
-    total: result.pagination.total,
+    total: result.pagination.totalItems,
     summary
   };
 
@@ -151,6 +151,59 @@ const deleteCategory = async (id) => {
 
 const getCategoryStats = () => categoryRepo.getCategoryStats();
 
+const bulkImportCategories = async (categories) => {
+  try {
+    const results = [];
+    const errors = [];
+
+    for (let i = 0; i < categories.length; i++) {
+      try {
+        const category = categories[i];
+
+        // Map CSV fields to category data format
+        const mappedCategory = {
+          name: category.name || category.Name || "",
+          description: category.description || category.Description || "",
+        };
+
+        // Validate required fields
+        if (!mappedCategory.name || mappedCategory.name.trim() === "") {
+          errors.push({
+            row: i + 1,
+            error: "Name is required",
+            data: category,
+          });
+          continue;
+        }
+
+        // Create the category
+        const createdCategory = await createCategory(mappedCategory);
+        results.push(createdCategory);
+      } catch (error) {
+        console.error(`Error importing category at row ${i + 1}:`, error);
+        errors.push({
+          row: i + 1,
+          error: error.message,
+          data: categories[i],
+        });
+      }
+    }
+
+    // Invalidate cache after bulk import
+    await cacheService.deletePattern('categories:*');
+
+    return {
+      success: true,
+      data: results,
+      importedCount: results.length,
+      errorCount: errors.length,
+      errors: errors,
+    };
+  } catch (error) {
+    throw new Error(`Failed to bulk import categories: ${error.message}`);
+  }
+};
+
 module.exports = {
   createCategory,
   getAllCategories,
@@ -158,4 +211,5 @@ module.exports = {
   updateCategory,
   deleteCategory,
   getCategoryStats,
+  bulkImportCategories,
 };

@@ -3,12 +3,16 @@ const cacheService = require("./cache.service");
 
 class CustomerService {
   async createCustomer(data) {
-    const result = await customerRepository.create(data);
-    
-    // Invalidate cache
-    await cacheService.deletePattern('customers:*');
-    
-    return result;
+    try {
+      const result = await customerRepository.create(data);
+      
+      // Invalidate cache
+      await cacheService.deletePattern('customers:*');
+      
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getCustomers(params = {}) {
@@ -67,10 +71,8 @@ class CustomerService {
   }
 
   async getCustomerById(id) {
-    console.log('CustomerService.getCustomerById - ID:', id);
     try {
       const result = await customerRepository.findById(id);
-      console.log('CustomerService.getCustomerById - Result:', result);
       return result;
     } catch (error) {
       console.error('CustomerService.getCustomerById - Error:', error);
@@ -98,8 +100,6 @@ class CustomerService {
 
   async bulkImportCustomers(customers) {
     try {
-      console.log("Bulk importing customers:", customers.length);
-
       const results = [];
       const errors = [];
 
@@ -131,6 +131,7 @@ class CustomerService {
           }
 
           const result = await this.createCustomer(mappedCustomer);
+          
           results.push(result);
         } catch (error) {
           errors.push({
@@ -141,13 +142,15 @@ class CustomerService {
         }
       }
 
-      return {
+      const finalResult = {
         success: true,
         data: results,
         importedCount: results.length,
         errorCount: errors.length,
         errors: errors,
       };
+
+      return finalResult;
     } catch (error) {
       throw new Error(`Failed to bulk import customers: ${error.message}`);
     }
@@ -155,8 +158,6 @@ class CustomerService {
 
   async bulkDeleteCustomers(customerIds) {
     try {
-      console.log("Bulk deleting customers:", customerIds.length);
-
       const results = [];
       const errors = [];
 

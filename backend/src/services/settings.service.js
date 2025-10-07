@@ -15,6 +15,16 @@ const getSettings = async () => {
           lowStockThreshold: 5,
           currency: "USD",
           taxRate: 0,
+          passwordExpiry: 90,
+          sessionTimeout: 30,
+          loginAttempts: 5,
+          twoFactorAuth: false,
+          autoBackup: false,
+          backupFrequency: "daily",
+          timezone: "UTC",
+          dateFormat: "MM/DD/YYYY",
+          timeFormat: "12",
+          language: "en",
         },
       });
     }

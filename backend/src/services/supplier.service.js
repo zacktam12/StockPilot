@@ -7,21 +7,73 @@ exports.getAllSuppliers = async (
   limit = 10,
   search = "",
   sortField = "",
-  sortOrder = ""
+  sortOrder = "",
+  hasPhone = false,
+  hasAddress = false,
+  hasEmail = false,
+  hasCompany = false
 ) => {
   const where = {
     isDeleted: false,
-    ...(search && {
-      OR: [
-        { name: { contains: search } },
-        { contactName: { contains: search } },
-        { email: { contains: search } },
-        { phone: { contains: search } },
-        { address: { contains: search } },
-        { companyName: { contains: search } },
-      ],
-    }),
   };
+
+  // Add search condition
+  if (search) {
+    where.OR = [
+      { name: { contains: search } },
+      { contactName: { contains: search } },
+      { email: { contains: search } },
+      { phone: { contains: search } },
+      { address: { contains: search } },
+      { companyName: { contains: search } },
+    ];
+  }
+
+  // Apply filters (filter out null and empty strings)
+  // Build AND conditions for filters
+  const filterConditions = [];
+  
+  if (hasPhone === 'true' || hasPhone === true) {
+    filterConditions.push({
+      AND: [
+        { phone: { not: null } },
+        { phone: { not: "" } }
+      ]
+    });
+  }
+  if (hasAddress === 'true' || hasAddress === true) {
+    filterConditions.push({
+      AND: [
+        { address: { not: null } },
+        { address: { not: "" } }
+      ]
+    });
+  }
+  if (hasEmail === 'true' || hasEmail === true) {
+    filterConditions.push({
+      AND: [
+        { email: { not: null } },
+        { email: { not: "" } }
+      ]
+    });
+  }
+  if (hasCompany === 'true' || hasCompany === true) {
+    filterConditions.push({
+      AND: [
+        { companyName: { not: null } },
+        { companyName: { not: "" } }
+      ]
+    });
+  }
+
+  // Add filter conditions to where clause if any exist
+  if (filterConditions.length > 0) {
+    if (where.AND) {
+      where.AND = [...where.AND, ...filterConditions];
+    } else {
+      where.AND = filterConditions;
+    }
+  }
 
   // Calculate pagination
   const skip = (page - 1) * limit;
@@ -66,7 +118,11 @@ exports.getAllSuppliers = async (
     limit.toString(),
     search,
     sortField,
-    sortOrder
+    sortOrder,
+    hasPhone.toString(),
+    hasAddress.toString(),
+    hasEmail.toString(),
+    hasCompany.toString()
   );
   await cacheService.set(cacheKey, result, 300);
 
@@ -83,9 +139,9 @@ exports.getSupplierById = async (id) => {
 };
 
 exports.createSupplier = async (data) => {
-  const { name, contactName, email, phone, address, companyName, status, notes } = data;
+  const { name, contactName, email, phone, address, companyName } = data;
   const supplier = await prisma.supplier.create({
-    data: { name, contactName, email, phone, address, companyName, status, notes },
+    data: { name, contactName, email, phone, address, companyName },
   });
   
   // Invalidate cache
@@ -95,10 +151,10 @@ exports.createSupplier = async (data) => {
 };
 
 exports.updateSupplier = async (id, data) => {
-  const { name, contactName, email, phone, address, companyName, status, notes } = data;
+  const { name, contactName, email, phone, address, companyName } = data;
   const supplier = await prisma.supplier.update({
     where: { id },
-    data: { name, contactName, email, phone, address, companyName, status, notes },
+    data: { name, contactName, email, phone, address, companyName },
   });
   
   // Invalidate cache
@@ -137,8 +193,6 @@ exports.bulkUpdateSuppliers = async (ids, data) => {
 // Import suppliers from array with validation and error handling
 exports.importSuppliers = async (suppliers) => {
   try {
-    console.log("Bulk importing suppliers:", suppliers.length);
-
     const results = [];
     const errors = [];
 

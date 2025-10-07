@@ -15,7 +15,6 @@ class CacheService {
           url: process.env.REDIS_URL,
           retry_strategy: (options) => {
             if (options.error && options.error.code === 'ECONNREFUSED') {
-              console.log('Redis connection refused, falling back to in-memory cache');
               return null;
             }
             if (options.total_retry_time > 1000 * 60 * 60) {
@@ -31,13 +30,11 @@ class CacheService {
         });
 
         this.client.on('connect', () => {
-          console.log('Connected to Redis');
           this.isConnected = true;
         });
 
         await this.client.connect();
       } else {
-        console.log('Redis not configured, using in-memory cache');
         this.memoryCache = new Map();
         this.memoryCacheExpiry = new Map();
       }

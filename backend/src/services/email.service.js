@@ -49,9 +49,6 @@ class EmailService {
 
       const successful = results.filter(r => r.success);
       const failed = results.filter(r => !r.success);
-
-      console.log('Email sending results:', { successful: successful.length, failed: failed.length });
-      
       return {
         success: successful.length > 0,
         messageId: successful[0]?.messageId,

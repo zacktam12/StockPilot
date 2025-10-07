@@ -37,7 +37,6 @@ const createProduct = async (data) => {
     if (!data.sku || data.sku.trim() === "") {
       const { sku } = await generateProductIdentifiers(data.name);
       data.sku = sku;
-      console.log(`Auto-generated SKU: ${sku}`);
     } else {
       // Check if provided SKU already exists
       const existingProduct = await productRepository.findBySku(data.sku);
@@ -50,7 +49,6 @@ const createProduct = async (data) => {
     if (!data.barcode || data.barcode.trim() === "") {
       const { barcode } = await generateProductIdentifiers(data.name);
       data.barcode = barcode;
-      console.log(`Auto-generated barcode: ${barcode}`);
     } else {
       // Check if provided barcode already exists
       const existingProduct = await productRepository.findByBarcode(
@@ -132,8 +130,6 @@ const createProduct = async (data) => {
 
 const getAllProducts = async (query = {}) => {
   try {
-    console.log("getAllProducts received query:", query);
-
     const {
       page = 1,
       limit = 5,
@@ -279,11 +275,6 @@ const getProductById = async (id) => {
       throw new Error("Product not found");
     }
     
-    // Debug: Check what we're getting from the repository
-    console.log("getProductById - Product keys:", Object.keys(product));
-    console.log("getProductById - createdAt:", product.createdAt, "updatedAt:", product.updatedAt);
-    console.log("getProductById - categoryId:", product.categoryId, "image:", product.image);
-    
     // Transform the data to match frontend expectations
     const transformedProduct = {
       id: product.id,
@@ -308,11 +299,6 @@ const getProductById = async (id) => {
       updated_at: product.updatedAt || new Date(),
     };
     
-    console.log("getProductById - Final transformed product keys:", Object.keys(transformedProduct));
-    console.log("getProductById - Final created_at:", transformedProduct.created_at);
-    console.log("getProductById - Final updated_at:", transformedProduct.updated_at);
-    console.log("getProductById - Final category_id:", transformedProduct.category_id);
-    
     return { success: true, data: transformedProduct };
   } catch (error) {
     throw new Error(`Failed to fetch product: ${error.message}`);
@@ -329,24 +315,19 @@ const updateProduct = async (id, data) => {
     );
 
     if (!existingProduct) {
-      console.log("Product not found for id:", id);
       throw new Error("Product not found");
     }
-
-    console.log("Existing product found:", existingProduct.id);
 
     // Auto-generate SKU if not provided and doesn't exist (only if we're updating name or sku)
     if (data.name !== undefined && data.sku !== undefined && (!data.sku || data.sku.trim() === "") && !existingProduct.sku) {
       const { sku } = await generateProductIdentifiers(data.name);
       data.sku = sku;
-      console.log(`Auto-generated SKU for existing product: ${sku}`);
     }
 
     // Auto-generate barcode if not provided and doesn't exist (only if we're updating name or barcode)
     if (data.name !== undefined && data.barcode !== undefined && (!data.barcode || data.barcode.trim() === "") && !existingProduct.barcode) {
       const { barcode } = await generateProductIdentifiers(data.name);
       data.barcode = barcode;
-      console.log(`Auto-generated barcode for existing product: ${barcode}`);
     }
 
     // Map frontend field names to backend field names
@@ -482,8 +463,6 @@ const decrementStock = async (id, quantity) => {
 
 const bulkImportProducts = async (products) => {
   try {
-    console.log("Bulk importing products:", products.length);
-
     const results = [];
     const errors = [];
 
@@ -555,8 +534,6 @@ const bulkImportProducts = async (products) => {
 
 const bulkDeleteProducts = async (productIds) => {
   try {
-    console.log("Bulk deleting products:", productIds.length);
-
     const results = [];
     const errors = [];
 

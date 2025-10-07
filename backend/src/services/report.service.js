@@ -29,10 +29,6 @@ const reportService = {
         },
         orderBy: { createdAt: 'desc' }
       });
-
-      console.log("Daily Sales - Found sales:", sales.length);
-      console.log("Daily Sales - Sample sale:", sales[0]);
-
       return sales.map((sale) => ({
         id: sale.id,
         date: sale.createdAt,
@@ -88,10 +84,6 @@ const reportService = {
       include: { category: true },
       orderBy: orderByClause
     });
-    
-    console.log("Inventory - Found products:", products.length);
-    console.log("Inventory - Sample product:", products[0]);
-    
     return products.map((product) => ({
       name: product.name,
       product_name: product.name,
@@ -136,15 +128,7 @@ const reportService = {
       },
       orderBy: { createdAt: 'desc' }
     });
-
-    console.log("Purchase Orders - Found purchases:", purchases.length);
     if (purchases.length > 0) {
-      console.log("Purchase Orders - Sample purchase:", {
-        id: purchases[0].id,
-        poNumber: purchases[0].poNumber,
-        totalCost: purchases[0].totalCost,
-        status: purchases[0].status
-      });
     }
 
     return purchases.map((purchase) => ({
@@ -787,12 +771,7 @@ const reportService = {
           }
         }
       });
-
-      console.log("Cost Analysis - Found purchases:", purchases.length);
-      console.log("Cost Analysis - Date range:", { start, end });
       if (purchases.length > 0) {
-        console.log("Cost Analysis - Sample purchase:", purchases[0]);
-        console.log("Cost Analysis - Sample productPurchases:", purchases[0].productPurchases);
       }
 
       // Aggregate cost data by product
@@ -805,16 +784,6 @@ const reportService = {
           const unitCost = pp.unit_cost || pp.purchase_price || 0;
           const quantity = pp.purchase_quantity || pp.quantity || 0;
           const totalCost = unitCost * quantity;
-          
-          console.log("Processing product purchase:", {
-            productName,
-            category,
-            unitCost,
-            quantity,
-            totalCost,
-            pp
-          });
-          
           if (!costAnalysis[productName]) {
             costAnalysis[productName] = {
               product_name: productName,
@@ -878,8 +847,6 @@ const reportService = {
 
       // Sort by total cost descending
       const finalResult = result.sort((a, b) => b.total_cost - a.total_cost);
-      console.log("Cost Analysis - Final result:", finalResult.length, "items");
-      console.log("Cost Analysis - Sample result:", finalResult[0]);
       return finalResult;
     } catch (error) {
       console.error("Error in costAnalysis report:", error);

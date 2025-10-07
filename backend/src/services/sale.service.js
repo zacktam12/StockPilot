@@ -323,7 +323,15 @@ const getAllSales = async (params = {}) => {
 const getSaleById = (id) =>
   prisma.sale.findUnique({
     where: { id: String(id) },
-    include: { user: true, customer: true, productSales: true },
+    include: { 
+      user: true, 
+      customer: true, 
+      productSales: {
+        include: {
+          product: true,
+        },
+      },
+    },
   });
 
 const updateSale = async (id, data) => {

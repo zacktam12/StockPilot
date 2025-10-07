@@ -394,16 +394,6 @@ exports.getLowStockAlerts = async (params = {}) => {
   const total = filtered.length;
   const paginated = filtered.slice((page - 1) * limit, page * limit);
 
-  console.log('🚨 Low Stock Alerts Service Debug:', {
-    totalProducts: allProducts.length,
-    filteredCount: filtered.length,
-    paginatedCount: paginated.length,
-    page,
-    limit,
-    threshold: lowStockThreshold,
-    firstAlert: paginated[0]
-  });
-
   return {
     data: paginated.map((p) => ({
       ...p,
@@ -421,10 +411,6 @@ exports.getLowStockAlerts = async (params = {}) => {
 exports.getRevenueData = async (params = {}) => {
   const { range = "monthly", startDate = "", endDate = "", groupBy = "day" } = params;
   
-  // Debug logging for revenue data (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 getRevenueData called with params:', { range, startDate, endDate, groupBy });
-  }
   
   // Handle different time ranges
   if (range === "7d" || range === "30d" || range === "90d" || range === "1y" || range === "monthly" || range === "all") {
@@ -528,10 +514,6 @@ exports.getRevenueData = async (params = {}) => {
       }
     }
     
-    // Debug logging for revenue data (only in development)
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`📅 Generated ${periods.length} ${periodType} periods from ${startDate.toISOString()} to ${endDate.toISOString()}`);
-    }
 
     const data = await Promise.all(
       periods.map(async (period) => {
@@ -573,46 +555,11 @@ exports.getRevenueData = async (params = {}) => {
           sales: count,
         };
         
-        // Debug logging for revenue data (only in development)
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`📊 Revenue for ${result.month}:`, {
-            revenue: result.revenue,
-            sales: result.sales,
-            dateRange: { start: start.toISOString(), end: end.toISOString() }
-          });
-        }
-        
         return result;
       })
     );
     
-    // Debug logging for revenue data (only in development)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📈 Total revenue data points:', data.length);
-      console.log('📈 Revenue data sample:', data.slice(0, 3));
-      console.log('📈 Revenue data with values > 0:', data.filter(item => item.revenue > 0));
-    }
-    
     return data;
-  }
-  
-  // If no data found for monthly range, try to get any sales data
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 No monthly data found, checking for any sales...');
-    const anySales = await prisma.sale.findFirst({
-      where: { isDeleted: false }, // Use same format as dashboard stats
-      select: { createdAt: true, totalPrice: true },
-      orderBy: { createdAt: 'desc' }
-    });
-    
-    if (anySales) {
-      console.log('📊 Found sales in database:', {
-        latestSale: anySales.createdAt,
-        totalPrice: anySales.totalPrice
-      });
-    } else {
-      console.log('❌ No sales found in database');
-    }
   }
   
   // Add yearly or other ranges as needed

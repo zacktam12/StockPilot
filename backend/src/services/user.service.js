@@ -1,5 +1,7 @@
 const userRepository = require("../repositories/user.repository");
 const cacheService = require("./cache.service");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 
 // Function to calculate user summary statistics
 const calculateUserSummary = async (where) => {
@@ -8,14 +10,24 @@ const calculateUserSummary = async (where) => {
       userRepository.count({ where }),
       userRepository.count({ where: { ...where, status: 'Active' } }),
       userRepository.count({ where: { ...where, status: 'Inactive' } }),
-      userRepository.groupByStatus(where)
+      // Use raw query for groupBy since it's not implemented in BaseRepository
+      prisma.user.groupBy({
+        by: ['roleId'],
+        where: where,
+        _count: {
+          roleId: true
+        }
+      })
     ]);
 
     return {
       totalUsers,
       activeUsers,
       inactiveUsers,
-      roleCounts
+      roleCounts: roleCounts.reduce((acc, item) => {
+        acc[item.roleId] = item._count.roleId;
+        return acc;
+      }, {})
     };
   } catch (error) {
     console.error('Error calculating user summary:', error);
@@ -74,10 +86,6 @@ const createUser = async (data) => {
       employeeId: userWithRole.employeeId,
       status: userWithRole.status,
       roleId: userWithRole.roleId,
-      department: userWithRole.department,
-      position: userWithRole.position,
-      hireDate: userWithRole.hireDate,
-      lastLoginAt: userWithRole.lastLoginAt,
       role: userWithRole.role
         ? {
             id: userWithRole.role.id,
@@ -107,7 +115,6 @@ const getAllUsers = async (params = {}) => {
     search = "",
     status = "",
     roleId = "",
-    department = "",
     sortField = "createdAt",
     sortOrder = "desc"
   } = params;
@@ -120,7 +127,6 @@ const getAllUsers = async (params = {}) => {
     search || '',
     status || '',
     roleId || '',
-    department || '',
     sortField,
     sortOrder
   );
@@ -140,7 +146,6 @@ const getAllUsers = async (params = {}) => {
     search,
     status,
     roleId,
-    department,
     sortField,
     sortOrder
   );
@@ -155,10 +160,6 @@ const getAllUsers = async (params = {}) => {
     employeeId: user.employeeId,
     status: user.status,
     roleId: user.roleId,
-    department: user.department,
-    position: user.position,
-    hireDate: user.hireDate,
-    lastLoginAt: user.lastLoginAt,
     role: user.role
       ? {
           id: user.role.id,
@@ -170,7 +171,7 @@ const getAllUsers = async (params = {}) => {
   }));
 
   // Calculate summary statistics
-  const where = { status: "Active" };
+  const where = {};
   if (search) where.OR = [
     { firstName: { contains: search } },
     { lastName: { contains: search } },
@@ -179,7 +180,6 @@ const getAllUsers = async (params = {}) => {
   ];
   if (status && status !== "all") where.status = status;
   if (roleId) where.roleId = roleId;
-  if (department) where.department = department;
 
   const summary = await calculateUserSummary(where);
 
@@ -202,6 +202,7 @@ const getUserById = (id) => {
 
 // Update user
 const updateUser = async (id, data) => {
+  
   const existingUser = await userRepository.findUnique({
     id: String(id),
   });
@@ -212,22 +213,21 @@ const updateUser = async (id, data) => {
 
   // Hash password if provided
   const updateData = { ...data };
-  if (updateData.password) {
+  
+  if (updateData.password && updateData.password.trim()) {
     const bcrypt = require("bcrypt");
     updateData.password = await bcrypt.hash(updateData.password, 10);
+  } else {
+    delete updateData.password;
   }
-
   const user = await userRepository.updateUser(String(id), updateData);
-
   // Fetch the updated user with role included
   const userWithRole = await userRepository.findUnique(
     { id: String(id) },
     { role: true }
   );
-
   // Invalidate cache
   await cacheService.deletePattern('users:*');
-
   // Transform the response
   return {
     success: true,
@@ -241,10 +241,6 @@ const updateUser = async (id, data) => {
       employeeId: userWithRole.employeeId,
       status: userWithRole.status,
       roleId: userWithRole.roleId,
-      department: userWithRole.department,
-      position: userWithRole.position,
-      hireDate: userWithRole.hireDate,
-      lastLoginAt: userWithRole.lastLoginAt,
       role: userWithRole.role
         ? {
             id: userWithRole.role.id,
@@ -258,13 +254,110 @@ const updateUser = async (id, data) => {
 };
 
 // Soft delete user: set status to Deactivated
-const deleteUser = async (id) => {
-  const result = await userRepository.softDeleteUser(String(id));
+const deleteUser = async (id, deactivatedBy = null) => {
+  // First check if user exists
+  const existingUser = await userRepository.findUnique({ id: String(id) });
+  
+  if (!existingUser) {
+    throw new Error(`User with ID ${id} does not exist.`);
+  }
+
+  // Check if user is already deactivated
+  if (existingUser.status === 'Deactivated') {
+    throw new Error(`User is already deactivated.`);
+  }
+
+  const result = await userRepository.softDeleteUser(String(id), deactivatedBy);
   
   // Invalidate cache
   await cacheService.deletePattern('users:*');
   
-  return result;
+  // Fetch the updated user with role
+  const deactivatedUser = await userRepository.findUnique(
+    { id: String(id) },
+    { role: true }
+  );
+  
+  return {
+    success: true,
+    message: "User deactivated successfully",
+    data: {
+      id: deactivatedUser.id,
+      firstName: deactivatedUser.firstName,
+      lastName: deactivatedUser.lastName,
+      email: deactivatedUser.email,
+      phone: deactivatedUser.phone,
+      employeeId: deactivatedUser.employeeId,
+      status: deactivatedUser.status,
+      roleId: deactivatedUser.roleId,
+      deactivatedAt: deactivatedUser.deactivatedAt,
+      deactivatedBy: deactivatedUser.deactivatedBy,
+      role: deactivatedUser.role
+        ? {
+            id: deactivatedUser.role.id,
+            role_type: deactivatedUser.role.role_type,
+          }
+        : null,
+      createdAt: deactivatedUser.createdAt,
+      updatedAt: deactivatedUser.updatedAt,
+    },
+  };
+};
+
+// Reactivate user: set status back to Active
+const reactivateUser = async (id) => {
+  // First check if user exists
+  const existingUser = await userRepository.findUnique({ id: String(id) });
+  
+  if (!existingUser) {
+    throw new Error(`User with ID ${id} does not exist.`);
+  }
+
+  // Check if user is deactivated
+  if (existingUser.status !== 'Deactivated') {
+    throw new Error(`User is not deactivated.`);
+  }
+
+  const result = await userRepository.update(
+    { id: String(id) },
+    { 
+      status: "Active",
+      deactivatedAt: null,
+      deactivatedBy: null
+    }
+  );
+  
+  // Invalidate cache
+  await cacheService.deletePattern('users:*');
+  
+  // Fetch the updated user with role
+  const reactivatedUser = await userRepository.findUnique(
+    { id: String(id) },
+    { role: true }
+  );
+  
+  return {
+    success: true,
+    message: "User reactivated successfully",
+    data: {
+      id: reactivatedUser.id,
+      firstName: reactivatedUser.firstName,
+      lastName: reactivatedUser.lastName,
+      email: reactivatedUser.email,
+      phone: reactivatedUser.phone,
+      employeeId: reactivatedUser.employeeId,
+      status: reactivatedUser.status,
+      roleId: reactivatedUser.roleId,
+      role: reactivatedUser.role
+        ? {
+            id: reactivatedUser.role.id,
+            role_type: reactivatedUser.role.role_type,
+          }
+        : null,
+      createdAt: reactivatedUser.createdAt,
+      updatedAt: reactivatedUser.updatedAt,
+    },
+  };
 };
 
 const updateFailedLoginAttempts = async (userId, attemptNumber) => {
@@ -385,12 +478,15 @@ const importUsers = async (usersData) => {
           phone: userWithRole.phone,
           employeeId: userWithRole.employeeId,
           status: userWithRole.status,
+          roleId: userWithRole.roleId,
           role: userWithRole.role
             ? {
                 id: userWithRole.role.id,
                 role_type: userWithRole.role.role_type,
               }
             : null,
+          createdAt: userWithRole.createdAt,
+          updatedAt: userWithRole.updatedAt,
         },
       });
     } catch (error) {
@@ -432,12 +528,14 @@ module.exports = {
   getUserById,
   updateUser,
   deleteUser,
+  reactivateUser,
   getUserByEmail,
   updateFailedLoginAttempts,
   lockUser,
   unlockUser,
   isUserLocked,
   importUsers,
+  calculateUserSummary,
 };
 
 // src/services/user.service.js
