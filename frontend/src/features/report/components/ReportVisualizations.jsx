@@ -216,7 +216,6 @@ const ReportVisualizations = ({ report, data }) => {
 
   const exportChart = () => {
     // Chart export functionality would go here
-    console.log('Exporting chart...');
   };
 
   const resetChart = () => {
@@ -228,38 +227,39 @@ const ReportVisualizations = ({ report, data }) => {
       {/* Chart Controls */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4">
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-blue-600" />
-              Data Visualizations
+              <span className="truncate">Data Visualizations</span>
             </CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={resetChart}
-                className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                className="flex-1 sm:flex-initial text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white flex items-center justify-center gap-2"
               >
                 <RotateCcw size={14} />
-                Reset
+                <span className="hidden sm:inline">Reset</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={exportChart}
-                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                className="flex-1 sm:flex-initial text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center justify-center gap-2"
               >
                 <Download size={14} />
-                Export
+                <span className="hidden sm:inline">Export</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsFullscreen(!isFullscreen)}
-                className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                className="flex-1 sm:flex-initial text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 flex items-center justify-center gap-2"
               >
                 <Maximize2 size={14} />
-                {isFullscreen ? 'Exit' : 'Fullscreen'}
+                <span className="hidden sm:inline">{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
+                <span className="sm:hidden">{isFullscreen ? 'Exit' : 'Full'}</span>
               </Button>
             </div>
           </div>
@@ -290,10 +290,10 @@ const ReportVisualizations = ({ report, data }) => {
           </div>
 
           {/* Chart Container */}
-          <div className={`bg-gray-50 dark:bg-gray-800 rounded-xl p-4 ${
+          <div className={`bg-gray-50 dark:bg-gray-800 rounded-xl p-2 sm:p-4 ${
             isFullscreen ? 'fixed inset-4 z-50 bg-white dark:bg-gray-900' : ''
           }`}>
-            <div className={`${isFullscreen ? 'h-[calc(100vh-8rem)]' : 'h-96'}`}>
+            <div className={`${isFullscreen ? 'h-[calc(100vh-8rem)]' : 'h-64 sm:h-80 md:h-96'}`}>
               <ResponsiveContainer width="100%" height="100%">
                 {renderChart()}
               </ResponsiveContainer>

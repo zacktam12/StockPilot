@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { 
   Download, 
-  Mail, 
   FileText, 
   FileSpreadsheet, 
   Clock
@@ -17,7 +16,6 @@ const ReportExportPanel = ({ report, data }) => {
   const [exportFormat, setExportFormat] = useState("pdf");
   const [includeCharts, setIncludeCharts] = useState(true);
   const [includeInsights, setIncludeInsights] = useState(true);
-  const [emailRecipients, setEmailRecipients] = useState("");
 
   const exportFormats = [
     { id: "pdf", label: "PDF", icon: FileText },
@@ -133,44 +131,6 @@ const ReportExportPanel = ({ report, data }) => {
     }
   };
 
-  const sendEmail = async () => {
-    if (!emailRecipients.trim()) {
-      alert("Please enter email addresses");
-      return;
-    }
-
-    setIsExporting(true);
-    try {
-      const response = await fetch('/api/email/send-report', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        },
-        body: JSON.stringify({
-          recipients: emailRecipients,
-          reportTitle: report.title,
-          reportData: data,
-          format: exportFormat
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        alert(`Report sent successfully to: ${result.data.recipients.join(', ')}`);
-        setEmailRecipients(""); // Clear the input
-      } else {
-        alert(`Failed to send email: ${result.message}`);
-      }
-    } catch (error) {
-      console.error("Email sending error:", error);
-      alert(`Failed to send email: ${error.message}`);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   if (!report || !data) return null;
 
   return (
@@ -239,23 +199,12 @@ const ReportExportPanel = ({ report, data }) => {
           </div>
         </div>
 
-        {/* Email Recipients */}
-        <div className="mb-3">
-          <input
-            type="text"
-            placeholder="Email addresses (comma separated)"
-            value={emailRecipients}
-            onChange={(e) => setEmailRecipients(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-          />
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2">
+        {/* Action Button */}
+        <div>
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors"
           >
             {isExporting ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -263,14 +212,6 @@ const ReportExportPanel = ({ report, data }) => {
               <Download size={14} />
             )}
             {isExporting ? 'Exporting...' : `Export ${exportFormat.toUpperCase()}`}
-          </button>
-
-          <button
-            onClick={sendEmail}
-            className="flex items-center gap-2 px-3 py-2 border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors"
-          >
-            <Mail size={14} />
-            Email
           </button>
         </div>
       </div>

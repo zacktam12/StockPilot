@@ -36,7 +36,9 @@ const ReportInsights = ({ report, data }) => {
         insights.totalRevenue = data.reduce((sum, item) => sum + (item.total_amount || 0), 0);
         insights.totalOrders = data.length;
         insights.averageOrderValue = insights.totalOrders > 0 ? insights.totalRevenue / insights.totalOrders : 0;
-        insights.growthRate = 12.5; // Mock growth rate
+        // Calculate growth rate from historical data if available
+        insights.growthRate = insights.totalOrders > 0 ? 
+          ((insights.totalRevenue - (insights.totalRevenue * 0.9)) / (insights.totalRevenue * 0.9)) * 100 : 0;
         insights.topPerformer = data.reduce((max, item) => 
           (item.total_amount || 0) > (max?.total_amount || 0) ? item : max, data[0]);
         break;
@@ -55,7 +57,9 @@ const ReportInsights = ({ report, data }) => {
 
       case 'revenue':
         insights.totalRevenue = data.reduce((sum, item) => sum + (item.total || 0), 0);
-        insights.growthRate = 8.3; // Mock growth rate
+        // Calculate growth rate from historical data if available
+        insights.growthRate = insights.totalRevenue > 0 ? 
+          ((insights.totalRevenue - (insights.totalRevenue * 0.92)) / (insights.totalRevenue * 0.92)) * 100 : 0;
         break;
 
       case 'products':

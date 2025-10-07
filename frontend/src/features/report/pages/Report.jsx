@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { toast } from "react-hot-toast";
+import { showSuccess, showError, showWarning } from "../../../services/notificationService";
 
 // Enhanced Components
 import EnhancedReportHeader from "../components/EnhancedReportHeader";
@@ -145,9 +146,6 @@ const ReportsPage = () => {
     try {
       const token = localStorage.getItem('authToken');
       const testUrl = `${API_URL}/reports/test`;
-      
-      console.log("Testing backend connection to:", testUrl);
-      
       const response = await fetch(testUrl, {
         method: 'GET',
         headers: {
@@ -158,21 +156,17 @@ const ReportsPage = () => {
       
       if (response.ok) {
         const data = await response.json();
-        console.log("Backend test successful:", data);
         return true;
       } else {
         console.error("Backend test failed:", response.status, response.statusText);
         return false;
       }
     } catch (error) {
-      console.error("Backend test error:", error);
       return false;
     }
   };
 
   const generateReport = async (reportType, isRefresh = false) => {
-    console.log("Generating report:", reportType, "isRefresh:", isRefresh);
-    
     if (!isRefresh) {
       setLoading(reportType);
       setIsLoading(true);
@@ -182,7 +176,7 @@ const ReportsPage = () => {
     const isBackendConnected = await testBackendConnection();
     if (!isBackendConnected) {
       console.warn("Backend not accessible");
-      toast.error("Backend server not accessible. Please check your connection.");
+      showError("Backend Not Accessible", "Backend server not accessible. Please check your connection.", 5000);
       setLoading(null);
       setIsLoading(false);
       return;
@@ -214,10 +208,6 @@ const ReportsPage = () => {
       try {
         // Get authentication token from localStorage
         const token = localStorage.getItem('authToken');
-        
-        console.log("Making API call to:", `${endpoint}?${queryParams}`);
-        console.log("Using token:", token ? "Present" : "Missing");
-        
         const response = await fetch(`${endpoint}?${queryParams}`, {
           method: 'GET',
           headers: {
@@ -225,10 +215,6 @@ const ReportsPage = () => {
             'Authorization': `Bearer ${token}`
           }
         });
-        
-        console.log("API Response Status:", response.status);
-        console.log("API Response Headers:", response.headers);
-        
         if (!response.ok) {
           const errorText = await response.text();
           console.error("API Error Response:", errorText);
@@ -236,9 +222,6 @@ const ReportsPage = () => {
         }
 
         const responseData = await response.json();
-        
-        console.log("Report API Response:", responseData);
-        
         // Handle different response formats from backend
         if (responseData.success && responseData.data) {
           data = responseData.data;
@@ -247,12 +230,9 @@ const ReportsPage = () => {
         } else {
           data = responseData;
         }
-        
-        console.log("Processed data:", data);
       } catch (apiError) {
-        console.error("API call failed with error:", apiError);
         console.warn("API call failed:", apiError.message);
-        toast.error(`Failed to fetch data: ${apiError.message}`);
+        showError("Data Fetch Failed", `Failed to fetch data: ${apiError.message}`, 5000);
         setLoading(null);
         setIsLoading(false);
         return;
@@ -279,11 +259,11 @@ const ReportsPage = () => {
       setReportData(data);
       
       if (!isRefresh) {
-        toast.success(`${title} generated successfully!`);
+        showSuccess("Report Generated", `${title} has been generated successfully!`, 4000);
       }
     } catch (error) {
       console.error("Error generating report:", error.message);
-      toast.error(`Failed to generate report: ${error.message}`);
+      showError("Report Generation Failed", `Failed to generate report: ${error.message}`, 5000);
     } finally {
       setLoading(null);
       setIsLoading(false);
@@ -336,7 +316,7 @@ const ReportsPage = () => {
       />
 
       {/* Main Content */}
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="pt-16 p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Interactive Report Cards - Only show when no report is active */}
         {!currentReport && (
           <InteractiveReportCards 
@@ -350,10 +330,10 @@ const ReportsPage = () => {
         {/* View Mode Info - Only show when report is active */}
         {currentReport && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-start sm:items-center gap-3">
               <button
                 onClick={handleBackToReports}
-                className="h-12 w-12 p-0 bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-center border-2"
+                className="h-10 w-10 sm:h-12 sm:w-12 p-0 bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-center border-2 flex-shrink-0"
                 style={{
                   borderColor: '#3b82f6',
                   color: '#3b82f6',
@@ -361,31 +341,12 @@ const ReportsPage = () => {
                   borderStyle: 'solid',
                   borderRadius: '8px',
                   backgroundColor: '#f0f9ff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 0,
-                  lineHeight: 1,
-                  textAlign: 'center',
-                  verticalAlign: 'middle',
                 }}
               >
-                <ArrowLeft
-                  size={24}
-                  style={{
-                    margin: 0,
-                    padding: 0,
-                    lineHeight: 1,
-                    fontWeight: 'bold',
-                    fontSize: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                />
+                <ArrowLeft size={20} className="sm:w-6 sm:h-6" />
               </button>
-              <div>
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100 truncate">
                   {viewMode === 'table' && 'Table View'}
                   {viewMode === 'chart' && 'Chart View'}
                   {viewMode === 'insights' && 'Insights View'}

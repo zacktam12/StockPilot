@@ -90,11 +90,11 @@ const ReportFilters = ({ filters, onFilterChange, onClose }) => {
   };
 
   return (
-    <div className="relative" ref={filterRef}>
+    <div className="relative flex-1 sm:flex-initial" ref={filterRef}>
       <button
         type="button"
         onClick={() => setIsFilterOpen(!isFilterOpen)}
-        className="px-4 py-3 rounded-lg border border-blue-300 !text-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:!text-blue-700 transition-colors relative flex items-center gap-2 bg-white"
+        className="w-full sm:w-auto px-4 py-3 rounded-lg border border-blue-300 !text-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:!text-blue-700 transition-colors relative flex items-center justify-center gap-2 bg-white"
       >
         <Filter size={16} />
         <span>Filters</span>

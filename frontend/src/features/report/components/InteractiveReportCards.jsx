@@ -58,7 +58,7 @@ const InteractiveReportCards = ({ onGenerateReport, loading, currentReport }) =>
     },
     {
       id: "inventory",
-      title: "Inventory Management",
+      title: "Product Management",
       description: "Stock levels, valuation, and inventory optimization",
       icon: <Package size={28} className="text-white" />,
       gradient: "from-green-500 to-green-600",
@@ -189,7 +189,6 @@ const InteractiveReportCards = ({ onGenerateReport, loading, currentReport }) =>
                         getLoadingState(report.id) ? 'animate-pulse' : ''
                       }`}
                       onClick={() => {
-                        console.log("Report card clicked:", report.id, report.name);
                         onGenerateReport(report.id);
                       }}
                       isLoading={getLoadingState(report.id)}
