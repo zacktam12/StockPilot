@@ -107,6 +107,11 @@ class BaseRepository {
     });
   }
 
+  findById(id, include) {
+    // Helper method to find by ID specifically
+    return this.findUnique({ id }, include);
+  }
+
   create(data) {
     return this.model.create({ data });
   }
