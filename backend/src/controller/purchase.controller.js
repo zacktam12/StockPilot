@@ -144,26 +144,13 @@ exports.getAllPurchases = async (req, res, next) => {
 
 exports.getPurchaseById = async (req, res, next) => {
   try {
-    console.log('getPurchaseById - Request params:', req.params);
-    console.log('getPurchaseById - Request ID:', req.params.id);
-    
     const result = await purchaseService.getPurchaseById(req.params.id);
-    console.log('getPurchaseById - Service result:', result ? 'Found' : 'Not found');
-    
     if (!result) {
-      console.log('getPurchaseById - Purchase not found for ID:', req.params.id);
       return res.status(404).json({
         success: false,
         message: "Purchase not found"
       });
     }
-    
-    console.log('getPurchaseById - Returning purchase data:', {
-      id: result.id,
-      poNumber: result.poNumber,
-      productPurchasesCount: result.productPurchases?.length || 0
-    });
-    
     res.json({
       success: true,
       data: result

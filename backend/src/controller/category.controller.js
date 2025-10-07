@@ -168,3 +168,21 @@ exports.getCategoryStats = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.bulkImportCategories = async (req, res, next) => {
+  try {
+    const { categories } = req.body;
+
+    if (!categories || !Array.isArray(categories)) {
+      return res.status(400).json({
+        success: false,
+        error: "Categories array is required",
+      });
+    }
+
+    const result = await categoryService.bulkImportCategories(categories);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};

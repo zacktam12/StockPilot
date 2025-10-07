@@ -269,10 +269,7 @@ exports.bulkDeleteProducts = async (req, res, next) => {
 exports.uploadProductImage = async (req, res, next) => {
   try {
     const { id } = req.params;
-    console.log("Upload product image request:", { id, file: req.file });
-
     if (!req.file) {
-      console.log("No file uploaded");
       return res.status(400).json({
         success: false,
         message: "No image file uploaded"
@@ -280,14 +277,11 @@ exports.uploadProductImage = async (req, res, next) => {
     }
 
     // First, let's verify the product exists
-    console.log("Verifying product exists with id:", id);
     const { prisma } = require("../config/db");
     const productExists = await prisma.product.findUnique({
       where: { id: String(id) },
       select: { id: true, name: true, isDeleted: true }
     });
-    console.log("Product exists check:", productExists);
-
     if (!productExists) {
       return res.status(404).json({
         success: false,
@@ -305,15 +299,9 @@ exports.uploadProductImage = async (req, res, next) => {
     // Construct the full URL for the uploaded image
     const baseUrl = process.env.BACKEND_URL || "http://localhost:5000";
     const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
-    console.log("Image URL:", imageUrl);
-
     // Update the product with the new image URL
-    console.log("Calling updateProduct with:", { id, image_url: imageUrl });
     const result = await productService.updateProduct(id, { image_url: imageUrl });
-    console.log("Update result:", result);
-    
     if (!result || !result.success) {
-      console.log("Product update failed:", result);
       return res.status(404).json({
         success: false,
         message: "Product not found"

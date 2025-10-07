@@ -45,7 +45,10 @@ exports.getAllSuppliers = async (req, res, next) => {
       search = "",
       sortField = "",
       sortOrder = "",
-      status = ""
+      hasPhone = false,
+      hasAddress = false,
+      hasEmail = false,
+      hasCompany = false
     } = req.query;
 
     // Validate pagination parameters
@@ -59,7 +62,10 @@ exports.getAllSuppliers = async (req, res, next) => {
       search,
       sortField,
       sortOrder,
-      status
+      hasPhone,
+      hasAddress,
+      hasEmail,
+      hasCompany
     );
 
     res.json({

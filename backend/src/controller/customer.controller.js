@@ -40,6 +40,7 @@ class CustomerController {
   async create(req, res, next) {
     try {
       const result = await customerService.createCustomer(req.body);
+      
       res.status(201).json({
         success: true,
         message: 'Customer created successfully',
@@ -101,9 +102,7 @@ class CustomerController {
 
   async getById(req, res, next) {
     try {
-      console.log('CustomerController.getById - ID:', req.params.id);
       const result = await customerService.getCustomerById(req.params.id);
-      console.log('CustomerController.getById - Result:', result);
       
       if (!result) {
         return res.status(404).json({
@@ -117,7 +116,6 @@ class CustomerController {
         data: result
       });
     } catch (error) {
-      console.error('CustomerController.getById - Error:', error);
       handleCustomerError(error, res);
     }
   }
@@ -171,6 +169,7 @@ class CustomerController {
       }
 
       const result = await customerService.bulkImportCustomers(customers);
+      
       res.json(result);
     } catch (error) {
       next(error);

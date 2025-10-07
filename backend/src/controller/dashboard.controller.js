@@ -131,15 +131,6 @@ exports.getRevenueData = async (req, res, next) => {
       groupBy
     });
     
-    // Debug logging for revenue data
-    if (process.env.NODE_ENV === 'development') {
-      console.log('💰 Revenue controller result:', {
-        result,
-        resultLength: result?.length || 0,
-        resultType: typeof result
-      });
-    }
-    
     res.json({
       success: true,
       data: result
