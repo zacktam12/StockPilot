@@ -3,23 +3,25 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, Star, Users, Shield, Zap, TrendingUp } from "lucide-react";
-import { toast, Toaster } from "react-hot-toast";
+import Logo from "../../../components/shared/Logo";
+import { showSuccess as showSuccessNotification, showError, showWarning } from "../../../services/notificationService";
+import { authAPI, settingsAPI } from "../../../services/api";
 
 import { useTheme } from "../../../components/ThemeProvider";
 import LoginForm from "../components/LoginForm";
 import ForgotPasswordModal from "../modals/ForgotPasswordModal";
 import AccountRecoveryModal from "../modals/AccountRecoveryModal";
 import useAuthCheck from "../../../hooks/useAuthCheck";
-import { useSelector } from "react-redux";
-
-// Backend API configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const LOGIN_ENDPOINT = `${API_BASE_URL}/api/auth/login`;
+import { useSelector, useDispatch } from "react-redux";
+import { setUser } from "../../../store/slices/authSlice";
 
 export default function Login() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { theme } = useTheme();
   const { isLoading, isAuthenticated } = useAuthCheck();
+  const settings = useSelector((state) => state.settings?.settings);
+  const appName = settings?.appName || "StockPilot";
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -29,10 +31,17 @@ export default function Login() {
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [lockoutTime, setLockoutTime] = useState(0);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showAccountRecovery, setShowAccountRecovery] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [publicStats, setPublicStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    uptimePercentage: 99.9,
+    supportAvailable: true
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const maxLoginAttempts =
     useSelector(
@@ -52,6 +61,36 @@ export default function Login() {
     }
   }, []);
 
+  // Fetch public statistics for the hero section
+  useEffect(() => {
+    const fetchPublicStats = async () => {
+      setStatsLoading(true);
+      try {
+        const response = await settingsAPI.getPublicStats();
+        setPublicStats(response.data.data);
+      } catch (error) {
+        console.error('Failed to fetch public stats:', error);
+        // Keep default values if API fails - don't show error to user
+        // This prevents the login page from blinking or showing errors
+        setPublicStats({
+          totalUsers: 0,
+          activeUsers: 0,
+          uptimePercentage: 99.9,
+          supportAvailable: true
+        });
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    // Only fetch if not already authenticated to avoid unnecessary calls
+    if (!isAuthenticated) {
+      fetchPublicStats();
+    } else {
+      setStatsLoading(false);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     let timer;
     if (isLocked && lockoutTime > 0) {
@@ -70,29 +109,149 @@ export default function Login() {
   }, [isLocked, lockoutTime]);
 
   const validateEmail = (email) => {
+    if (!email) return { isValid: false, error: null };
+    
+    // Check for basic format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    if (!emailRegex.test(email)) {
+      return { isValid: false, error: "Please enter a valid email address" };
+    }
+    
+    // Check for common issues
+    if (email.includes('..')) {
+      return { isValid: false, error: "Email cannot contain consecutive dots" };
+    }
+    if (email.startsWith('.') || email.endsWith('.')) {
+      return { isValid: false, error: "Email cannot start or end with a dot" };
+    }
+    if (email.includes(' ')) {
+      return { isValid: false, error: "Email cannot contain spaces" };
+    }
+    
+    const parts = email.split('@');
+    if (parts.length !== 2) {
+      return { isValid: false, error: "Invalid email format" };
+    }
+    
+    const [localPart, domain] = parts;
+    if (localPart.length === 0 || localPart.length > 64) {
+      return { isValid: false, error: "Invalid email format" };
+    }
+    if (domain.length === 0 || domain.length > 255) {
+      return { isValid: false, error: "Invalid email domain" };
+    }
+    if (!domain.includes('.')) {
+      return { isValid: false, error: "Email domain must contain a dot" };
+    }
+    
+    return { isValid: true, error: null };
+  };
+
+  const validatePassword = (password) => {
+    if (!password) return { isValid: false, error: null };
+    
+    if (password.length < 6) {
+      return { isValid: false, error: "Password must be at least 6 characters" };
+    }
+    if (password.length > 128) {
+      return { isValid: false, error: "Password is too long (max 128 characters)" };
+    }
+    
+    return { isValid: true, error: null };
   };
 
   const validateForm = () => {
     const newErrors = {};
+    
+    // Validate email
     if (!formData.email) {
       newErrors.email = "Email is required";
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+    } else {
+      const emailValidation = validateEmail(formData.email.trim());
+      if (!emailValidation.isValid && emailValidation.error) {
+        newErrors.email = emailValidation.error;
+      }
     }
+    
+    // Validate password
     if (!formData.password) {
       newErrors.password = "Password is required";
+    } else {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid && passwordValidation.error) {
+        newErrors.password = passwordValidation.error;
+      }
     }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Update form data with raw value (don't transform while typing)
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    
+    // Real-time validation as user types (but don't transform yet)
+    if (name === 'email' && value) {
+      // Validate with trimmed/lowercased version but don't update the displayed value
+      const normalizedEmail = value.trim().toLowerCase();
+      const emailValidation = validateEmail(normalizedEmail);
+      if (!emailValidation.isValid && emailValidation.error) {
+        setErrors((prev) => ({ ...prev, email: emailValidation.error }));
+      } else {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.email;
+          return newErrors;
+        });
+      }
+    } else if (name === 'password' && value) {
+      const passwordValidation = validatePassword(value);
+      if (!passwordValidation.isValid && passwordValidation.error) {
+        setErrors((prev) => ({ ...prev, password: passwordValidation.error }));
+      } else {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.password;
+          return newErrors;
+        });
+      }
+    } else {
+      // Clear error if field is being edited
+      if (errors[name]) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[name];
+          return newErrors;
+        });
+      }
+    }
+  };
+
+  // Add blur handler for final sanitization
+  const handleInputBlur = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'email') {
+      // Sanitize email on blur (trim and lowercase)
+      const sanitized = value.trim().toLowerCase();
+      setFormData((prev) => ({ ...prev, email: sanitized }));
+      
+      // Validate the sanitized value
+      if (sanitized) {
+        const emailValidation = validateEmail(sanitized);
+        if (!emailValidation.isValid && emailValidation.error) {
+          setErrors((prev) => ({ ...prev, email: emailValidation.error }));
+        } else {
+          setErrors((prev) => {
+            const newErrors = { ...prev };
+            delete newErrors.email;
+            return newErrors;
+          });
+        }
+      }
     }
   };
 
@@ -126,23 +285,13 @@ export default function Login() {
     try {
       // Always normalize email before sending to backend
       const normalizedEmail = formData.email.trim().toLowerCase();
-      const response = await fetch(LOGIN_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: normalizedEmail,
-          password: formData.password,
-        }),
+      
+      const response = await authAPI.login({
+        email: normalizedEmail,
+        password: formData.password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Only show backend error if present, otherwise fallback
-        throw new Error(data.message || "Login failed");
-      }
+      const data = response.data;
 
       // Store token and user info
       if (formData.rememberMe) {
@@ -155,25 +304,73 @@ export default function Login() {
       localStorage.setItem("userRole", data.user.role);
       localStorage.setItem("userName", data.user.email);
       localStorage.setItem("userEmail", data.user.email);
+      
+      // Store additional profile data
+      localStorage.setItem("firstName", data.user.firstName || "");
+      localStorage.setItem("lastName", data.user.lastName || "");
+      localStorage.setItem("phone", data.user.phone || "");
+      localStorage.setItem("userAvatar", data.user.profilePicture || "");
+      localStorage.setItem("userJoinDate", data.user.createdAt || new Date().toISOString());
+      localStorage.setItem("userLastLogin", data.user.lastLoginAt || new Date().toISOString());
 
-      setShowSuccess(true);
-      toast.success("Login successful! Redirecting...");
+      // Update Redux auth state immediately
+      dispatch(setUser({
+        firstName: data.user.firstName || "",
+        lastName: data.user.lastName || "",
+        name: data.user.firstName && data.user.lastName 
+          ? `${data.user.firstName} ${data.user.lastName}`.trim()
+          : data.user.email,
+        email: data.user.email,
+        avatar: data.user.profilePicture || "",
+        role: data.user.role,
+        phone: data.user.phone || ""
+      }));
+
+      setShowSuccessMessage(true);
+      showSuccessNotification(
+        "Login Successful",
+        `Welcome back, ${data.user.firstName || data.user.email}! Redirecting to dashboard...`,
+        2000
+      );
+      
+      // Navigate immediately with replace to prevent blink
       setTimeout(() => {
         switch (data.user.role) {
           case "admin":
-            navigate("/dashboard");
+            navigate("/dashboard", { replace: true });
             break;
           default:
-            navigate("/");
+            navigate("/", { replace: true });
         }
-      }, 200);
+      }, 100);
     } catch (error) {
-      // Only increment attempts if credentials are actually invalid
-      if (
-        error.message &&
-        (error.message.toLowerCase().includes("invalid credentials") ||
-          error.message.toLowerCase().includes("user not found"))
-      ) {
+      // Extract error message from response
+      const errorMessage = error.response?.data?.message || error.message || "Login failed";
+      const errorStatus = error.response?.status;
+      const validationErrors = error.response?.data?.errors;
+
+      // Handle validation errors
+      if (validationErrors && Array.isArray(validationErrors)) {
+        const fieldErrors = {};
+        validationErrors.forEach(err => {
+          fieldErrors[err.field] = err.message;
+        });
+        setErrors(fieldErrors);
+        showError(
+          "Validation Error",
+          "Please check your input and try again.",
+          4000
+        );
+        return;
+      }
+
+      // Only increment attempts if credentials are actually invalid (401 or 404)
+      const isAuthenticationError = (errorStatus === 401 || errorStatus === 404) &&
+        (errorMessage.toLowerCase().includes("invalid credentials") ||
+         errorMessage.toLowerCase().includes("user not found") ||
+         errorMessage.toLowerCase().includes("invalid email"));
+
+      if (isAuthenticationError) {
         const newAttempts = loginAttempts + 1;
         setLoginAttempts(newAttempts);
 
@@ -183,8 +380,10 @@ export default function Login() {
           setErrors({
             general: `Too many failed attempts. Account locked for 60 seconds.`,
           });
-          toast.error(
-            `Too many failed attempts. Account locked for 60 seconds.`
+          showError(
+            "Account Locked",
+            "Too many failed login attempts. Your account is locked for 60 seconds.",
+            5000
           );
         } else {
           setErrors({
@@ -192,32 +391,39 @@ export default function Login() {
               maxLoginAttempts - newAttempts
             } attempts remaining.`,
           });
-          toast.error(
-            `Invalid credentials. ${
-              maxLoginAttempts - newAttempts
-            } attempts remaining.`
+          showError(
+            "Invalid Credentials",
+            `Invalid email or password. ${maxLoginAttempts - newAttempts} attempts remaining.`,
+            4000
           );
         }
       } else {
+        // Handle other errors (network, server, etc.)
         setErrors({
-          general: error.message || "Login failed. Please try again.",
+          general: errorMessage || "Login failed. Please try again.",
         });
-        toast.error(error.message || "Login failed. Please try again.");
+        showError(
+          "Login Failed",
+          errorMessage || "Unable to log in. Please check your connection and try again.",
+          4000
+        );
       }
     }
   };
 
-  // Redirect if already authenticated (move to useEffect)
+  const reduxAuth = useSelector((state) => state.auth.isAuthenticated);
+
+  // Redirect if already authenticated (check both useAuthCheck and Redux)
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if ((!isLoading && isAuthenticated) || reduxAuth) {
       if (window.location.pathname !== "/dashboard") {
         navigate("/dashboard", { replace: true });
       }
     }
-  }, [isLoading, isAuthenticated, navigate]);
+  }, [isLoading, isAuthenticated, reduxAuth, navigate]);
 
   // Prevent rendering login form if already authenticated
-  if (!isLoading && isAuthenticated) {
+  if ((!isLoading && isAuthenticated) || reduxAuth) {
     return null;
   }
 
@@ -237,110 +443,70 @@ export default function Login() {
           : "bg-gradient-to-br from-gray-50 via-white to-blue-50"
       }`}
     >
-      <Toaster
-        position="top-center"
-        reverseOrder={false}
-        toastOptions={{
-          style: {
-            fontFamily: "inherit",
-            borderRadius: "12px",
-            fontWeight: 500,
-            boxShadow:
-              "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-          },
-          success: {
-            style: {
-              color: "#16a34a",
-              background: "#f0fdf4",
-              border: "1px solid #bbf7d0",
-            },
-            iconTheme: {
-              primary: "#16a34a",
-              secondary: "#f0fdf4",
-            },
-          },
-          error: {
-            style: {
-              color: "#dc2626",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-            },
-            iconTheme: {
-              primary: "#dc2626",
-              secondary: "#fef2f2",
-            },
-          },
-        }}
-      />
-      {/* Compact Header */}
+      {/* Enhanced Header */}
       <header className="flex-shrink-0 relative z-10">
         <div
-          className={`flex items-center justify-between p-3 sm:p-4 ${
+          className={`flex items-center justify-between px-6 py-4 ${
             theme === "dark"
-              ? "bg-white-800/80 backdrop-blur-md border-b border-gray-700/50"
-              : "bg-white/80 backdrop-blur-md border-b border-gray-200/50"
+              ? "bg-gray-900/95 backdrop-blur-md border-b border-gray-700/50"
+              : "bg-white/95 backdrop-blur-md border-b border-gray-200/50"
           }`}
         >
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
-                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-              </div>
-              <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full border border-white"></div>
-            </div>
+          <div className="flex items-center gap-3">
+            <Logo size="small" showText={false} showStatus={true} />
             <div>
-              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-300">
-                Stock
-                <span className="text-blue-600 dark:text-blue-400">Pilot</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent dark:from-blue-400 dark:to-blue-200">
+                {appName}
               </span>
-              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium hidden sm:block">
-                Inventory Management
+              <div className="text-sm text-gray-600 dark:text-gray-400 font-medium hidden sm:block">
+                Business Management Platform
               </div>
             </div>
           </div>
 
-          {/* Status Indicator */}
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-xs font-medium text-green-700 dark:text-green-400">
-              Online
+          {/* Enhanced Status Indicator */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-full border border-green-200 dark:border-green-800">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+              System Online
             </span>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex min-h-0">
-        {/* Left Side - Compact Login Form */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
-          <div className="w-full max-w-xs sm:max-w-sm">
-            {/* Compact Form Container */}
+      <div className="flex-1 flex min-h-0 overflow-y-auto">
+        {/* Left Side - Enhanced Login Form */}
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 min-h-full">
+          <div className="w-full max-w-md my-8">
+            {/* Enhanced Form Container */}
             <div
-              className={`relative p-4 sm:p-6 rounded-2xl shadow-xl ${
+              className={`relative p-6 sm:p-8 rounded-3xl shadow-2xl ${
                 theme === "dark"
-                  ? "bg-gray-800/90 backdrop-blur-md border border-gray-700/50"
-                  : "bg-white/90 backdrop-blur-md border border-gray-200/50"
+                  ? "bg-gray-800/95 backdrop-blur-md border border-gray-700/50"
+                  : "bg-white/95 backdrop-blur-md border border-gray-200/50"
               }`}
             >
-              {/* Decorative Elements */}
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full opacity-20"></div>
-              <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full opacity-20"></div>
+              {/* Enhanced Decorative Elements */}
+              <div className="absolute -top-3 -right-3 w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full opacity-30 animate-pulse"></div>
+              <div className="absolute -bottom-3 -left-3 w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full opacity-30 animate-pulse delay-1000"></div>
+              <div className="absolute top-1/2 -right-2 w-4 h-4 bg-gradient-to-br from-green-500 to-green-600 rounded-full opacity-20 animate-pulse delay-500"></div>
 
               <div className="relative z-10">
-                {/* Compact Header */}
-                <div className="text-center mb-4 sm:mb-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3 shadow-lg">
-                    <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                {/* Enhanced Header */}
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg ring-2 ring-blue-100 dark:ring-blue-900/30">
+                    <Shield className="h-7 w-7 text-white" />
                   </div>
                   <h1
-                    className={`text-xl sm:text-2xl font-bold mb-1 ${
+                    className={`text-2xl font-bold mb-1 ${
                       theme === "dark" ? "text-white" : "text-gray-900"
                     }`}
                   >
                     Welcome Back
                   </h1>
                   <p
-                    className={`text-xs sm:text-sm ${
+                    className={`text-sm ${
                       theme === "dark" ? "text-gray-400" : "text-gray-600"
                     }`}
                   >
@@ -352,6 +518,7 @@ export default function Login() {
                 <LoginForm
                   formData={formData}
                   onInputChange={handleInputChange}
+                  onInputBlur={handleInputBlur}
                   onSubmit={handleSubmit}
                   onRememberMeChange={handleRememberMeChange}
                   onForgotPasswordClick={() => handleOpenForgotPassword()}
@@ -359,25 +526,18 @@ export default function Login() {
                   isLoading={isLoading}
                   isLocked={isLocked}
                   lockoutTime={lockoutTime}
-                  showSuccess={showSuccess}
+                  showSuccess={showSuccessMessage}
                   maxLoginAttempts={maxLoginAttempts}
                   loginAttempts={loginAttempts}
                 />
 
-                {/* Compact Footer */}
-                <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
+                {/* Enhanced Footer */}
+                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="text-center">
-                    <p
-                      className={`text-xs ${
-                        theme === "dark" ? "text-gray-500" : "text-gray-600"
-                      }`}
-                    >
-                      Protected by enterprise security
-                    </p>
-                    <div className="flex items-center justify-center gap-1 mt-1">
-                      <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                      <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
-                      <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse delay-300"></div>
+                      <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse delay-700"></div>
                     </div>
                   </div>
                 </div>
@@ -386,39 +546,40 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Right Side - Compact Hero Section */}
+        {/* Right Side - Enhanced Hero Section */}
         <div className="hidden lg:flex flex-1 relative overflow-hidden">
-          {/* Background */}
+          {/* Enhanced Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900">
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center opacity-80"></div>
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-blue-800/60 to-indigo-900/80"></div>
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center opacity-70"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 via-blue-800/70 to-indigo-900/90"></div>
           </div>
 
-          {/* Animated Background Elements */}
+          {/* Enhanced Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-16 left-16 w-24 h-24 bg-blue-500/10 rounded-full blur-xl animate-pulse"></div>
-            <div className="absolute bottom-16 right-16 w-32 h-32 bg-purple-500/10 rounded-full blur-xl animate-pulse delay-1000"></div>
-            <div className="absolute top-1/2 left-1/3 w-20 h-20 bg-indigo-500/10 rounded-full blur-xl animate-pulse delay-500"></div>
+            <div className="absolute top-20 left-20 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl animate-pulse"></div>
+            <div className="absolute bottom-20 right-20 w-40 h-40 bg-purple-500/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
+            <div className="absolute top-1/2 left-1/3 w-28 h-28 bg-indigo-500/20 rounded-full blur-2xl animate-pulse delay-500"></div>
+            <div className="absolute top-1/4 right-1/4 w-24 h-24 bg-green-500/15 rounded-full blur-xl animate-pulse delay-700"></div>
           </div>
 
-          {/* Compact Content */}
+          {/* Enhanced Content */}
           <div className="relative z-10 flex items-center justify-center w-full">
-            <div className="text-center max-w-md mx-auto px-6 py-8">
-              {/* Compact Icon */}
+            <div className="text-center max-w-lg mx-auto px-6 py-8">
+              {/* Enhanced Icon */}
               <div className="mb-6 relative">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xl">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xl ring-2 ring-blue-400/30">
                   <Star className="h-8 w-8 text-white" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                  <Zap className="h-2.5 w-2.5 text-white" />
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                  <Zap className="h-3 w-3 text-white" />
                 </div>
-                <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center">
-                  <TrendingUp className="h-2 w-2 text-white" />
+                <div className="absolute -bottom-2 -left-2 w-5 h-5 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-lg">
+                  <TrendingUp className="h-2.5 w-2.5 text-white" />
                 </div>
               </div>
 
-              {/* Compact Text */}
-              <h2 className="text-3xl font-bold mb-3 text-white drop-shadow-lg">
+              {/* Enhanced Text */}
+              <h2 className="text-3xl font-bold mb-3 text-white drop-shadow-2xl">
                 <span className="bg-gradient-to-r from-blue-300 to-blue-100 bg-clip-text text-transparent">
                   Smart Inventory
                 </span>
@@ -431,23 +592,31 @@ export default function Login() {
                 analytics platform.
               </p>
 
-              {/* Compact Stats */}
+              {/* Enhanced Stats */}
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="text-center">
-                  <div className="text-xl font-bold text-white mb-1">10K+</div>
-                  <div className="text-xs text-blue-200">Users</div>
+                  <div className="text-xl font-bold text-white mb-1">
+                    {statsLoading ? '...' : (publicStats.totalUsers > 0 ? `${publicStats.totalUsers}+` : 'New')}
+                  </div>
+                  <div className="text-xs text-blue-200 font-medium">
+                    {statsLoading ? 'Loading...' : (publicStats.totalUsers > 0 ? 'Users' : 'Platform')}
+                  </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-bold text-white mb-1">99.9%</div>
-                  <div className="text-xs text-blue-200">Uptime</div>
+                  <div className="text-xl font-bold text-white mb-1">
+                    {statsLoading ? '...' : `${publicStats.uptimePercentage}%`}
+                  </div>
+                  <div className="text-xs text-blue-200 font-medium">Uptime</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-bold text-white mb-1">24/7</div>
-                  <div className="text-xs text-blue-200">Support</div>
+                  <div className="text-xl font-bold text-white mb-1">
+                    {statsLoading ? '...' : (publicStats.supportAvailable ? '24/7' : 'Limited')}
+                  </div>
+                  <div className="text-xs text-blue-200 font-medium">Support</div>
                 </div>
               </div>
 
-              {/* Compact User Avatars */}
+              {/* Enhanced User Avatars */}
               <div className="flex items-center justify-center gap-2 mb-3">
                 <div className="flex -space-x-2">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 border-2 border-blue-900 flex items-center justify-center shadow-lg">
@@ -462,94 +631,86 @@ export default function Login() {
               </div>
 
               <p className="text-blue-200 text-xs font-medium">
-                Join <span className="font-bold text-white">10,000+</span>{" "}
-                businesses managing inventory efficiently
+                {statsLoading ? 'Loading...' : (publicStats.totalUsers > 0 ? 
+                  `Join ${publicStats.totalUsers}+ businesses managing inventory efficiently` :
+                  'Be among the first to streamline your inventory management'
+                )}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Compact Footer */}
+      {/* Enhanced Footer */}
       <footer className="flex-shrink-0 relative z-10">
         <div
           className={`${
             theme === "dark"
-              ? "bg-gray-900/90 backdrop-blur-md border-t border-gray-800/50"
-              : "bg-gray-900/90 backdrop-blur-md border-t border-gray-800/50"
-          } py-3 sm:py-4`}
+              ? "bg-gray-900/95 backdrop-blur-md border-t border-gray-800/50"
+              : "bg-gray-900/95 backdrop-blur-md border-t border-gray-800/50"
+          } py-4 sm:py-6`}
         >
-          <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <Package className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
-              </div>
+          <div className="container mx-auto px-6 sm:px-8 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Logo size="small" showText={false} showStatus={false} />
               <div>
-                <span className="text-sm sm:text-base font-semibold text-white">
-                  Stock<span className="text-blue-400">Pilot</span>
+                <span className="text-base sm:text-lg font-bold text-white">
+                  {appName.split(' ')[0]}<span className="text-blue-400">{appName.split(' ').slice(1).join(' ')}</span>
                 </span>
-                <div className="text-xs text-gray-400 hidden sm:block">
+                <div className="text-sm text-gray-400 hidden sm:block">
                   v2.1.0
                 </div>
               </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-4 text-xs text-gray-400">
-              <a
-                href="#"
-                className="hover:text-white transition-colors duration-200 font-medium"
-              >
-                About
-              </a>
-              <a
-                href="#"
-                className="hover:text-white transition-colors duration-200 font-medium"
-              >
-                Privacy
-              </a>
-              <a
-                href="#"
-                className="hover:text-white transition-colors duration-200 font-medium"
-              >
-                Terms
-              </a>
-            </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {/* LinkedIn Icon */}
               <a
-                href="#"
-                className="text-gray-400 hover:text-white transition-colors duration-200 p-1.5 rounded-lg hover:bg-gray-800/50"
+                href="https://www.linkedin.com/in/zekariastamiru"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-lg hover:bg-gray-800/50"
+                title="Connect on LinkedIn"
               >
                 <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
-                </svg>
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-white transition-colors duration-200 p-1.5 rounded-lg hover:bg-gray-800/50"
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z" />
-                </svg>
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-white transition-colors duration-200 p-1.5 rounded-lg hover:bg-gray-800/50"
-              >
-                <svg
-                  className="h-4 w-4"
+                  className="h-5 w-5"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                </svg>
+              </a>
+              
+              {/* Email Icon */}
+              <a
+                href="mailto:zekariastamiru12@gmail.com"
+                className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-lg hover:bg-gray-800/50"
+                title="Send Email"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+                </svg>
+              </a>
+              
+              {/* GitHub Icon */}
+              <a
+                href="https://github.com/zacktam12"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-lg hover:bg-gray-800/50"
+                title="View GitHub Profile"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
                 </svg>
               </a>
             </div>

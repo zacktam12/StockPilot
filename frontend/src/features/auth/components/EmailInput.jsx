@@ -7,6 +7,7 @@ import { useTheme } from "../../../components/ThemeProvider";
 export default function EmailInput({
   value,
   onChange,
+  onBlur,
   error,
   disabled = false,
 }) {
@@ -23,11 +24,11 @@ export default function EmailInput({
         Email Address
       </label>
       <div className="relative group">
-        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
+        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
           <Mail
-            className={`h-5 w-5 ${
+            className={`h-4 w-4 ${
               theme === "dark" ? "text-gray-400" : "text-gray-500"
-            } group-focus-within:text-blue-500 transition-colors duration-200`}
+            }`}
           />
         </div>
         <Input
@@ -37,16 +38,17 @@ export default function EmailInput({
           placeholder="Enter your email address"
           value={value}
           onChange={onChange}
-          className={`w-full h-12 pl-12 pr-4 text-sm rounded-xl border-2 transition-all duration-200 ${
+          onBlur={onBlur}
+          className={`w-full h-12 pl-[52px] pr-4 text-sm rounded-xl border ${
             theme === "dark"
-              ? "bg-gray-700/50 text-white placeholder:text-gray-400 border-gray-600 focus:border-blue-500 focus:bg-gray-700/70"
-              : "bg-gray-50 text-gray-900 placeholder:text-gray-500 border-gray-200 focus:border-blue-500 focus:bg-white focus:shadow-lg"
-          } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+              ? "bg-gray-700/50 text-white placeholder:text-gray-300 border-gray-600 focus:border-gray-600 focus:bg-gray-700/50"
+              : "bg-gray-50 text-gray-900 placeholder:text-gray-400 border-gray-200 focus:border-gray-200 focus:bg-gray-50"
+          } focus:outline-none`}
           disabled={disabled}
         />
         {error && (
-          <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <AlertCircle className="h-4 w-4 text-red-500" />
           </div>
         )}
       </div>

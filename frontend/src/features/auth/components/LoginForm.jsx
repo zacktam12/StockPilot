@@ -11,6 +11,7 @@ import { useTheme } from "../../../components/ThemeProvider";
 export default function LoginForm({
   formData,
   onInputChange,
+  onInputBlur,
   onSubmit,
   onRememberMeChange,
   onForgotPasswordClick,
@@ -25,7 +26,7 @@ export default function LoginForm({
   const { theme } = useTheme();
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-6">
       <LoginNotice
         type="success"
         message="Login successful! Redirecting..."
@@ -40,17 +41,18 @@ export default function LoginForm({
         typeof maxLoginAttempts === "number" &&
         typeof loginAttempts === "number" &&
         loginAttempts > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-xs text-yellow-800 mb-2">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-800 mb-4">
             {`You have ${maxLoginAttempts - loginAttempts} login attempt${
               maxLoginAttempts - loginAttempts === 1 ? "" : "s"
             } remaining.`}
           </div>
         )}
 
-      <form onSubmit={onSubmit} className="space-y-3 sm:space-y-4">
+      <form onSubmit={onSubmit} className="space-y-6">
         <EmailInput
           value={formData.email}
           onChange={onInputChange}
+          onBlur={onInputBlur}
           error={errors.email}
           disabled={isLoading || isLocked}
         />
@@ -115,46 +117,6 @@ export default function LoginForm({
         </Button>
       </form>
 
-      {/* Compact Security Notice */}
-      <div
-        className={`mt-3 sm:mt-4 p-2.5 sm:p-3 rounded-lg border ${
-          theme === "dark"
-            ? "bg-gray-800/50 border-gray-700/50"
-            : "bg-blue-50/50 border-blue-200/50"
-        }`}
-      >
-        <div className="flex items-start gap-2">
-          <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-            <svg
-              className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-blue-600 dark:text-blue-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div>
-            <p
-              className={`text-xs font-medium ${
-                theme === "dark" ? "text-blue-300" : "text-blue-700"
-              }`}
-            >
-              Secure Connection
-            </p>
-            <p
-              className={`text-xs ${
-                theme === "dark" ? "text-gray-400" : "text-blue-600"
-              } mt-0.5`}
-            >
-              Your data is encrypted and protected
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

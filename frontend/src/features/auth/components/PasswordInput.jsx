@@ -25,11 +25,11 @@ export default function PasswordInput({
         Password
       </label>
       <div className="relative group">
-        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
+        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
           <Lock
-            className={`h-5 w-5 ${
+            className={`h-4 w-4 ${
               theme === "dark" ? "text-gray-400" : "text-gray-500"
-            } group-focus-within:text-blue-500 transition-colors duration-200`}
+            }`}
           />
         </div>
         <Input
@@ -39,20 +39,20 @@ export default function PasswordInput({
           placeholder="Enter your password"
           value={value}
           onChange={onChange}
-          className={`w-full h-12 pl-12 pr-12 text-sm rounded-xl border-2 transition-all duration-200 ${
+          className={`w-full h-12 pl-[52px] pr-12 text-sm rounded-xl border ${
             theme === "dark"
-              ? "bg-gray-700/50 text-white placeholder:text-gray-400 border-gray-600 focus:border-blue-500 focus:bg-gray-700/70"
-              : "bg-gray-50 text-gray-900 placeholder:text-gray-500 border-gray-200 focus:border-blue-500 focus:bg-white focus:shadow-lg"
-          } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+              ? "bg-gray-700/50 text-white placeholder:text-gray-300 border-gray-600 focus:border-gray-600 focus:bg-gray-700/50"
+              : "bg-gray-50 text-gray-900 placeholder:text-gray-400 border-gray-200 focus:border-gray-200 focus:bg-gray-50"
+          } focus:outline-none`}
           disabled={disabled}
         />
         <button
           type="button"
-          className={`absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all duration-200 ${
+          className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg ${
             theme === "dark"
-              ? "text-gray-400 hover:text-gray-200 hover:bg-gray-600/50"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-          } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+              ? "text-gray-400"
+              : "text-gray-500"
+          }`}
           onClick={() => setShowPassword(!showPassword)}
           disabled={disabled}
         >
@@ -64,7 +64,7 @@ export default function PasswordInput({
         </button>
         {error && (
           <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
+            <AlertCircle className="h-4 w-4 text-red-500" />
           </div>
         )}
       </div>
