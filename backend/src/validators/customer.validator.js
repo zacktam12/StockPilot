@@ -1,6 +1,7 @@
 const Joi = require("joi");
 
-// Enhanced customer validation schema with comprehensive validation
+// Customer validation schema matching the Prisma database schema
+// Database fields: id, name, email, phone, address, createdAt
 const createCustomerSchema = Joi.object({
   name: Joi.string()
     .trim()
@@ -11,24 +12,27 @@ const createCustomerSchema = Joi.object({
     .messages({
       'string.pattern.base': 'Name can only contain letters, spaces, hyphens, apostrophes, and periods',
       'string.min': 'Name must be at least 2 characters long',
-      'string.max': 'Name cannot exceed 100 characters'
+      'string.max': 'Name cannot exceed 100 characters',
+      'any.required': 'Name is required'
     }),
   
   email: Joi.string()
     .trim()
     .email({ tlds: { allow: false } })
     .max(255)
-    .allow(null).allow("")
+    .required()
     .messages({
       'string.email': 'Please enter a valid email address',
-      'string.max': 'Email cannot exceed 255 characters'
+      'string.max': 'Email cannot exceed 255 characters',
+      'any.required': 'Email is required'
     }),
   
   phone: Joi.string()
     .trim()
     .pattern(/^[\+]?[1-9][\d]{0,15}$/)
     .max(20)
-    .allow(null).allow("")
+    .allow(null, "")
+    .optional()
     .messages({
       'string.pattern.base': 'Please enter a valid phone number (international format supported)',
       'string.max': 'Phone number cannot exceed 20 characters'
@@ -37,107 +41,11 @@ const createCustomerSchema = Joi.object({
   address: Joi.string()
     .trim()
     .max(500)
-    .allow(null).allow("")
+    .allow(null, "")
+    .optional()
     .messages({
       'string.max': 'Address cannot exceed 500 characters'
-    }),
-  
-  company: Joi.string()
-    .trim()
-    .max(100)
-    .allow(null).allow("")
-    .messages({
-      'string.max': 'Company name cannot exceed 100 characters'
-    }),
-  
-  city: Joi.string()
-    .trim()
-    .max(50)
-    .allow(null).allow("")
-    .messages({
-      'string.max': 'City name cannot exceed 50 characters'
-    }),
-  
-  state: Joi.string()
-    .trim()
-    .max(50)
-    .allow(null).allow("")
-    .messages({
-      'string.max': 'State name cannot exceed 50 characters'
-    }),
-  
-  zipCode: Joi.string()
-    .trim()
-    .pattern(/^[0-9]{5}(-[0-9]{4})?$/)
-    .allow(null).allow("")
-    .messages({
-      'string.pattern.base': 'ZIP code must be in format 12345 or 12345-6789'
-    }),
-  
-  country: Joi.string()
-    .trim()
-    .max(50)
-    .allow(null).allow("")
-    .messages({
-      'string.max': 'Country name cannot exceed 50 characters'
-    }),
-  
-  status: Joi.string()
-    .valid('active', 'inactive', 'blocked')
-    .default('active'),
-  
-  customerType: Joi.string()
-    .valid('individual', 'business', 'wholesale')
-    .default('individual'),
-  
-  creditLimit: Joi.number()
-    .min(0)
-    .max(999999.99)
-    .precision(2)
-    .allow(null).allow("")
-    .messages({
-      'number.min': 'Credit limit cannot be negative',
-      'number.max': 'Credit limit cannot exceed $999,999.99'
-    }),
-  
-  taxId: Joi.string()
-    .trim()
-    .pattern(/^[0-9\-]+$/)
-    .max(20)
-    .allow(null).allow("")
-    .messages({
-      'string.pattern.base': 'Tax ID can only contain numbers and hyphens'
-    }),
-  
-  dateOfBirth: Joi.date()
-    .max('now')
-    .allow(null).allow("")
-    .messages({
-      'date.max': 'Date of birth cannot be in the future'
-    }),
-  
-  notes: Joi.string()
-    .trim()
-    .max(1000)
-    .allow(null).allow("")
-    .messages({
-      'string.max': 'Notes cannot exceed 1000 characters'
-    }),
-  
-  tags: Joi.array()
-    .items(Joi.string().trim().max(50))
-    .max(10)
-    .allow(null).optional()
-    .messages({
-      'array.max': 'Cannot have more than 10 tags'
-    }),
-  
-  preferences: Joi.object({
-    newsletter: Joi.boolean().default(false),
-    smsNotifications: Joi.boolean().default(false),
-    emailNotifications: Joi.boolean().default(true),
-    preferredContactMethod: Joi.string().valid('email', 'phone', 'sms').default('email')
-  }).allow(null)
+    })
 });
 
 // Update schema with same validation as create but all fields optional
@@ -152,12 +60,19 @@ const sanitizeInput = (data) => {
   for (const [key, value] of Object.entries(data)) {
     if (typeof value === 'string') {
       // Remove potential XSS attempts and normalize whitespace
-      sanitized[key] = value
+      let sanitizedValue = value
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
         .replace(/javascript:/gi, '')
         .replace(/on\w+\s*=/gi, '')
         .trim()
         .replace(/\s+/g, ' ');
+      
+      // Convert email to lowercase for consistent storage
+      if (key === 'email') {
+        sanitizedValue = sanitizedValue.toLowerCase();
+      }
+      
+      sanitized[key] = sanitizedValue;
     } else if (Array.isArray(value)) {
       // Sanitize array items
       sanitized[key] = value.map(item => 
@@ -203,7 +118,6 @@ const validateCreateCustomer = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Customer validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -268,15 +182,17 @@ const validateCustomerId = (req, res, next) => {
 const validateEmailUniqueness = async (req, res, next) => {
   try {
     const { email } = req.body;
-    if (!email) return next();
+    
+    if (!email) {
+      return next();
+    }
     
     const { PrismaClient } = require("@prisma/client");
     const prisma = new PrismaClient();
     
     const existingCustomer = await prisma.customer.findFirst({
       where: { 
-        email: email.toLowerCase(),
-        isDeleted: false
+        email: email.toLowerCase()
       }
     });
     
@@ -291,7 +207,6 @@ const validateEmailUniqueness = async (req, res, next) => {
     await prisma.$disconnect();
     next();
   } catch (error) {
-    console.error('Email validation error:', error);
     next();
   }
 };

@@ -76,114 +76,30 @@ const registerSchema = Joi.object({
     }),
   
   status: Joi.string()
-    .valid('Active', 'Inactive', 'Deactivated', 'Banned', 'Pending')
+    .valid('Active', 'Inactive', 'Deactivated', 'Banned')
     .default('Active')
     .messages({
-      'any.only': 'Status must be one of: Active, Inactive, Deactivated, Banned, Pending'
-    }),
+      'any.only': 'Status must be one of: Active, Inactive, Deactivated, Banned'
+    })
   
-  department: Joi.string()
-    .trim()
-    .max(100)
-    .optional()
-    .messages({
-      'string.max': 'Department cannot exceed 100 characters'
-    }),
+  // Removed fields that don't exist in Prisma schema:
+  // - department
+  // - position
+  // - hireDate
+  // - salary
+  // - address
+  // - emergencyContact
+  // - notes
+  // - permissions
   
-  position: Joi.string()
-    .trim()
-    .max(100)
-    .optional()
-    .messages({
-      'string.max': 'Position cannot exceed 100 characters'
-    }),
-  
-  hireDate: Joi.date()
-    .max('now')
-    .optional()
-    .messages({
-      'date.max': 'Hire date cannot be in the future'
-    }),
-  
-  salary: Joi.number()
-    .min(0)
-    .max(999999.99)
-    .precision(2)
-    .optional()
-    .messages({
-      'number.min': 'Salary cannot be negative',
-      'number.max': 'Salary cannot exceed $999,999.99'
-    }),
-  
-  address: Joi.object({
-    street: Joi.string().trim().max(200).optional(),
-    city: Joi.string().trim().max(50).optional(),
-    state: Joi.string().trim().max(50).optional(),
-    zipCode: Joi.string().trim().max(20).optional(),
-    country: Joi.string().trim().max(50).optional()
-  }).optional(),
-  
-  emergencyContact: Joi.object({
-    name: Joi.string().trim().max(100).optional(),
-    relationship: Joi.string().trim().max(50).optional(),
-    phone: Joi.string().trim().pattern(/^[+]?[\d\s\-\(\)]{10,20}$/).optional()
-  }).optional(),
-  
-  notes: Joi.string()
-    .trim()
-    .max(1000)
-    .optional()
-    .messages({
-      'string.max': 'Notes cannot exceed 1000 characters'
-    }),
-  
-  permissions: Joi.array()
-    .items(Joi.string().trim().max(50))
-    .max(20)
-    .optional()
-    .messages({
-      'array.max': 'Cannot have more than 20 permissions'
-    }),
-  
-  isEmailVerified: Joi.boolean()
-    .default(false),
-  
-  emailVerificationToken: Joi.string()
-    .trim()
-    .max(255)
-    .optional(),
-  
-  passwordResetToken: Joi.string()
-    .trim()
-    .max(255)
-    .optional(),
-  
-  passwordResetExpires: Joi.date()
-    .optional(),
-  
-  lastLoginAt: Joi.date()
-    .optional(),
-  
-  failedLoginAttempts: Joi.number()
-    .integer()
-    .min(0)
-    .max(10)
-    .default(0)
-    .messages({
-      'number.min': 'Failed login attempts cannot be negative',
-      'number.max': 'Failed login attempts cannot exceed 10'
-    }),
-  
-  lockUntil: Joi.date()
-    .optional(),
-  
-  twoFactorEnabled: Joi.boolean()
-    .default(false),
-  
-  twoFactorSecret: Joi.string()
-    .trim()
-    .max(255)
-    .optional()
+  // Removed fields that don't exist in Prisma schema:
+  // - isEmailVerified
+  // - emailVerificationToken  
+  // - passwordResetToken (use resetToken instead)
+  // - passwordResetExpires (use resetTokenExpiry instead)
+  // - twoFactorEnabled
+  // - twoFactorSecret
+  // These fields were causing Prisma validation errors
 });
 
 const loginSchema = Joi.object({
@@ -215,9 +131,9 @@ const loginSchema = Joi.object({
     })
 });
 
-// Update schema with same validation as register but all fields optional and no password requirement
+// Update schema - email not editable, password and roleId optional
 const updateUserSchema = registerSchema.fork(
-  ['password', 'roleId'], // Keep password and roleId optional for updates
+  ['email', 'password', 'roleId'], // Make email, password and roleId optional for updates
   (schema) => schema.optional()
 );
 
@@ -362,6 +278,7 @@ const validateLogin = (req, res, next) => {
 
 const validateUpdateUser = (req, res, next) => {
   try {
+    
     // Sanitize input first
     req.body = sanitizeInput(req.body);
     
@@ -391,7 +308,8 @@ const validateUpdateUser = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('User update validation error:', err);
+    console.error('🔴 VALIDATOR - Exception:', err);
+    console.error('Error stack:', err.stack);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",

@@ -37,16 +37,6 @@ const createPurchaseSchema = Joi.object({
       'number.max': 'Discount cannot exceed $999,999.99'
     }),
   
-  discountPercentage: Joi.number()
-    .precision(2)
-    .min(0)
-    .max(100)
-    .optional()
-    .messages({
-      'number.min': 'Discount percentage cannot be negative',
-      'number.max': 'Discount percentage cannot exceed 100%'
-    }),
-  
   tax: Joi.number()
     .precision(2)
     .min(0)
@@ -55,16 +45,6 @@ const createPurchaseSchema = Joi.object({
     .messages({
       'number.min': 'Tax cannot be negative',
       'number.max': 'Tax cannot exceed $999,999.99'
-    }),
-  
-  taxPercentage: Joi.number()
-    .precision(2)
-    .min(0)
-    .max(50)
-    .optional()
-    .messages({
-      'number.min': 'Tax percentage cannot be negative',
-      'number.max': 'Tax percentage cannot exceed 50%'
     }),
   
   status: Joi.string()
@@ -88,50 +68,6 @@ const createPurchaseSchema = Joi.object({
     .optional()
     .messages({
       'string.max': 'PO number cannot exceed 50 characters'
-    }),
-  
-  expectedDeliveryDate: Joi.date()
-    .min('now')
-    .optional()
-    .messages({
-      'date.min': 'Expected delivery date cannot be in the past'
-    }),
-  
-  actualDeliveryDate: Joi.date()
-    .optional()
-    .messages({
-      'date.base': 'Actual delivery date must be a valid date'
-    }),
-  
-  shippingCost: Joi.number()
-    .precision(2)
-    .min(0)
-    .max(99999.99)
-    .optional()
-    .messages({
-      'number.min': 'Shipping cost cannot be negative',
-      'number.max': 'Shipping cost cannot exceed $99,999.99'
-    }),
-  
-  paymentTerms: Joi.string()
-    .valid('net_15', 'net_30', 'net_45', 'net_60', 'due_on_receipt', 'prepaid')
-    .optional()
-    .messages({
-      'any.only': 'Payment terms must be one of: net_15, net_30, net_45, net_60, due_on_receipt, prepaid'
-    }),
-  
-  paymentMethod: Joi.string()
-    .valid('cash', 'check', 'bank_transfer', 'credit_card', 'purchase_order')
-    .optional()
-    .messages({
-      'any.only': 'Payment method must be one of: cash, check, bank_transfer, credit_card, purchase_order'
-    }),
-  
-  priority: Joi.string()
-    .valid('low', 'medium', 'high', 'urgent')
-    .default('medium')
-    .messages({
-      'any.only': 'Priority must be one of: low, medium, high, urgent'
     }),
   
   items: Joi.array()
@@ -192,22 +128,6 @@ const createPurchaseSchema = Joi.object({
     .messages({
       'array.min': 'At least one item is required',
       'array.max': 'Cannot have more than 100 items in a single purchase'
-    }),
-  
-  tags: Joi.array()
-    .items(Joi.string().trim().max(50))
-    .max(10)
-    .optional()
-    .messages({
-      'array.max': 'Cannot have more than 10 tags'
-    }),
-  
-  attachments: Joi.array()
-    .items(Joi.string().uri())
-    .max(5)
-    .optional()
-    .messages({
-      'array.max': 'Cannot have more than 5 attachments'
     })
 });
 

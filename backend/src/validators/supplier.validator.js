@@ -51,16 +51,6 @@ const supplierSchema = Joi.object({
     .allow(null, "")
     .messages({
       'string.pattern.base': 'Company name can only contain letters, numbers, spaces, and basic punctuation'
-    }),
-  status: Joi.string()
-    .valid('active', 'inactive')
-    .default('active'),
-  notes: Joi.string()
-    .trim()
-    .max(500)
-    .allow(null, "")
-    .messages({
-      'string.max': 'Notes cannot exceed 500 characters'
     })
 });
 
@@ -154,14 +144,14 @@ const validateUpdateSupplier = (req, res, next) => {
 const validateSupplierId = (req, res, next) => {
   const { id } = req.params;
   
-  if (!id || !/^\d+$/.test(id)) {
+  // UUID format validation (consistent with other validators)
+  if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
     return res.status(400).json({
       success: false,
       message: "Invalid supplier ID",
     });
   }
   
-  req.params.id = parseInt(id);
   next();
 };
 
