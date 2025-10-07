@@ -31,6 +31,7 @@ const dashboardRoutes = require("./routes/dashboard.routes");
 const customerRoutes = require("./routes/customer.routes");
 const reportsRoutes = require("./routes/reports.routes");
 const notificationRoutes = require("./routes/notification.routes");
+const emailRoutes = require("./routes/email.routes");
 
 // Initialize app and database
 const app = express();
@@ -79,8 +80,10 @@ app.get("/health", async (req, res) => {
   }
 });
 
+// Auth routes (public - no authentication required)
 app.use("/api/auth", authRoutes);
 
+// Test routes (public)
 app.get("/protected", authenticate, (req, res) => {
   res.json({ message: "You are authorized", user: req.user });
 });
@@ -89,7 +92,14 @@ app.get("/api/test-auth", authenticate, (req, res) => {
   res.json({ message: "Authenticated!", user: req.user });
 });
 
-// Auth routes (public)
+// Public test endpoint for reports
+app.get("/api/reports/test", (req, res) => {
+  res.json({
+    success: true,
+    message: "Reports API is working",
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Protected routes (everything below requires auth)
 app.use(authenticate);
@@ -109,6 +119,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/email", emailRoutes);
 
 // Error handling
 app.use(notFound);
