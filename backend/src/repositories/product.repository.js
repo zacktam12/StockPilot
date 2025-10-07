@@ -21,7 +21,6 @@ class ProductRepository extends BaseRepository {
   }
 
   async findActiveProducts(page = 1, limit = 5, filters = {}) {
-    console.log("findActiveProducts received filters:", filters);
     const {
       search,
       categoryId,
@@ -158,9 +157,6 @@ class ProductRepository extends BaseRepository {
       const dbField = fieldMapping[sortField] || sortField;
       orderBy[dbField] = sortOrder || "desc";
     }
-
-    console.log("Final where clause:", where);
-    console.log("Final orderBy:", orderBy);
 
     // If page or limit is undefined, fetch all products without pagination
     if (page === undefined || limit === undefined) {
