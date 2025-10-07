@@ -59,39 +59,43 @@ const CategoryTableRow = ({
           className="rounded-none border-gray-300 text-blue-600 focus:ring-gray-400"
         />
       </TableCell>
-      <TableCell className="flex-[2] pl-2 font-medium">
+      <TableCell className="min-w-[200px] pl-2 font-medium">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-indigo-100 text-indigo-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-md bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
             <Tag size={16} />
           </div>
-          <div>
-            <div className="font-medium text-gray-900">{category.name}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-gray-900 truncate">{category.name}</div>
             {category.slug && (
-              <div className="text-sm text-gray-500">
+              <div className="text-xs sm:text-sm text-gray-500 truncate">
                 Slug: {category.slug}
               </div>
             )}
           </div>
         </div>
       </TableCell>
-      <TableCell className="hidden md:table-cell flex-1 text-gray-900">
-        {category.description || "-"}
+      <TableCell className="min-w-[150px] text-gray-900">
+        <span className="truncate block">{category.description || "-"}</span>
       </TableCell>
-      <TableCell className="hidden lg:table-cell flex-1 text-gray-900">
-        {new Date(category.createdAt || category.created_at).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })}
+      <TableCell className="min-w-[100px] text-gray-900">
+        <span className="text-xs sm:text-sm">
+          {new Date(category.createdAt || category.created_at).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </span>
       </TableCell>
-      <TableCell className="hidden lg:table-cell flex-1 text-gray-900">
-        {new Date(category.updatedAt || category.updated_at).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })}
+      <TableCell className="min-w-[100px] text-gray-900">
+        <span className="text-xs sm:text-sm">
+          {new Date(category.updatedAt || category.updated_at).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </span>
       </TableCell>
-      <TableCell className="w-24">
+      <TableCell className="min-w-[80px]">
         <div className="relative flex justify-center" ref={dropdownRef} data-dropdown>
           <button
             onClick={toggleDropdown}

@@ -29,36 +29,29 @@ const CategoryTable = () => {
 
   // Handle pagination
   const handlePageChange = (page) => {
-    console.log('Changing page to:', page);
     dispatch(setCurrentPage(page));
   };
 
   // Debug pagination state
-  console.log('Category Pagination state:', {
-    currentPage,
-    totalPages,
-    totalItems,
-    itemsPerPage,
-    filteredItemsLength: filteredItems.length
-  });
-
   return (
-    <div className="bg-white rounded-lg border-0 shadow-sm overflow-x-auto">
-      <Table>
-        <CategoryTableHeader
-          selectAll={selectAll}
-          onToggleSelectAll={() => dispatch(toggleSelectAll())}
-        />
-        <CategoryTableBody
-          loading={loading}
-          items={items}
-          filteredItems={filteredItems}
-          selectedItems={selectedItems}
-          onToggleItemSelection={(id) => dispatch(toggleItemSelection(id))}
-          searchTerm={searchTerm}
-          onClearSearch={() => dispatch(setSearchTerm(""))}
-        />
-      </Table>
+    <div className="bg-white rounded-lg border-0 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <Table className="min-w-[600px] w-full">
+          <CategoryTableHeader
+            selectAll={selectAll}
+            onToggleSelectAll={() => dispatch(toggleSelectAll())}
+          />
+          <CategoryTableBody
+            loading={loading}
+            items={items}
+            filteredItems={filteredItems}
+            selectedItems={selectedItems}
+            onToggleItemSelection={(id) => dispatch(toggleItemSelection(id))}
+            searchTerm={searchTerm}
+            onClearSearch={() => dispatch(setSearchTerm(""))}
+          />
+        </Table>
+      </div>
     </div>
   );
 };
