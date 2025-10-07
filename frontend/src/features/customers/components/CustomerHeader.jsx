@@ -31,10 +31,10 @@ const CustomerHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
       const customersToExport = items.filter((customer) => 
         selectedItems.includes(customer.id)
       );
-      onExportCSV(customersToExport);
+      onExportCSV(selectedItems); // Pass IDs, not filtered items
     } else {
       // Export all items
-      onExportCSV(items);
+      onExportCSV(items.map(item => item.id)); // Pass IDs of all items
     }
     setIsActionsOpen(false);
   };
@@ -49,7 +49,6 @@ const CustomerHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
   const handleFileSelect = async (event) => {
     const selectedFile = event.target.files[0];
     if (!selectedFile) return;
-
     // Validate file type
     if (!selectedFile.name.endsWith(".csv")) {
       dispatch(showToast({ message: "Please select a valid CSV file", type: "error" }));
@@ -61,7 +60,6 @@ const CustomerHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
     try {
       const text = await selectedFile.text();
       const parsed = parseCSV(text);
-      
       // Validate the data
       const errors = validateCSVData(parsed.data, REQUIRED_CUSTOMER_CSV_FIELDS);
       if (errors.length > 0) {
@@ -75,7 +73,6 @@ const CustomerHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
       // Convert and import customers
       const customers = convertCSVToCustomers(parsed.data);
       const result = await dispatch(importCustomers(customers)).unwrap();
-      
       dispatch(showToast({ 
         message: `Successfully imported ${result.importedCount || customers.length} customers!`, 
         type: "success" 
@@ -98,13 +95,13 @@ const CustomerHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
   return (
     <div className="flex flex-col gap-4 mb-6">
       {/* Top row with title and create button */}
-      <div className="flex flex-row items-center justify-between gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
               <Users size={20} className="text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
               Customers
             </h1>
           </div>
@@ -118,7 +115,7 @@ const CustomerHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
             size="md"
             icon={<Plus size={18} />}
             onClick={() => dispatch(openCreateDrawer())}
-            className="px-4 py-3 rounded-lg flex items-center justify-center focus:outline-none focus:ring-0 focus:shadow-none active:shadow-none"
+            className="px-4 py-3 rounded-lg flex items-center justify-center focus:outline-none focus:ring-0 focus:shadow-none active:shadow-none w-full sm:w-auto"
             style={{
               backgroundColor: '#3b82f6',
               borderColor: '#3b82f6',
@@ -136,15 +133,16 @@ const CustomerHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
               e.currentTarget.style.borderColor = '#3b82f6';
             }}
           >
-            Create Customer
+            <span className="hidden sm:inline">Create Customer</span>
+            <span className="sm:hidden">Add Customer</span>
           </Button>
         </div>
       </div>
 
       {/* Bottom row with search and action buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center sm:justify-between">
         {/* Search bar */}
-        <div className="relative w-96">
+        <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-md">
           <Input
             placeholder="Search customers..."
             icon={<Search size={18} className="text-gray-400" />}
@@ -154,18 +152,20 @@ const CustomerHeader = ({ onExportCSV, searchTerm, onSearchChange }) => {
           />
         </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-2">
-          <CustomerFilters />
+        {/* Action buttons - mobile: 50% each, desktop: auto width on right */}
+        <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex-1 sm:flex-initial">
+            <CustomerFilters />
+          </div>
           
           {/* Actions Dropdown */}
-          <div className="relative" ref={actionsRef}>
+          <div className="relative flex-1 sm:flex-initial" ref={actionsRef}>
             <Button
               variant="outline"
               size="md"
               icon={<FileCog size={16} />}
               onClick={() => setIsActionsOpen(!isActionsOpen)}
-              className="px-4 py-3 rounded-lg border-blue-300 !text-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:!text-blue-700 transition-colors"
+              className="w-full px-4 py-3 rounded-lg border-blue-300 !text-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:!text-blue-700 transition-colors"
             >
               Actions
             </Button>

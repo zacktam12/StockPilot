@@ -51,19 +51,10 @@ const CustomerTable = () => {
 
   // Handle pagination
   const handlePageChange = (page) => {
-    console.log('Changing page to:', page);
     dispatch(setCurrentPage(page));
   };
 
   // Debug pagination state
-  console.log('Pagination state:', {
-    currentPage,
-    totalPages,
-    totalItems,
-    itemsPerPage,
-    itemsLength: items.length
-  });
-
   // Render status badge based on customer completeness
   const getStatusBadge = (customer) => {
     const hasEmail = customer.email && customer.email.trim() !== "";
@@ -80,24 +71,26 @@ const CustomerTable = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg border-0 shadow-sm overflow-x-auto">
-      <Table>
-        <CustomerTableHeader
-          selectAll={selectAll}
-          onToggleSelectAll={() => dispatch(toggleSelectAll())}
-          onSort={handleSort}
-          getSortIcon={getSortIcon}
-        />
-        <CustomerTableBody
-          loading={loading}
-          items={items}
-          selectedItems={selectedItems}
-          onToggleItemSelection={(id) => dispatch(toggleItemSelection(id))}
-          getStatusBadge={getStatusBadge}
-          searchTerm={searchTerm}
-          onClearSearch={() => dispatch(setSearchTerm(""))}
-        />
-      </Table>
+    <div className="bg-white rounded-lg border-0 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <Table className="min-w-[700px] w-full">
+          <CustomerTableHeader
+            selectAll={selectAll}
+            onToggleSelectAll={() => dispatch(toggleSelectAll())}
+            onSort={handleSort}
+            getSortIcon={getSortIcon}
+          />
+          <CustomerTableBody
+            loading={loading}
+            items={items}
+            selectedItems={selectedItems}
+            onToggleItemSelection={(id) => dispatch(toggleItemSelection(id))}
+            getStatusBadge={getStatusBadge}
+            searchTerm={searchTerm}
+            onClearSearch={() => dispatch(setSearchTerm(""))}
+          />
+        </Table>
+      </div>
     </div>
   );
 };

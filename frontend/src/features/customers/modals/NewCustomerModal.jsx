@@ -10,6 +10,13 @@ import {
 import Button from "../../../components/shared/Button";
 import Input from "../../../components/shared/Input";
 import { useOutsideClick } from "../../../hooks/useOutsideClick";
+import {
+  validateEmail,
+  validatePhone,
+  validateName,
+  sanitizeEmail,
+  sanitizePhone
+} from "../../../utils/authValidation";
 
 const NewCustomerModal = () => {
   const dispatch = useDispatch();
@@ -28,6 +35,7 @@ const NewCustomerModal = () => {
     phone: "",
     address: "",
   });
+  const [errors, setErrors] = useState({});
 
   // Initialize form when modal opens or editingCustomer changes
   useEffect(() => {
@@ -55,8 +63,104 @@ const NewCustomerModal = () => {
     }
   });
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Validate name
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    } else {
+      const nameValidation = validateName(formData.name.trim(), "Customer name");
+      if (!nameValidation.isValid && nameValidation.error) {
+        newErrors.name = nameValidation.error;
+      }
+    }
+
+    // Validate email
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else {
+      const emailValidation = validateEmail(formData.email.trim());
+      if (!emailValidation.isValid && emailValidation.error) {
+        newErrors.email = emailValidation.error;
+      }
+    }
+
+    // Validate phone (optional but must be valid if provided)
+    if (formData.phone) {
+      const phoneValidation = validatePhone(formData.phone);
+      if (!phoneValidation.isValid && phoneValidation.error) {
+        newErrors.phone = phoneValidation.error;
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field, value) => {
+    // Sanitize phone as user types
+    let sanitizedValue = value;
+    if (field === 'phone') {
+      sanitizedValue = sanitizePhone(value);
+    }
+    
+    setFormData({ ...formData, [field]: sanitizedValue });
+    
+    // Real-time validation
+    if (sanitizedValue) {
+      let validation = { isValid: true, error: null };
+      
+      switch (field) {
+        case 'name':
+          validation = validateName(sanitizedValue, "Customer name");
+          break;
+        case 'email':
+          validation = validateEmail(sanitizedValue);
+          break;
+        case 'phone':
+          validation = validatePhone(sanitizedValue);
+          break;
+        default:
+          break;
+      }
+      
+      if (!validation.isValid && validation.error) {
+        setErrors(prev => ({ ...prev, [field]: validation.error }));
+      } else {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    } else {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleEmailBlur = () => {
+    if (formData.email) {
+      const sanitized = sanitizeEmail(formData.email);
+      setFormData({ ...formData, email: sanitized });
+      
+      const validation = validateEmail(sanitized);
+      if (!validation.isValid && validation.error) {
+        setErrors(prev => ({ ...prev, email: validation.error }));
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
 
     try {
       if (isEdit) {
@@ -96,7 +200,9 @@ const NewCustomerModal = () => {
             label="Full Name"
             icon={<User size={18} />}
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            error={errors.name}
+            placeholder="John Doe"
             required
           />
 
@@ -105,9 +211,10 @@ const NewCustomerModal = () => {
             type="email"
             icon={<Mail size={18} />}
             value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
+            onChange={(e) => handleInputChange('email', e.target.value)}
+            onBlur={handleEmailBlur}
+            error={errors.email}
+            placeholder="customer@example.com"
             required
           />
 
@@ -116,9 +223,9 @@ const NewCustomerModal = () => {
             type="tel"
             icon={<Phone size={18} />}
             value={formData.phone}
-            onChange={(e) =>
-              setFormData({ ...formData, phone: e.target.value })
-            }
+            onChange={(e) => handleInputChange('phone', e.target.value)}
+            error={errors.phone}
+            placeholder="+1 (555) 123-4567"
           />
 
           <div>

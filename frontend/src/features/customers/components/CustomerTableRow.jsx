@@ -33,35 +33,35 @@ const CustomerTableRow = ({
           className="rounded-none border-gray-300 text-blue-600 focus:ring-gray-400"
         />
       </TableCell>
-      <TableCell className="flex-1 pl-2 font-medium">
+      <TableCell className="min-w-[200px] pl-2 font-medium">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold flex-shrink-0">
             {customer.name.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <div className="font-medium text-gray-900">{customer.name}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-gray-900 truncate">{customer.name}</div>
           </div>
         </div>
       </TableCell>
-      <TableCell className="hidden md:table-cell flex-1 text-gray-900">
+      <TableCell className="min-w-[150px] text-gray-900">
         <div className="flex items-center gap-2">
-          <Mail size={14} className="text-gray-400" />
-          <span>{customer.email || "No email"}</span>
+          <Mail size={14} className="text-gray-400 flex-shrink-0" />
+          <span className="truncate">{customer.email || "No email"}</span>
         </div>
       </TableCell>
-      <TableCell className="hidden lg:table-cell flex-1 text-gray-900">
+      <TableCell className="min-w-[120px] text-gray-900">
         <div className="flex items-center gap-2">
-          <Phone size={14} className="text-gray-400" />
-          <span>{customer.phone || "No phone"}</span>
+          <Phone size={14} className="text-gray-400 flex-shrink-0" />
+          <span className="truncate">{customer.phone || "No phone"}</span>
         </div>
       </TableCell>
-      <TableCell className="hidden xl:table-cell flex-1 text-gray-900">
+      <TableCell className="min-w-[150px] text-gray-900">
         <div className="flex items-center gap-2">
-          <MapPin size={14} className="text-gray-400" />
+          <MapPin size={14} className="text-gray-400 flex-shrink-0" />
           <span className="truncate">{customer.address || "No address"}</span>
         </div>
       </TableCell>
-      <TableCell className="hidden sm:table-cell w-24">
+      <TableCell className="min-w-[80px]">
         {getStatusBadge(customer)}
       </TableCell>
     </TableRow>

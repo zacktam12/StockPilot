@@ -19,7 +19,7 @@ const CustomerTableHeader = ({
           />
         </TableHead>
         <TableHead
-          className="cursor-pointer hover:bg-gray-100 flex-1 pl-2"
+          className="cursor-pointer hover:bg-gray-100 min-w-[200px] pl-2"
           onClick={() => onSort("name")}
         >
           <div className="flex items-center gap-1">
@@ -28,7 +28,7 @@ const CustomerTableHeader = ({
           </div>
         </TableHead>
         <TableHead
-          className="cursor-pointer hover:bg-gray-100 hidden md:table-cell flex-1"
+          className="cursor-pointer hover:bg-gray-100 min-w-[150px]"
           onClick={() => onSort("email")}
         >
           <div className="flex items-center gap-1">
@@ -37,7 +37,7 @@ const CustomerTableHeader = ({
           </div>
         </TableHead>
         <TableHead
-          className="cursor-pointer hover:bg-gray-100 hidden lg:table-cell flex-1"
+          className="cursor-pointer hover:bg-gray-100 min-w-[120px]"
           onClick={() => onSort("phone")}
         >
           <div className="flex items-center gap-1">
@@ -46,7 +46,7 @@ const CustomerTableHeader = ({
           </div>
         </TableHead>
         <TableHead
-          className="cursor-pointer hover:bg-gray-100 hidden xl:table-cell flex-1"
+          className="cursor-pointer hover:bg-gray-100 min-w-[150px]"
           onClick={() => onSort("address")}
         >
           <div className="flex items-center gap-1">
@@ -54,7 +54,7 @@ const CustomerTableHeader = ({
             {getSortIcon("address")}
           </div>
         </TableHead>
-        <TableHead className="hidden sm:table-cell w-24">Status</TableHead>
+        <TableHead className="min-w-[80px]">Status</TableHead>
       </TableRow>
     </TableHeader>
   );

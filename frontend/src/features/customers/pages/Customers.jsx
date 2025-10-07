@@ -11,40 +11,43 @@ import {
   importCustomers,
 } from "../../../store/slices/customerSlice";
 import CustomerHeader from "../components/CustomerHeader";
-import CustomerSearch from "../components/CustomerSearch";
+import CustomerStats from "../components/CustomerStats";
 import CustomerTable from "../components/CustomerTable";
 import CustomerActions from "../components/CustomerActions";
 import CustomerErrorState from "../components/CustomerErrorState";
-import CustomerPagination from "../components/CustomerPagination";
+import UnifiedPagination from "../../../components/shared/UnifiedPagination";
 import LoadingOverlay from "../../../components/shared/LoadingOverlay";
 import { exportCustomersToCSV, validateCustomerCSV } from "../../../utils/csvUtils";
 
 const CustomersPage = () => {
   const dispatch = useDispatch();
-  const { items, loading, error, pagination, filters } = useSelector(
+  const { items, loading, error, pagination, filters, searchTerm, sortField, sortOrder, selectedItems, itemsPerPage, currentPage } = useSelector(
     (state) => state.customer
   );
-  const [selected, setSelected] = useState([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(
-      fetchCustomers({
-        page: pagination?.page || 1,
-        limit: pagination?.limit || 5,
-        search: filters.searchTerm,
-        sortField: filters.sortField,
-        sortOrder: filters.sortOrder,
-        hasPhone: filters.hasPhone,
-        hasAddress: filters.hasAddress,
-      })
-    );
+    const params = {
+      page: pagination?.page || 1,
+      limit: pagination?.limit || 5,
+      search: searchTerm || filters.searchTerm,
+      sortField: sortField || filters.sortField,
+      sortOrder: sortOrder || filters.sortOrder,
+      hasPhone: filters.hasPhone,
+      hasAddress: filters.hasAddress,
+    };
+    dispatch(fetchCustomers(params));
   }, [
     dispatch,
     pagination?.page,
     pagination?.limit,
+    itemsPerPage,
+    currentPage,
+    searchTerm,
     filters.searchTerm,
+    sortField,
     filters.sortField,
+    sortOrder,
     filters.sortOrder,
     filters.hasPhone,
     filters.hasAddress,
@@ -56,25 +59,14 @@ const CustomersPage = () => {
         fetchCustomers({
           page: pagination?.page || 1,
           limit: pagination?.limit || 5,
-          search: filters.searchTerm,
-          sortField: filters.sortField,
-          sortOrder: filters.sortOrder,
+          search: searchTerm || filters.searchTerm,
+          sortField: sortField || filters.sortField,
+          sortOrder: sortOrder || filters.sortOrder,
           hasPhone: filters.hasPhone,
           hasAddress: filters.hasAddress,
         })
       );
     });
-  };
-
-  const handleSelect = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selected.length === items.length) setSelected([]);
-    else setSelected(items.map((c) => c.id));
   };
 
   const handleExport = (ids) => {
@@ -82,20 +74,24 @@ const CustomersPage = () => {
     exportCustomersToCSV(toExport);
   };
 
-  const handleImport = (csvData) => {
-    dispatch(importCustomers(csvData)).then(() => {
-      dispatch(
+  const handleImport = async (csvData) => {
+    try {
+      const result = await dispatch(importCustomers(csvData)).unwrap();
+      // Refetch customers after import
+      await dispatch(
         fetchCustomers({
-          page: pagination?.page || 1,
+          page: 1, // Reset to first page after import
           limit: pagination?.limit || 5,
-          search: filters.searchTerm,
-          sortField: filters.sortField,
-          sortOrder: filters.sortOrder,
+          search: searchTerm || filters.searchTerm,
+          sortField: sortField || filters.sortField,
+          sortOrder: sortOrder || filters.sortOrder,
           hasPhone: filters.hasPhone,
           hasAddress: filters.hasAddress,
         })
-      );
-    });
+      ).unwrap();
+    } catch (error) {
+      console.error('💥 [IMPORT] Import failed:', error);
+    }
   };
 
   const handleOpenImportModal = () => setIsImportModalOpen(true);
@@ -114,15 +110,20 @@ const CustomersPage = () => {
       {/* Header */}
       <CustomerHeader 
         items={items} 
-        onOpenImportModal={handleOpenImportModal} 
+        onExportCSV={handleExport}
+        searchTerm={searchTerm || filters.searchTerm}
+        onSearchChange={handleSearch}
       />
 
       {/* Error Message */}
       <CustomerErrorState error={error} />
 
+      {/* Customer Statistics Cards */}
+      <CustomerStats />
+
       {/* Bulk Actions and Modals */}
       <CustomerActions
-        selected={selected}
+        selected={selectedItems}
         onDelete={handleDelete}
         onExport={handleExport}
         onImport={handleImport}
@@ -130,26 +131,17 @@ const CustomersPage = () => {
         onCloseImportModal={handleCloseImportModal}
       />
 
-      {/* Search and Filters */}
-      <CustomerSearch 
-        searchTerm={filters.searchTerm} 
-        onSearchChange={handleSearch} 
-      />
 
       {/* Customers Table */}
-      <CustomerTable
-        items={items}
-        selected={selected}
-        onSelect={handleSelect}
-        onSelectAll={handleSelectAll}
-        onDelete={handleDelete}
-        onExport={handleExport}
-        onImport={handleImport}
-        importConfig={{ validate: validateCustomerCSV }}
-      />
+      <CustomerTable />
 
       {/* Pagination */}
-      <CustomerPagination pagination={pagination} />
+      <UnifiedPagination
+        sliceName="customer"
+        showPageSizeSelector={true}
+        showItemCount={true}
+        pageSizeOptions={[5, 10, 25, 50, 100]}
+      />
     </div>
   );
 };
