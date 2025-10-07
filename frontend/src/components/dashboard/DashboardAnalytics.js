@@ -47,7 +47,6 @@ export const formatDate = (date, options = {}) => {
     
     return new Intl.DateTimeFormat('en-US', { ...defaultOptions, ...options }).format(dateObj);
   } catch (error) {
-    console.error("Date formatting error:", error);
     return "Invalid date";
   }
 };
@@ -67,7 +66,6 @@ export const formatDateShort = (date) => {
       day: 'numeric'
     }).format(dateObj);
   } catch (error) {
-    console.error("Date formatting error:", error);
     return "Invalid date";
   }
 };
@@ -348,8 +346,6 @@ export const measurePerformance = (name, fn) => {
   const start = performance.now();
   const result = fn();
   const end = performance.now();
-  
-  console.log(`${name} took ${end - start} milliseconds`);
   return result;
 };
 

@@ -47,7 +47,6 @@ const Logo = ({
             alt={`${appName} Logo`}
             className="w-full h-full object-contain rounded-2xl"
             onError={(e) => {
-              console.warn('Logo image failed to load, falling back to default icon:', companyLogo);
               e.target.style.display = 'none';
             }}
           />

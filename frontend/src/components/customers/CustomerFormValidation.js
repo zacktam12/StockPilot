@@ -148,7 +148,6 @@ export const formatDate = (date) => {
       day: 'numeric'
     }).format(dateObj);
   } catch (error) {
-    console.error("Date formatting error:", error);
     return "Invalid date";
   }
 };

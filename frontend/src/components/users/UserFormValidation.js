@@ -243,7 +243,6 @@ export const formatDate = (date) => {
       minute: '2-digit'
     }).format(dateObj);
   } catch (error) {
-    console.error("Date formatting error:", error);
     return "Invalid date";
   }
 };

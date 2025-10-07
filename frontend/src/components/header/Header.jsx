@@ -26,6 +26,7 @@ import { fetchSettings, updateSettings, resetSettings } from "../../store/slices
 import { setUser, logout } from "../../store/slices/authSlice";
 import { API_BASE_URL } from "../../config";
 import { useOutsideClick } from "../../hooks/useOutsideClick";
+import NotificationPanel from "./NotificationPanel";
 
 const Header = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -40,6 +41,13 @@ const Header = () => {
   );
   const settings = useSelector((state) => state.settings.settings);
   const settingsLoading = useSelector((state) => state.settings.loading);
+  
+  // Get stock alerts and activities for total count
+  const { lowStockAlerts, activities } = useSelector((state) => state.dashboard);
+  const stockAlertsCount = lowStockAlerts?.data?.length || 0;
+  const activitiesCount = activities?.data?.length || 0;
+  const totalNotificationCount = unreadCount + stockAlertsCount + activitiesCount;
+  
   const profileRef = useRef(null);
   const notificationsRef = useRef(null);
 
@@ -182,7 +190,6 @@ const Header = () => {
   useEffect(() => {
     if (settings) {
       // Settings have been updated, force re-render
-      console.log("Settings updated in header:", settings);
     }
   }, [settings]);
 
@@ -241,62 +248,6 @@ const Header = () => {
     }
   };
 
-  const getNotificationIcon = (type) => {
-    switch (type) {
-      case "low_stock":
-        return "⚠️";
-      case "purchase":
-        return "📦";
-      case "sale":
-        return "💰";
-      case "customer":
-        return "👤";
-      case "staff":
-        return "👥";
-      case "supplier":
-        return "🏭";
-      case "category":
-        return "📁";
-      case "system":
-        return "🖥️";
-      default:
-        return "ℹ️";
-    }
-  };
-
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHrs = Math.floor(diffMin / 60);
-    const diffDays = Math.floor(diffHrs / 24);
-
-    if (diffSec < 60) return "Just now";
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHrs < 24) return `${diffHrs}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
-
-  const handleClearAllNotifications = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to clear all notifications? This action cannot be undone."
-      )
-    ) {
-      dispatch(clearAllNotifications())
-        .unwrap()
-        .then(() => {
-          console.log("🔔 Header: All notifications cleared");
-        })
-        .catch((error) => {
-          console.error("🔔 Header: Failed to clear notifications:", error);
-        });
-    }
-  };
-
   // Always show notifications (no settings to control this anymore)
   const notificationsEnabled = true;
 
@@ -340,96 +291,18 @@ const Header = () => {
                   size={18}
                   className="group-hover:text-blue-600 dark:group-hover:text-blue-400"
                 />
-                {unreadCount > 0 && (
+                {totalNotificationCount > 0 && (
                   <span className="absolute -top-1 -right-1 h-5 w-5 text-xs flex items-center justify-center bg-red-500 text-white rounded-full font-semibold animate-pulse">
-                    {unreadCount > 9 ? "9+" : unreadCount}
+                    {totalNotificationCount > 9 ? "9+" : totalNotificationCount}
                   </span>
                 )}
               </button>
 
-              {/* Notifications Dropdown */}
-              {isNotificationsOpen && (
-                <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-strong border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
-                      Notifications
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={() => dispatch(markAllAsRead())}
-                          className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors duration-200"
-                        >
-                          Mark all as read
-                        </button>
-                      )}
-                      {notifications && notifications.length > 0 && (
-                        <button
-                          onClick={handleClearAllNotifications}
-                          className="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium transition-colors duration-200"
-                        >
-                          Clear all
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="max-h-80 overflow-y-auto">
-                    {notifications && notifications.length > 0 ? (
-                      <>
-                        {notifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-start gap-3 transition-all duration-200 cursor-pointer ${
-                              !notification.read
-                                ? "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500"
-                                : ""
-                            }`}
-                            onClick={() =>
-                              dispatch(markAsRead(notification.id))
-                            }
-                          >
-                            <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100 dark:bg-gray-700">
-                              <span className="text-lg">
-                                {getNotificationIcon(notification.type)}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-gray-900 dark:text-white font-medium">
-                                {notification.title}
-                              </p>
-                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                {notification.message}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {formatTime(notification.createdAt)}
-                              </p>
-                            </div>
-                            {!notification.read && (
-                              <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full"></div>
-                            )}
-                          </div>
-                        ))}
-                      </>
-                    ) : (
-                      <div className="px-4 py-8 text-center">
-                        <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Bell
-                            size={20}
-                            className="text-gray-400 dark:text-gray-500"
-                          />
-                        </div>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
-                          No notifications
-                        </p>
-                        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
-                          You're all caught up!
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* Enhanced Notifications Panel */}
+              <NotificationPanel
+                isOpen={isNotificationsOpen}
+                onClose={() => setIsNotificationsOpen(false)}
+              />
             </div>
           )}
 
