@@ -435,11 +435,12 @@ router.post(
 // Update user (Admin-only)
 router.put(
   "/:id",
+  (req, res, next) => {
+    next();
+  },
   validateUserId,
   authorize("admin"),
   validateUpdateUser,
-  validateEmailUniqueness,
-  validateEmployeeIdUniqueness,
   userController.updateUser
 );
 
@@ -463,12 +464,7 @@ router.post(
   upload.single("profilePicture"),
   async (req, res) => {
     try {
-      console.log("Profile picture upload request received");
-      console.log("User ID:", req.user.id);
-      console.log("File:", req.file);
-
       if (!req.file) {
-        console.log("No file uploaded");
         return res
           .status(400)
           .json({ success: false, message: "No file uploaded" });
@@ -477,21 +473,13 @@ router.post(
       // Construct the full URL for the uploaded image
       const baseUrl = process.env.BACKEND_URL || "http://localhost:5000";
       const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
-      console.log("Image URL:", imageUrl);
-
       // Update user's profile picture in database
       const { prisma } = require("../config/db");
-      console.log("Updating user with ID:", req.user.id);
-      console.log("Setting profilePicture to:", imageUrl);
-
       const updatedUser = await prisma.user.update({
         where: { id: req.user.id },
         data: { profilePicture: imageUrl },
         include: { role: true },
       });
-
-      console.log("User updated successfully:", updatedUser.id);
-
       // Remove password from response
       const { password, ...userWithoutPassword } = updatedUser;
 
@@ -536,6 +524,14 @@ router.delete(
   authorize("admin"),
   strictLimiter,
   userController.deleteUser
+);
+
+// Reactivate user (Admin-only)
+router.put(
+  "/:id/reactivate",
+  validateUserId,
+  authorize("admin"),
+  userController.reactivateUser
 );
 
 // Import users from CSV (Admin-only)

@@ -142,6 +142,9 @@ router.get("/profile", authenticate, async (req, res) => {
   });
 });
 
+// Update user profile
+router.put("/profile", authenticate, userController.updateProfile);
+
 router.post("/register", validateRegister, userController.register);
 router.post("/login", validateLogin, userController.login);
 router.post("/forgot-password", userController.forgotPassword);

@@ -108,6 +108,13 @@ const { generalLimiter, strictLimiter, searchLimiter } = require("../middlewares
 router.use(authenticate);
 router.use(generalLimiter);
 
+// Bulk import categories (Admin-only)
+router.post(
+  "/bulk",
+  authorize("admin"),
+  categoryController.bulkImportCategories
+);
+
 // Create category (Admin-only)
 router.post(
   "/",

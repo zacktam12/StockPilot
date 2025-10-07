@@ -9,6 +9,7 @@ const {
 } = require("../validators/product.validator");
 const { authenticate, authorize } = require("../middlewares/auth");
 const { generalLimiter, strictLimiter, uploadLimiter, searchLimiter } = require("../middlewares/rateLimiter");
+const upload = require("../services/upload.service");
 
 // Create product (Admin-only)
 /**
@@ -257,6 +258,16 @@ router.delete(
   authorize("admin"),
   strictLimiter,
   productController.bulkDeleteProducts
+);
+
+// Upload product image (Admin and Staff)
+router.post(
+  "/:id/image",
+  validateProductId,
+  authorize("admin", "staff"),
+  uploadLimiter,
+  upload.single("image"),
+  productController.uploadProductImage
 );
 
 module.exports = router;
