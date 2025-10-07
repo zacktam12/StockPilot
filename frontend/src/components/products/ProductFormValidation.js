@@ -104,10 +104,15 @@ export const sanitizeInput = (input) => {
 };
 
 // Format currency
-export const formatCurrency = (amount) => {
+export const formatCurrency = (amount, currency = 'USD') => {
+  // Handle ETB with custom formatting since it's not widely supported by Intl.NumberFormat
+  if (currency === 'ETB') {
+    return `Br ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD'
+    currency: currency
   }).format(amount);
 };
 
