@@ -27,22 +27,49 @@ export const formatPercentage = (value, decimals = 1) => {
 };
 
 export const formatDate = (date, options = {}) => {
-  const defaultOptions = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  };
+  if (!date) {
+    return "No date available";
+  }
   
-  return new Intl.DateTimeFormat('en-US', { ...defaultOptions, ...options }).format(new Date(date));
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return "Invalid date";
+    }
+    
+    const defaultOptions = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    
+    return new Intl.DateTimeFormat('en-US', { ...defaultOptions, ...options }).format(dateObj);
+  } catch (error) {
+    console.error("Date formatting error:", error);
+    return "Invalid date";
+  }
 };
 
 export const formatDateShort = (date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric'
-  }).format(new Date(date));
+  if (!date) {
+    return "No date available";
+  }
+  
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return "Invalid date";
+    }
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric'
+    }).format(dateObj);
+  } catch (error) {
+    console.error("Date formatting error:", error);
+    return "Invalid date";
+  }
 };
 
 // Calculate percentage change
