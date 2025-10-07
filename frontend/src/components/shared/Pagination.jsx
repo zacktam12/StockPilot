@@ -28,7 +28,7 @@ export default function Pagination({ sliceName = "product" }) {
       case "sale":
         return state.sales;
       case "purchase":
-        return state.purchase;
+        return state.purchases;
       case "customer":
         return state.customer;
       case "dashboard-activities":
@@ -168,7 +168,7 @@ export function FloatingPagination({ sliceName = "product" }) {
       case "sale":
         return state.sales;
       case "purchase":
-        return state.purchase;
+        return state.purchases;
       case "customer":
         return state.customer;
       case "dashboard-activities":
@@ -353,3 +353,5 @@ export function SimplePagination({
     </div>
   );
 }
+
+

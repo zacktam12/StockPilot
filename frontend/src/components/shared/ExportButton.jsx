@@ -4,16 +4,17 @@ import Button from "./button";
 import { Download } from "lucide-react";
 import jsPDF from "jspdf";
 import { toast } from "react-hot-toast";
+import { showSuccess, showError, showWarning } from "../../services/notificationService";
 
 const ExportButton = ({ reportType, reportData, reportTitle, isLoading }) => {
   const exportPDF = () => {
     if (isLoading) {
-      toast.error("Please wait for the report to load");
+      showWarning("Please Wait", "Please wait for the report to load before exporting.", 4000);
       return;
     }
 
     if (!reportType || !reportData) {
-      toast.error("Please select and view a report before exporting");
+      showError("No Report Data", "Please select and view a report before exporting.", 4000);
       return;
     }
 
@@ -158,9 +159,11 @@ const ExportButton = ({ reportType, reportData, reportTitle, isLoading }) => {
           .toISOString()
           .slice(0, 10)}.pdf`
       );
+      showSuccess("PDF Exported", "PDF has been exported successfully!", 4000);
       toast.success("PDF exported successfully!", { id: "pdf-generation" });
     } catch (error) {
       console.error("PDF export failed:", error);
+      showError("Export Failed", `PDF export failed: ${error.message}`, 5000);
       toast.error(`PDF export failed: ${error.message}`, {
         id: "pdf-generation",
       });

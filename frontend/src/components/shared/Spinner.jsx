@@ -44,7 +44,7 @@ export function BarsSpinner({ color = "#3f51b5" }) {
 
 export function FullPageSpinner({ message = "Loading..." }) {
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-white/80 dark:bg-black/60">
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-white/60 dark:bg-black/40 backdrop-blur-sm">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3f51b5] mb-4" />
         <p className="text-[#3f51b5] text-sm">{message}</p>

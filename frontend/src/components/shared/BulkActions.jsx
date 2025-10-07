@@ -18,7 +18,7 @@ const BulkActions = ({
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
-    if (!selectedItems.length) {
+    if (!selectedItems || !selectedItems.length) {
       alert("Please select items to export");
       return;
     }
@@ -34,7 +34,7 @@ const BulkActions = ({
   };
 
   const handleDelete = () => {
-    if (!selectedItems.length) {
+    if (!selectedItems || !selectedItems.length) {
       alert("Please select items to delete");
       return;
     }
@@ -53,7 +53,7 @@ const BulkActions = ({
     setIsImportModalOpen(false);
   };
 
-  if (selectedItems.length === 0) {
+  if (!selectedItems || selectedItems.length === 0) {
     return null;
   }
 
@@ -65,7 +65,7 @@ const BulkActions = ({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              {selectedItems.length} item(s) selected
+              {selectedItems?.length || 0} item(s) selected
             </span>
           </div>
 

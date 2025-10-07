@@ -54,7 +54,7 @@ const UnifiedPagination = ({
       case "sale":
         return state.sales;
       case "purchase":
-        return state.purchase;
+        return state.purchases;
       case "customer":
         return state.customer;
       default:
@@ -155,7 +155,21 @@ const UnifiedPagination = ({
   };
 
   // Show pagination if there are items or if we have items in the state
-  const hasItems = totalItems > 0 || (sliceState.items && sliceState.items.length > 0);
+  const hasItems = totalItems > 0 || 
+    (sliceState.items && sliceState.items.length > 0) ||
+    (sliceState.users && sliceState.users.length > 0); // For user slice
+  
+  // Debug logging for pagination visibility
+  console.log('UnifiedPagination Debug:', {
+    sliceName,
+    totalItems,
+    hasItems,
+    sliceStateItems: sliceState.items?.length,
+    sliceStateUsers: sliceState.users?.length,
+    currentPage,
+    totalPages
+  });
+  
   if (!hasItems) return null;
 
   // Use mobile pagination for small screens
@@ -167,6 +181,10 @@ const UnifiedPagination = ({
         onPageChange={handlePageChange}
         totalItems={totalItems}
         itemsPerPage={itemsPerPage}
+        onPageSizeChange={handlePageSizeChange}
+        pageSizeOptions={pageSizeOptions}
+        showPageSizeSelector={showPageSizeSelector}
+        showItemCount={showItemCount}
         className={className}
       />
     );

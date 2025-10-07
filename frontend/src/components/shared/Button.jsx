@@ -21,23 +21,23 @@ const Button = React.forwardRef(
 
     const variantStyles = {
       primary:
-        "bg-[#3f51b5] hover:bg-[#303f9f] text-white font-bold rounded-lg px-4 py-2 transition",
+        "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-2xl px-6 py-3 transition-all duration-200 shadow-lg hover:shadow-xl focus-visible:ring-4 focus-visible:ring-blue-500/20",
       secondary:
-        "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500",
+        "bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold rounded-2xl px-6 py-3 transition-all duration-200 shadow-lg hover:shadow-xl focus-visible:ring-4 focus-visible:ring-gray-500/20",
       outline:
-        "border border-gray-300 bg-white text-gray-800 hover:bg-blue-50 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700",
+        "border-2 border-gray-300 bg-white text-gray-800 hover:bg-blue-50 hover:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 rounded-2xl px-6 py-3 transition-all duration-200",
       ghost:
-        "bg-transparent text-gray-800 hover:bg-blue-50 focus-visible:ring-blue-500 dark:text-gray-200 dark:hover:bg-gray-700",
+        "bg-transparent text-gray-800 hover:bg-blue-50 focus-visible:ring-4 focus-visible:ring-blue-500/20 dark:text-gray-200 dark:hover:bg-gray-700 rounded-2xl px-6 py-3 transition-all duration-200",
       danger:
-        "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
+        "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-2xl px-6 py-3 transition-all duration-200 shadow-lg hover:shadow-xl focus-visible:ring-4 focus-visible:ring-red-500/20",
       success:
-        "bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-500",
+        "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-2xl px-6 py-3 transition-all duration-200 shadow-lg hover:shadow-xl focus-visible:ring-4 focus-visible:ring-green-500/20",
     };
 
     const sizeStyles = {
-      sm: "text-xs py-1.5 px-3 rounded-lg",
-      md: "text-sm py-2 px-4 rounded-lg",
-      lg: "text-base py-2.5 px-5 rounded-lg",
+      sm: "text-sm py-2 px-4 rounded-xl",
+      md: "text-base py-3 px-6 rounded-2xl",
+      lg: "text-lg py-4 px-8 rounded-2xl",
     };
 
     const styles = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
