@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
+import { showSuccess, showError, showWarning } from "../../services/notificationService";
 
 // Async Thunks
 export const fetchPurchases = createAsyncThunk(
@@ -86,6 +87,20 @@ export const deletePurchase = createAsyncThunk(
   }
 );
 
+export const updatePurchase = createAsyncThunk(
+  "purchases/updatePurchase",
+  async ({ id, purchaseData }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/purchases/${id}`, purchaseData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update purchase"
+      );
+    }
+  }
+);
+
 export const generateReceipt = createAsyncThunk(
   "purchases/generateReceipt",
   async (purchaseId, { rejectWithValue }) => {
@@ -119,12 +134,13 @@ const purchaseSlice = createSlice({
   name: "purchases",
   initialState: {
     items: [],
+    filteredItems: [],
     loading: false,
     error: null,
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 5,
+    itemsPerPage: 10,
     searchTerm: "",
     sortField: "createdAt",
     sortOrder: "desc",
@@ -134,6 +150,13 @@ const purchaseSlice = createSlice({
     receipt: null,
     isModalOpen: false,
     editingPurchase: null,
+    filters: {
+      supplierId: null,
+      status: null,
+      totalCostRange: { min: null, max: null },
+      dateRange: { start: null, end: null },
+      hasNotes: false,
+    },
   },
 
   reducers: {
@@ -156,6 +179,11 @@ const purchaseSlice = createSlice({
     },
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload;
+    },
+    setItemsPerPage: (state, action) => {
+      state.itemsPerPage = action.payload;
+      state.currentPage = 1; // Reset to first page when changing page size
+      // totalPages will be updated when the next fetch completes
     },
     clearCurrentPurchase: (state) => {
       state.currentPurchase = null;
@@ -200,6 +228,23 @@ const purchaseSlice = createSlice({
       state.isModalOpen = false;
       state.editingPurchase = null;
     },
+    setFilterOptions: (state, action) => {
+      state.filters = { ...state.filters, ...action.payload };
+      state.currentPage = 1; // Reset to first page when filtering
+    },
+    clearFilters: (state) => {
+      state.filters = {
+        supplierId: null,
+        status: null,
+        totalCostRange: { min: null, max: null },
+        dateRange: { start: null, end: null },
+        hasNotes: false,
+      };
+      state.currentPage = 1; // Reset to first page when clearing filters
+    },
+    setFilteredItems: (state, action) => {
+      state.filteredItems = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -210,42 +255,35 @@ const purchaseSlice = createSlice({
       })
       .addCase(fetchPurchases.fulfilled, (state, action) => {
         state.loading = false;
-        console.log("fetchPurchases fulfilled:", action.payload);
-        if (action.payload && action.payload.data) {
-          // Server-side paginated response
+        // Handle the actual backend response structure
+        if (action.payload && action.payload.success && action.payload.data) {
+          // Backend returns: { success: true, data: purchases[], pagination: {...} }
           state.items = action.payload.data;
+          
           if (action.payload.pagination) {
-            state.totalItems =
-              action.payload.pagination.totalItems || action.payload.total || 0;
-            state.totalPages =
-              action.payload.pagination.totalPages || action.payload.pages || 1;
-            state.currentPage =
-              action.payload.pagination.currentPage || action.payload.page || 1;
-            state.itemsPerPage = action.payload.pagination.itemsPerPage || 5;
+            state.totalItems = action.payload.pagination.totalItems || 0;
+            state.totalPages = action.payload.pagination.totalPages || 1;
+            state.currentPage = action.payload.pagination.currentPage || 1;
+            state.itemsPerPage = action.payload.pagination.itemsPerPage || 10;
           } else {
-            // Fallback for flattened response structure
-            state.totalItems = action.payload.total || 0;
-            state.totalPages = action.payload.pages || 1;
-            state.currentPage = action.payload.page || 1;
-            state.itemsPerPage = 5;
+            // Fallback if no pagination data
+            state.totalItems = state.items.length;
+            state.totalPages = Math.ceil(state.items.length / state.itemsPerPage);
+            state.currentPage = 1;
           }
         } else if (Array.isArray(action.payload)) {
-          // Non-paginated response or direct array
+          // Direct array response (fallback)
           state.items = action.payload;
           state.totalItems = state.items.length;
           state.totalPages = Math.ceil(state.items.length / state.itemsPerPage);
+          state.currentPage = 1;
         } else {
-          // Fallback
+          // No data or error
           state.items = [];
           state.totalItems = 0;
           state.totalPages = 1;
+          state.currentPage = 1;
         }
-        console.log("Updated purchase state:", {
-          itemsCount: state.items.length,
-          currentPage: state.currentPage,
-          totalPages: state.totalPages,
-          totalItems: state.totalItems,
-        });
       })
       .addCase(fetchPurchases.rejected, (state, action) => {
         state.loading = false;
@@ -259,7 +297,13 @@ const purchaseSlice = createSlice({
       })
       .addCase(fetchPurchaseById.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentPurchase = action.payload;
+        // Handle the nested response structure from backend
+        if (action.payload && action.payload.success && action.payload.data) {
+          state.currentPurchase = action.payload.data;
+        } else {
+          // Fallback if response structure is different
+          state.currentPurchase = action.payload;
+        }
       })
       .addCase(fetchPurchaseById.rejected, (state, action) => {
         state.loading = false;
@@ -271,14 +315,27 @@ const purchaseSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(createPurchase.fulfilled, (state) => {
+      .addCase(createPurchase.fulfilled, (state, action) => {
         state.loading = false;
         // Refresh the purchase list to get updated pagination
         // The useEffect will automatically refetch with current parameters
+        
+        // Show success notification
+        const purchase = action.payload.data || action.payload;
+        showSuccess(
+          'Purchase Created Successfully',
+          `Purchase order ${purchase.poNumber || 'PO-' + purchase.id?.slice(0, 8) || 'N/A'} has been recorded.`,
+          4000
+        );
       })
       .addCase(createPurchase.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        showError(
+          'Purchase Creation Failed',
+          action.payload || 'Unable to create the purchase. Please try again.',
+          5000
+        );
       })
 
       // Update Status
@@ -296,10 +353,22 @@ const purchaseSlice = createSlice({
         if (index !== -1) {
           state.items[index] = { ...state.items[index], ...updatedPurchase };
         }
+        
+        // Show success notification
+        showSuccess(
+          'Purchase Status Updated',
+          `Purchase order ${updatedPurchase.poNumber || 'PO-' + updatedPurchase.id?.slice(0, 8) || 'N/A'} status has been updated to ${updatedPurchase.status}.`,
+          4000
+        );
       })
       .addCase(updatePurchaseStatus.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        showError(
+          'Status Update Failed',
+          action.payload || 'Unable to update purchase status. Please try again.',
+          5000
+        );
       })
 
       // Delete Purchase
@@ -311,10 +380,56 @@ const purchaseSlice = createSlice({
         state.loading = false;
         // Refresh the purchase list to get updated pagination
         // The useEffect will automatically refetch with current parameters
+        
+        // Show success notification
+        showSuccess(
+          'Purchase Deleted Successfully',
+          'The purchase has been removed from your records.',
+          4000
+        );
       })
       .addCase(deletePurchase.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        showError(
+          'Purchase Deletion Failed',
+          action.payload || 'Unable to delete the purchase. Please try again.',
+          5000
+        );
+      })
+
+      // Update Purchase
+      .addCase(updatePurchase.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updatePurchase.fulfilled, (state, action) => {
+        state.loading = false;
+        // Update the current purchase if it's the one being updated
+        if (state.currentPurchase && state.currentPurchase.id === action.payload.id) {
+          state.currentPurchase = { ...state.currentPurchase, ...action.payload };
+        }
+        // Update in items list if it exists
+        const index = state.items.findIndex(item => item.id === action.payload.id);
+        if (index !== -1) {
+          state.items[index] = { ...state.items[index], ...action.payload };
+        }
+        
+        // Show success notification
+        showSuccess(
+          'Purchase Updated Successfully',
+          `Purchase order ${action.payload.poNumber || 'PO-' + action.payload.id?.slice(0, 8) || 'N/A'} has been updated.`,
+          4000
+        );
+      })
+      .addCase(updatePurchase.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        showError(
+          'Purchase Update Failed',
+          action.payload || 'Unable to update the purchase. Please try again.',
+          5000
+        );
       })
 
       // Generate Receipt
@@ -352,6 +467,7 @@ export const {
   setSearchTerm,
   setSortField,
   setCurrentPage,
+  setItemsPerPage,
   clearCurrentPurchase,
   clearReceipt,
   clearError,
@@ -361,6 +477,9 @@ export const {
   openCreateModal,
   openEditModal,
   closeModal,
+  setFilterOptions,
+  clearFilters,
+  setFilteredItems,
 } = purchaseSlice.actions;
 
 // Export Reducer

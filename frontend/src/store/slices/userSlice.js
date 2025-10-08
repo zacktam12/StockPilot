@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { usersAPI } from "../../services/api";
+import { showSuccess, showError, showWarning } from "../../services/notificationService";
 
 // Async thunks with loading messages
 export const fetchUsers = createAsyncThunk(
@@ -129,7 +130,7 @@ const userSlice = createSlice({
 
     // Pagination
     currentPage: 1,
-    itemsPerPage: 5,
+    itemsPerPage: 10,
     totalPages: 1,
     totalItems: 0,
 
@@ -158,6 +159,11 @@ const userSlice = createSlice({
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload;
     },
+    setItemsPerPage: (state, action) => {
+      state.itemsPerPage = action.payload;
+      state.currentPage = 1; // Reset to first page when changing page size
+      state.totalPages = Math.ceil(state.totalItems / state.itemsPerPage);
+    },
     setSortField: (state, action) => {
       if (state.sortField === action.payload) {
         state.sortOrder = state.sortOrder === "asc" ? "desc" : "asc";
@@ -185,10 +191,10 @@ const userSlice = createSlice({
         if (action.payload.success) {
           state.users = action.payload.data || [];
           if (action.payload.pagination) {
-            state.currentPage = action.payload.pagination.page;
-            state.totalPages = action.payload.pagination.pages;
-            state.totalItems = action.payload.pagination.total;
-            state.itemsPerPage = action.payload.pagination.limit;
+            state.currentPage = action.payload.pagination.currentPage || action.payload.pagination.page;
+            state.totalPages = action.payload.pagination.totalPages || action.payload.pagination.pages;
+            state.totalItems = action.payload.pagination.totalItems || action.payload.pagination.total;
+            state.itemsPerPage = action.payload.pagination.itemsPerPage || action.payload.pagination.limit;
           }
         } else {
           state.error = "Failed to fetch users";
@@ -208,13 +214,31 @@ const userSlice = createSlice({
         state.loading = false;
         if (action.payload.success) {
           state.users.unshift(action.payload.data);
+          
+          // Show success notification
+          const user = action.payload.data;
+          showSuccess(
+            'User Created Successfully',
+            `"${user.firstName} ${user.lastName}" has been added to your users.`,
+            4000
+          );
         } else {
           state.error = "Failed to create user";
+          showError(
+            'User Creation Failed',
+            'Unable to create the user. Please try again.',
+            5000
+          );
         }
       })
       .addCase(createUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        showError(
+          'User Creation Failed',
+          action.payload || 'An unexpected error occurred while creating the user.',
+          5000
+        );
       })
 
       // Update User
@@ -229,13 +253,30 @@ const userSlice = createSlice({
           state.users = state.users.map((user) =>
             user.id === updatedUser.id ? updatedUser : user
           );
+          
+          // Show success notification
+          showSuccess(
+            'User Updated Successfully',
+            `"${updatedUser.firstName} ${updatedUser.lastName}" has been updated.`,
+            4000
+          );
         } else {
           state.error = "Failed to update user";
+          showError(
+            'User Update Failed',
+            'Unable to update the user. Please try again.',
+            5000
+          );
         }
       })
       .addCase(updateUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        showError(
+          'User Update Failed',
+          action.payload || 'An unexpected error occurred while updating the user.',
+          5000
+        );
       })
 
       // Delete User
@@ -245,11 +286,32 @@ const userSlice = createSlice({
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = state.users.filter((user) => user.id !== action.payload);
+        
+        // Update the user's status to Deactivated instead of removing them
+        const deactivatedData = action.payload?.data;
+        if (deactivatedData) {
+          state.users = state.users.map((user) =>
+            user.id === deactivatedData.id 
+              ? { ...user, status: 'Deactivated', deactivatedAt: deactivatedData.deactivatedAt, deactivatedBy: deactivatedData.deactivatedBy }
+              : user
+          );
+        }
+        
+        // Show success notification
+        showSuccess(
+          'User Deactivated Successfully',
+          'The user has been deactivated and will remain visible with "Deactivated" status.',
+          4000
+        );
       })
       .addCase(deleteUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        showError(
+          'User Deletion Failed',
+          action.payload || 'Unable to delete the user. Please try again.',
+          5000
+        );
       })
 
       // Import Users
@@ -261,13 +323,30 @@ const userSlice = createSlice({
         state.loading = false;
         if (action.payload.success) {
           state.users = action.payload.data || [];
+          
+          // Show success notification
+          showSuccess(
+            'Users Imported Successfully',
+            `${action.payload.data?.length || 0} user(s) have been imported from CSV.`,
+            4000
+          );
         } else {
           state.error = "Failed to import users";
+          showError(
+            'Import Failed',
+            'Unable to import users from CSV. Please check the file format and try again.',
+            5000
+          );
         }
       })
       .addCase(importUsers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        showError(
+          'Import Failed',
+          action.payload || 'An unexpected error occurred while importing users.',
+          5000
+        );
       });
   },
 });
@@ -280,6 +359,7 @@ export const {
   setStatusFilter,
   setRoleFilter,
   setCurrentPage,
+  setItemsPerPage,
   setSortField,
 } = userSlice.actions;
 

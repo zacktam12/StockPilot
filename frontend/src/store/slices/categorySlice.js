@@ -1,5 +1,60 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
+import { showSuccess, showError, showWarning } from "../../services/notificationService";
+
+// Helper function to filter and sort items
+const getFilteredItems = (items, searchTerm, sortField, sortOrder, filters) => {
+  let filtered = [...items];
+
+  // Apply search filter
+  if (searchTerm) {
+    filtered = filtered.filter((item) =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }
+
+  // Apply description filter
+  if (filters.options.hasDescription) {
+    filtered = filtered.filter((item) => item.description && item.description.trim() !== "");
+  }
+
+  // Apply date range filter
+  if (filters.dateRange.from && filters.dateRange.to) {
+    const fromDate = new Date(filters.dateRange.from);
+    const toDate = new Date(filters.dateRange.to);
+    filtered = filtered.filter((item) => {
+      const itemDate = new Date(item.createdAt);
+      return itemDate >= fromDate && itemDate <= toDate;
+    });
+  }
+
+  // Apply sorting
+  filtered.sort((a, b) => {
+    let aValue = a[sortField];
+    let bValue = b[sortField];
+
+    // Handle date sorting
+    if (sortField === "createdAt" || sortField === "created_at") {
+      aValue = new Date(a.createdAt || a.created_at);
+      bValue = new Date(b.createdAt || b.created_at);
+    }
+
+    // Handle string sorting
+    if (typeof aValue === "string") {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
+    }
+
+    if (sortOrder === "asc") {
+      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+    } else {
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    }
+  });
+
+  return filtered;
+};
 
 // Async Thunks
 export const fetchCategories = createAsyncThunk(
@@ -58,8 +113,23 @@ export const deleteCategory = createAsyncThunk(
   }
 );
 
+export const importCategories = createAsyncThunk(
+  "category/import",
+  async (categories, { rejectWithValue }) => {
+    try {
+      const response = await api.post("/categories/bulk", { categories });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to import categories"
+      );
+    }
+  }
+);
+
 const initialState = {
   items: [],
+  filteredItems: [],
   loading: false,
   error: null,
   currentPage: 1,
@@ -69,6 +139,8 @@ const initialState = {
   searchTerm: "",
   sortField: "name",
   sortOrder: "asc",
+  selectedItems: [],
+  selectAll: false,
   modal: {
     isOpen: false,
     mode: "create",
@@ -117,6 +189,13 @@ const categorySlice = createSlice({
     setSearchTerm: (state, action) => {
       state.searchTerm = action.payload;
       state.currentPage = 1; // Reset to first page when searching
+      state.filteredItems = getFilteredItems(
+        state.items,
+        state.searchTerm,
+        state.sortField,
+        state.sortOrder,
+        state.filters
+      );
     },
     setSort: (state, action) => {
       const { field } = action.payload;
@@ -141,9 +220,23 @@ const categorySlice = createSlice({
       }
       // Reset to first page when sorting changes
       state.currentPage = 1;
+      state.filteredItems = getFilteredItems(
+        state.items,
+        state.searchTerm,
+        state.sortField,
+        state.sortOrder,
+        state.filters
+      );
     },
     setFilterOptions: (state, action) => {
       state.filters.options = { ...state.filters.options, ...action.payload };
+      state.filteredItems = getFilteredItems(
+        state.items,
+        state.searchTerm,
+        state.sortField,
+        state.sortOrder,
+        state.filters
+      );
     },
     toggleDescriptionFilter: (state) => {
       state.filters.options.hasDescription =
@@ -152,15 +245,59 @@ const categorySlice = createSlice({
     setDateRangeFilter: (state, action) => {
       state.filters.dateRange = action.payload;
       state.currentPage = 1;
+      state.filteredItems = getFilteredItems(
+        state.items,
+        state.searchTerm,
+        state.sortField,
+        state.sortOrder,
+        state.filters
+      );
     },
     clearDateRangeFilter: (state) => {
       state.filters.dateRange = { from: "", to: "" };
       state.currentPage = 1;
+      state.filteredItems = getFilteredItems(
+        state.items,
+        state.searchTerm,
+        state.sortField,
+        state.sortOrder,
+        state.filters
+      );
     },
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload;
     },
+    setItemsPerPage: (state, action) => {
+      state.itemsPerPage = action.payload;
+      state.currentPage = 1; // Reset to first page when changing page size
+      // Recalculate totalPages based on totalItems, not items.length
+      state.totalPages = Math.ceil(state.totalItems / state.itemsPerPage);
+    },
     resetCategoryState: () => initialState,
+    // Selection functionality
+    toggleItemSelection: (state, action) => {
+      const itemId = action.payload;
+      const index = state.selectedItems.indexOf(itemId);
+      if (index > -1) {
+        state.selectedItems.splice(index, 1);
+      } else {
+        state.selectedItems.push(itemId);
+      }
+      // Update selectAll based on current selection
+      state.selectAll = state.selectedItems.length === state.filteredItems.length && state.filteredItems.length > 0;
+    },
+    toggleSelectAll: (state) => {
+      if (state.selectAll) {
+        state.selectedItems = [];
+      } else {
+        state.selectedItems = state.filteredItems.map(item => item.id);
+      }
+      state.selectAll = !state.selectAll;
+    },
+    clearSelection: (state) => {
+      state.selectedItems = [];
+      state.selectAll = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -170,7 +307,6 @@ const categorySlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.loading = false;
-        console.log("fetchCategories fulfilled:", action.payload);
         // Handle both paginated and non-paginated responses
         if (action.payload && action.payload.success && action.payload.data) {
           // Server-side paginated response
@@ -198,12 +334,15 @@ const categorySlice = createSlice({
           state.totalItems = 0;
           state.totalPages = 1;
         }
-        console.log("Updated category state:", {
-          itemsCount: state.items.length,
-          currentPage: state.currentPage,
-          totalPages: state.totalPages,
-          totalItems: state.totalItems,
-        });
+        
+        // Update filtered items
+        state.filteredItems = getFilteredItems(
+          state.items,
+          state.searchTerm,
+          state.sortField,
+          state.sortOrder,
+          state.filters
+        );
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.loading = false;
@@ -227,11 +366,32 @@ const categorySlice = createSlice({
         // Reset to first page to show the new category
         state.currentPage = 1;
 
+        // Update filtered items
+        state.filteredItems = getFilteredItems(
+          state.items,
+          state.searchTerm,
+          state.sortField,
+          state.sortOrder,
+          state.filters
+        );
+
         state.modal.isOpen = false;
+        
+        // Show success notification
+        showSuccess(
+          'Category Created Successfully',
+          `"${categoryData.name}" has been added to your categories.`,
+          4000
+        );
       })
       .addCase(createCategory.rejected, (state, action) => {
         state.modal.isLoading = false;
         state.error = action.payload;
+        showError(
+          'Category Creation Failed',
+          action.payload || 'Unable to create the category. Please try again.',
+          5000
+        );
       })
       .addCase(updateCategory.pending, (state) => {
         state.modal.isLoading = true;
@@ -245,12 +405,34 @@ const categorySlice = createSlice({
         if (index !== -1) {
           state.items[index] = categoryData;
         }
+        
+        // Update filtered items
+        state.filteredItems = getFilteredItems(
+          state.items,
+          state.searchTerm,
+          state.sortField,
+          state.sortOrder,
+          state.filters
+        );
+        
         state.modal.isLoading = false;
         state.modal.isOpen = false;
+        
+        // Show success notification
+        showSuccess(
+          'Category Updated Successfully',
+          `"${categoryData.name}" has been updated.`,
+          4000
+        );
       })
       .addCase(updateCategory.rejected, (state, action) => {
         state.modal.isLoading = false;
         state.error = action.payload;
+        showError(
+          'Category Update Failed',
+          action.payload || 'Unable to update the category. Please try again.',
+          5000
+        );
       })
       .addCase(deleteCategory.pending, (state, action) => {
         state.items = state.items.map((item) =>
@@ -269,15 +451,79 @@ const categorySlice = createSlice({
           state.currentPage = state.totalPages;
         }
 
+        // Update filtered items
+        state.filteredItems = getFilteredItems(
+          state.items,
+          state.searchTerm,
+          state.sortField,
+          state.sortOrder,
+          state.filters
+        );
+
         // Trigger dashboard refresh after category deletion
-        console.log("🗑️ Category deleted, triggering dashboard refresh...");
         // We'll dispatch this from the component instead to avoid circular imports
+        
+        // Show success notification
+        showSuccess(
+          'Category Deleted Successfully',
+          'The category has been removed from your categories.',
+          4000
+        );
       })
       .addCase(deleteCategory.rejected, (state, action) => {
         state.items = state.items.map((item) =>
           item.id === action.meta.arg ? { ...item, _deleting: false } : item
         );
         state.error = action.payload;
+        showError(
+          'Category Deletion Failed',
+          action.payload || 'Unable to delete the category. Please try again.',
+          5000
+        );
+      })
+      .addCase(importCategories.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(importCategories.fulfilled, (state, action) => {
+        state.loading = false;
+        // Handle the response structure from backend
+        const newCategories = action.payload.data || action.payload || [];
+        
+        // Add the new categories to the beginning of the items array
+        state.items.unshift(...newCategories);
+
+        // Update pagination info for client-side pagination
+        state.totalItems = state.items.length;
+        state.totalPages = Math.ceil(state.totalItems / state.itemsPerPage);
+
+        // Reset to first page to show the new categories
+        state.currentPage = 1;
+
+        // Update filtered items
+        state.filteredItems = getFilteredItems(
+          state.items,
+          state.searchTerm,
+          state.sortField,
+          state.sortOrder,
+          state.filters
+        );
+        
+        // Show success notification
+        showSuccess(
+          'Categories Imported Successfully',
+          `${newCategories.length} categor${newCategories.length === 1 ? 'y' : 'ies'} imported from CSV.`,
+          4000
+        );
+      })
+      .addCase(importCategories.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        showError(
+          'Category Import Failed',
+          action.payload || 'Unable to import categories. Please check the file format and try again.',
+          5000
+        );
       });
   },
 });
@@ -295,7 +541,11 @@ export const {
   setDateRangeFilter,
   clearDateRangeFilter,
   setCurrentPage,
+  setItemsPerPage,
   resetCategoryState,
+  toggleItemSelection,
+  toggleSelectAll,
+  clearSelection,
 } = categorySlice.actions;
 
 export default categorySlice.reducer;

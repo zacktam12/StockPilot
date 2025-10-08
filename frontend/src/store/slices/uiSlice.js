@@ -42,8 +42,11 @@ const uiSlice = createSlice({
     hideToast: (state) => {
       state.toast = { message: '', type: '', visible: false };
     },
+    clearAllToasts: (state) => {
+      state.toast = { message: '', type: '', visible: false };
+    },
   }
 });
 
-export const { toggleModal, setLoading, setTheme, showToast, hideToast } = uiSlice.actions;
+export const { toggleModal, setLoading, setTheme, showToast, hideToast, clearAllToasts } = uiSlice.actions;
 export default uiSlice.reducer;

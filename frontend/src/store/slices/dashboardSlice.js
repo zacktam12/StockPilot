@@ -1,6 +1,7 @@
 // Updated dashboardSlice.js with pagination support and debugging
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
+import { showError, showWarning } from "../../services/notificationService";
 
 // Add action to refresh product distribution
 export const refreshProductDistribution = createAsyncThunk(
@@ -20,10 +21,14 @@ export const refreshProductDistribution = createAsyncThunk(
 
 export const fetchDashboardStats = createAsyncThunk(
   "dashboard/fetchDashboardStats",
-  async () => {
+  async (timeRange = "monthly") => {
     try {
-      console.log("🔍 Fetching dashboard stats...");
-      const response = await api.get("/dashboard/stats");
+      if (process.env.NODE_ENV === 'development') {
+        console.log("🔍 Fetching dashboard stats with range:", timeRange);
+      }
+      const response = await api.get("/dashboard/stats", {
+        params: { range: timeRange },
+      });
       console.log("📊 Dashboard stats response:", response.data);
       return response.data;
     } catch (error) {
@@ -120,12 +125,21 @@ export const fetchRevenueData = createAsyncThunk(
   "dashboard/fetchRevenueData",
   async (timeRange = "monthly") => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Fetching revenue data with range:', timeRange);
+      }
       const response = await api.get("/dashboard/revenue-data", {
         params: { range: timeRange },
       });
+      console.log('💰 Revenue API response:', response.data);
       return response.data;
     } catch (error) {
-      console.warn("Failed to load revenue data:", error);
+      console.error("❌ Failed to load revenue data:", error);
+      console.error("❌ Error details:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
       // Return default revenue data structure
       return [];
     }
@@ -249,12 +263,16 @@ const dashboardSlice = createSlice({
       .addCase(fetchDashboardStats.fulfilled, (state, action) => {
         console.log("✅ Dashboard stats loaded:", action.payload);
         state.loading = false;
+        
+        // Handle both backend response formats
+        const responseData = action.payload.data || action.payload;
+        
         state.stats = {
           ...state.stats,
-          ...action.payload.stats,
-          lowStockItems: action.payload.lowStockItems?.length || 0,
+          ...responseData.stats,
+          lowStockItems: responseData.lowStockItems?.length || 0,
         };
-        state.lowStockProducts = action.payload.lowStockItems || [];
+        state.lowStockProducts = responseData.lowStockItems || [];
         state.lastUpdated.stats = new Date().toISOString();
         console.log("📊 Updated stats state:", state.stats);
       })
@@ -262,6 +280,11 @@ const dashboardSlice = createSlice({
         console.error("❌ Dashboard stats failed:", action.payload);
         state.loading = false;
         state.error = action.payload;
+        showError(
+          'Dashboard Data Failed',
+          'Unable to load dashboard statistics. Some data may not be available.',
+          5000
+        );
       })
       .addCase(fetchActivities.pending, (state) => {
         state.activitiesLoading = true;
@@ -281,12 +304,18 @@ const dashboardSlice = createSlice({
       .addCase(fetchActivities.rejected, (state, action) => {
         state.activitiesLoading = false;
         state.error = action.payload;
+        showWarning(
+          'Activities Data Failed',
+          'Unable to load recent activities. The activity feed may not be available.',
+          4000
+        );
       })
       .addCase(fetchLowStockAlerts.pending, (state) => {
         state.lowStockLoading = true;
         state.error = null;
       })
       .addCase(fetchLowStockAlerts.fulfilled, (state, action) => {
+        console.log('✅ Low stock alerts fulfilled:', action.payload);
         state.lowStockLoading = false;
         state.lowStockAlerts = {
           data: action.payload.data || [],
@@ -296,10 +325,16 @@ const dashboardSlice = createSlice({
           limit: action.payload.limit || 10,
         };
         state.lastUpdated.lowStockAlerts = new Date().toISOString();
+        console.log('📊 Updated lowStockAlerts state:', state.lowStockAlerts);
       })
       .addCase(fetchLowStockAlerts.rejected, (state, action) => {
         state.lowStockLoading = false;
         state.error = action.payload;
+        showWarning(
+          'Low Stock Alerts Failed',
+          'Unable to load low stock alerts. Product alerts may not be available.',
+          4000
+        );
       })
       .addCase(fetchRevenueData.pending, (state) => {
         state.revenueLoading = true;
@@ -307,12 +342,26 @@ const dashboardSlice = createSlice({
       })
       .addCase(fetchRevenueData.fulfilled, (state, action) => {
         state.revenueLoading = false;
-        state.revenue = { data: action.payload };
+        // Handle both backend response formats
+        const responseData = action.payload.data || action.payload;
+        state.revenue = { data: responseData };
         state.lastUpdated.revenue = new Date().toISOString();
+        if (process.env.NODE_ENV === 'development') {
+          console.log('💰 Revenue data loaded in Redux:', {
+            payload: action.payload,
+            responseData,
+            dataLength: responseData?.length || 0
+          });
+        }
       })
       .addCase(fetchRevenueData.rejected, (state, action) => {
         state.revenueLoading = false;
         state.error = action.payload;
+        showWarning(
+          'Revenue Data Failed',
+          'Unable to load revenue chart data. The chart may not display correctly.',
+          4000
+        );
       })
       .addCase(fetchProductDistribution.pending, (state) => {
         state.distributionLoading = true;
@@ -320,8 +369,10 @@ const dashboardSlice = createSlice({
       })
       .addCase(fetchProductDistribution.fulfilled, (state, action) => {
         state.distributionLoading = false;
+        // Handle both backend response formats
+        const responseData = action.payload.data || action.payload;
         state.distribution = {
-          data: action.payload || {},
+          data: responseData || {},
         };
         state.lastUpdated.distribution = new Date().toISOString();
       })
@@ -329,6 +380,11 @@ const dashboardSlice = createSlice({
         state.distributionLoading = false;
         state.distribution = { data: {} };
         state.error = action.payload;
+        showWarning(
+          'Product Distribution Failed',
+          'Unable to load product distribution chart. The chart may not display correctly.',
+          4000
+        );
       })
       .addCase(refreshProductDistribution.pending, (state) => {
         state.distributionLoading = true;
@@ -336,11 +392,12 @@ const dashboardSlice = createSlice({
       })
       .addCase(refreshProductDistribution.fulfilled, (state, action) => {
         state.distributionLoading = false;
+        // Handle both backend response formats
+        const responseData = action.payload.data || action.payload;
         state.distribution = {
-          data: action.payload || {},
+          data: responseData || {},
         };
         state.lastUpdated.distribution = new Date().toISOString();
-        console.log("✅ Product distribution refreshed successfully");
       })
       .addCase(refreshProductDistribution.rejected, (state, action) => {
         state.distributionLoading = false;
@@ -348,6 +405,11 @@ const dashboardSlice = createSlice({
         console.error(
           "❌ Failed to refresh product distribution:",
           action.payload
+        );
+        showWarning(
+          'Refresh Failed',
+          'Unable to refresh product distribution data. Please try again later.',
+          4000
         );
       });
   },

@@ -1,6 +1,7 @@
 // src/store/slices/supplierSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
+import { showSuccess, showError, showWarning } from "../../services/notificationService";
 
 // Async Thunks
 export const fetchSuppliers = createAsyncThunk(
@@ -54,6 +55,20 @@ export const deleteSupplier = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.message || "Failed to delete supplier"
+      );
+    }
+  }
+);
+
+export const fetchSupplierById = createAsyncThunk(
+  "supplier/fetchById",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/suppliers/${id}`);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to load supplier"
       );
     }
   }
@@ -143,13 +158,19 @@ const initialState = {
   sortField: "createdAt",
   sortOrder: "desc",
   isModalOpen: false,
+  isDrawerOpen: false,
   editingSupplier: null,
+  selectedSupplier: null,
   formData: {},
   filters: {
-    hasPhone: false,
-    hasAddress: false,
-    hasEmail: false,
-    hasCompany: false,
+    sortField: "createdAt",
+    sortOrder: "desc",
+    options: {
+      hasPhone: false,
+      hasAddress: false,
+      hasEmail: false,
+      hasCompany: false,
+    },
   },
 };
 
@@ -178,6 +199,8 @@ const supplierSlice = createSlice({
       const { field, order } = action.payload;
       state.sortField = field;
       state.sortOrder = order || "asc";
+      state.filters.sortField = field;
+      state.filters.sortOrder = order || "asc";
       // Reset to first page when sorting changes
       state.currentPage = 1;
     },
@@ -185,8 +208,21 @@ const supplierSlice = createSlice({
       state.filters[action.payload.key] = action.payload.value;
       state.currentPage = 1;
     },
+    setFilterOptions: (state, action) => {
+      state.filters.options = { ...state.filters.options, ...action.payload };
+      state.currentPage = 1; // Reset to first page when filtering
+    },
+    clearFilters: (state) => {
+      state.filters = initialState.filters;
+      state.currentPage = 1;
+    },
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload;
+    },
+    setItemsPerPage: (state, action) => {
+      state.itemsPerPage = action.payload;
+      state.currentPage = 1; // Reset to first page when changing page size
+      state.totalPages = Math.ceil(state.items.length / state.itemsPerPage);
     },
     openCreateModal: (state) => {
       state.isModalOpen = true;
@@ -200,6 +236,18 @@ const supplierSlice = createSlice({
       state.isModalOpen = false;
       state.editingSupplier = null;
     },
+    openCreateDrawer: (state) => {
+      state.isDrawerOpen = true;
+      state.editingSupplier = null;
+    },
+    openEditDrawer: (state, action) => {
+      state.isDrawerOpen = true;
+      state.editingSupplier = action.payload;
+    },
+    closeDrawer: (state) => {
+      state.isDrawerOpen = false;
+      state.editingSupplier = null;
+    },
     setFormField: (state, action) => {
       const { field, value } = action.payload;
       if (!state.formData) {
@@ -208,16 +256,16 @@ const supplierSlice = createSlice({
       state.formData[field] = value;
     },
     toggleEmailFilter: (state) => {
-      state.filters.hasEmail = !state.filters.hasEmail;
+      state.filters.options.hasEmail = !state.filters.options.hasEmail;
     },
     togglePhoneFilter: (state) => {
-      state.filters.hasPhone = !state.filters.hasPhone;
+      state.filters.options.hasPhone = !state.filters.options.hasPhone;
     },
     toggleAddressFilter: (state) => {
-      state.filters.hasAddress = !state.filters.hasAddress;
+      state.filters.options.hasAddress = !state.filters.options.hasAddress;
     },
     toggleCompanyFilter: (state) => {
-      state.filters.hasCompany = !state.filters.hasCompany;
+      state.filters.options.hasCompany = !state.filters.options.hasCompany;
     },
   },
   extraReducers: (builder) => {
@@ -229,8 +277,23 @@ const supplierSlice = createSlice({
       })
       .addCase(fetchSuppliers.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload && action.payload.data) {
-          // Server-side paginated response
+        if (action.payload && action.payload.success && action.payload.data) {
+          // Backend returns { success: true, data: suppliers, pagination: {...} }
+          state.items = action.payload.data;
+          if (action.payload.pagination) {
+            state.totalItems = action.payload.pagination.totalItems || 0;
+            state.totalPages = action.payload.pagination.totalPages || 1;
+            state.currentPage = action.payload.pagination.currentPage || 1;
+            state.itemsPerPage = action.payload.pagination.itemsPerPage || 5;
+          } else {
+            // Fallback for flattened response structure
+            state.totalItems = action.payload.total || 0;
+            state.totalPages = action.payload.pages || 1;
+            state.currentPage = action.payload.page || 1;
+            state.itemsPerPage = 5;
+          }
+        } else if (action.payload && action.payload.data) {
+          // Server-side paginated response (legacy format)
           state.items = action.payload.data;
           if (action.payload.pagination) {
             state.totalItems =
@@ -268,28 +331,61 @@ const supplierSlice = createSlice({
       .addCase(createSupplier.pending, (state) => {
         state.loading = true;
       })
-      .addCase(createSupplier.fulfilled, (state) => {
+      .addCase(createSupplier.fulfilled, (state, action) => {
         // Refresh the supplier list to get updated pagination
         // The useEffect will automatically refetch with current parameters
         state.isModalOpen = false;
+        state.isDrawerOpen = false;
+        
+        // Show success notification
+        const supplier = action.payload.data || action.payload;
+        showSuccess(
+          'Supplier Created Successfully',
+          `"${supplier.name || supplier.companyName}" has been added to your suppliers.`,
+          4000
+        );
       })
       .addCase(createSupplier.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        showError(
+          'Supplier Creation Failed',
+          action.payload || 'Unable to create the supplier. Please try again.',
+          5000
+        );
       })
 
       // Update Supplier
       .addCase(updateSupplier.pending, (state) => {
         state.loading = true;
       })
-      .addCase(updateSupplier.fulfilled, (state) => {
+      .addCase(updateSupplier.fulfilled, (state, action) => {
+        state.loading = false;
+        // Backend returns { success: true, data: supplier }
+        const updatedSupplier = action.payload.data || action.payload;
+        // Update the selected supplier if it's the same one being updated
+        if (state.selectedSupplier && state.selectedSupplier.id === updatedSupplier.id) {
+          state.selectedSupplier = updatedSupplier;
+        }
         // Refresh the supplier list to get updated data
-        // The useEffect will automatically refetch with current parameters
         state.isModalOpen = false;
+        state.isDrawerOpen = false;
+        
+        // Show success notification
+        showSuccess(
+          'Supplier Updated Successfully',
+          `"${updatedSupplier.name || updatedSupplier.companyName}" has been updated.`,
+          4000
+        );
       })
       .addCase(updateSupplier.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        showError(
+          'Supplier Update Failed',
+          action.payload || 'Unable to update the supplier. Please try again.',
+          5000
+        );
       })
 
       // Delete Supplier
@@ -300,8 +396,35 @@ const supplierSlice = createSlice({
         state.loading = false;
         // Refresh the supplier list to get updated pagination
         // The useEffect will automatically refetch with current parameters
+        
+        // Show success notification
+        showSuccess(
+          'Supplier Deleted Successfully',
+          'The supplier has been removed from your supplier list.',
+          4000
+        );
       })
       .addCase(deleteSupplier.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        showError(
+          'Supplier Deletion Failed',
+          action.payload || 'Unable to delete the supplier. Please try again.',
+          5000
+        );
+      })
+
+      // Fetch Supplier by ID
+      .addCase(fetchSupplierById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchSupplierById.fulfilled, (state, action) => {
+        state.loading = false;
+        // Backend returns { success: true, data: supplier }
+        state.selectedSupplier = action.payload.data || action.payload;
+      })
+      .addCase(fetchSupplierById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -368,10 +491,16 @@ export const {
   setSortField,
   setSort,
   setFilter,
+  setFilterOptions,
+  clearFilters,
   setCurrentPage,
+  setItemsPerPage,
   openCreateModal,
   openEditModal,
   closeModal,
+  openCreateDrawer,
+  openEditDrawer,
+  closeDrawer,
   setFormField,
   toggleEmailFilter,
   togglePhoneFilter,
