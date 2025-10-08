@@ -15,10 +15,15 @@ import { useOutsideClick } from "../../../hooks/useOutsideClick";
 const NewSupplierModal = () => {
   const dispatch = useDispatch();
   const {
-    modal: { isOpen, mode, formData },
+    isModalOpen,
+    editingSupplier,
+    formData,
     loading: saveLoading,
     error: saveError,
   } = useSelector((state) => state.supplier);
+  
+  const isOpen = isModalOpen;
+  const mode = editingSupplier ? "edit" : "create";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
