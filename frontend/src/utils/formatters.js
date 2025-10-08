@@ -13,12 +13,17 @@ export const formatCurrency = (amount, currency = "USD", locale = "en-US") => {
       console.warn("Invalid amount provided to formatCurrency");
       return "$0.00";
     }
+    
+    // Handle ETB with custom formatting since it's not widely supported by Intl.NumberFormat
+    if (currency === 'ETB') {
+      return `Br ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    
     return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: currency,
     }).format(amount);
   } catch (error) {
-    console.error("Currency formatting error:", error);
     return amount?.toString() || "0";
   }
 };
@@ -50,7 +55,6 @@ export const formatDate = (date, locale = "en-US", options = {}) => {
       ...options,
     }).format(dateObj);
   } catch (error) {
-    console.error("Date formatting error:", error);
     return date?.toString() || "Invalid Date";
   }
 };
@@ -69,7 +73,6 @@ export const formatNumber = (number, locale = "en-US") => {
     }
     return new Intl.NumberFormat(locale).format(number);
   } catch (error) {
-    console.error("Number formatting error:", error);
     return number?.toString() || "0";
   }
 };
@@ -93,7 +96,6 @@ export const formatPercentage = (value, isDecimal = true, locale = "en-US") => {
       maximumFractionDigits: 2,
     }).format(numValue / 100);
   } catch (error) {
-    console.error("Percentage formatting error:", error);
     return "0%";
   }
 };
@@ -117,7 +119,6 @@ export const formatFileSize = (bytes) => {
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   } catch (error) {
-    console.error("File size formatting error:", error);
     return bytes?.toString() || "0 Bytes";
   }
 };
@@ -135,7 +136,6 @@ export const formatPhoneNumber = (phoneNumber) => {
     const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
     return match ? `(${match[1]}) ${match[2]}-${match[3]}` : phoneNumber;
   } catch (error) {
-    console.error("Phone number formatting error:", error);
     return phoneNumber?.toString() || "";
   }
 };

@@ -266,9 +266,9 @@ export const convertCSVToProducts = (csvData) => {
       price: getNumericValue("price", 0),
       cost: getNumericValue("cost", null),
       quantity: getIntegerValue("quantity", 0),
-      minStock:
+      min_stock:
         getIntegerValue("minStock", null) || getIntegerValue("Min Stock", null),
-      maxStock:
+      max_stock:
         getIntegerValue("maxStock", null) || getIntegerValue("Max Stock", null),
       categoryId: getIntegerValue("categoryId", null),
       image_url: getFieldValue("image_url", "").trim(),
@@ -293,6 +293,12 @@ export const PRODUCT_CSV_HEADERS = [
 
 // Required fields for CSV import (support both lowercase and capitalized versions)
 export const REQUIRED_CSV_FIELDS = ["name", "price"];
+
+// Required fields for customer CSV import
+export const REQUIRED_CUSTOMER_CSV_FIELDS = ["Name", "Email"];
+
+// Required fields for supplier CSV import
+export const REQUIRED_SUPPLIER_CSV_FIELDS = ["Name"];
 
 // Field mapping for CSV import (handles both export and import formats)
 export const CSV_FIELD_MAPPING = {
@@ -376,19 +382,24 @@ export const exportToCSV = (data, filename = "export.csv", headers = null) => {
 
 // User-specific export function
 export const exportUsersToCSV = (users) => {
+  // Check if there's data to export
+  if (!users || users.length === 0) {
+    alert('No users data to export. Please ensure you have user records in the current view.');
+    return;
+  }
+
   const userData = users.map((user) => ({
-    "First Name": user.firstName || "",
-    "Last Name": user.lastName || "",
+    "First Name": user.firstName || user.first_name || "",
+    "Last Name": user.lastName || user.last_name || "",
     Email: user.email || "",
     Phone: user.phone || "",
-    "Employee ID": user.employeeId || "",
-    Role: user.role?.role_type || "",
+    "Employee ID": user.employeeId || user.employee_id || "",
+    Role: user.role?.role_type || user.role?.name || user.roleName || "",
     Status: user.status || "",
-    "Created At": user.createdAt
-      ? new Date(user.createdAt).toLocaleDateString()
+    "Created At": user.createdAt || user.created_at
+      ? new Date(user.createdAt || user.created_at).toLocaleDateString()
       : "",
   }));
-
   exportToCSV(
     userData,
     `users-export-${new Date().toISOString().split("T")[0]}.csv`
@@ -397,6 +408,12 @@ export const exportUsersToCSV = (users) => {
 
 // Product-specific export function
 export const exportProductsToCSV = (products) => {
+  // Check if there's data to export
+  if (!products || products.length === 0) {
+    alert('No products data to export. Please ensure you have product records in the current view.');
+    return;
+  }
+
   const productData = products.map((product) => ({
     Name: product.name || "",
     Description: product.description || "",
@@ -405,14 +422,13 @@ export const exportProductsToCSV = (products) => {
     Price: product.price || "",
     Cost: product.cost || "",
     Quantity: product.quantity || "",
-    "Min Stock": product.minStock || "",
-    "Max Stock": product.maxStock || "",
+    "Min Stock": product.min_stock || product.minStock || "",
+    "Max Stock": product.max_stock || product.maxStock || "",
     Category: product.category?.name || "",
     "Created At": product.createdAt
       ? new Date(product.createdAt).toLocaleDateString()
       : "",
   }));
-
   exportToCSV(
     productData,
     `products-export-${new Date().toISOString().split("T")[0]}.csv`
@@ -523,6 +539,12 @@ const isValidEmail = (email) => {
 
 // Supplier CSV utilities
 export const exportSuppliersToCSV = (suppliers) => {
+  // Check if there's data to export
+  if (!suppliers || suppliers.length === 0) {
+    alert('No suppliers data to export. Please ensure you have supplier records in the current view.');
+    return;
+  }
+
   const headers = [
     { key: "name", label: "Name" },
     { key: "contactName", label: "Contact Name" },
@@ -621,7 +643,100 @@ export const convertCSVToSuppliers = (csvData) => {
   });
 };
 
+// Category CSV utilities
+export const exportCategoriesToCSV = (categories) => {
+  // Check if there's data to export
+  if (!categories || categories.length === 0) {
+    alert('No categories data to export. Please ensure you have category records in the current view.');
+    return;
+  }
+
+  const headers = [
+    { key: "name", label: "Name" },
+    { key: "description", label: "Description" },
+    { key: "createdAt", label: "Created At" },
+  ];
+
+  const csvContent = convertToCSV(categories, headers);
+  const filename = generateCSVFilename("categories");
+  downloadCSV(csvContent, filename);
+};
+
+export const validateCategoryCSV = (data) => {
+  const errors = [];
+  const requiredFields = ["Name"];
+
+  if (!data || data.length === 0) {
+    return { isValid: false, errors: ["No data found in CSV file"] };
+  }
+
+  // Check required fields (support both formats)
+  const firstRow = data[0];
+  const availableFields = Object.keys(firstRow);
+
+  // Check if required fields exist in either format
+  const missingFields = requiredFields.filter((requiredField) => {
+    // Check for exact match
+    if (availableFields.includes(requiredField)) return false;
+
+    // Check for lowercase version
+    const lowercaseField = requiredField.toLowerCase();
+    if (availableFields.includes(lowercaseField)) return false;
+
+    return true;
+  });
+
+  if (missingFields.length > 0) {
+    errors.push(`Missing required fields: ${missingFields.join(", ")}`);
+  }
+
+  // Validate data
+  data.forEach((row, index) => {
+    const rowNumber = index + 2;
+
+    // Check for required fields (support both formats)
+    requiredFields.forEach((requiredField) => {
+      let fieldValue = null;
+
+      // Try different field name formats
+      if (row[requiredField]) {
+        fieldValue = row[requiredField];
+      } else if (row[requiredField.toLowerCase()]) {
+        fieldValue = row[requiredField.toLowerCase()];
+      }
+
+      if (!fieldValue || fieldValue.toString().trim() === "") {
+        errors.push(`Row ${rowNumber}: ${requiredField} is required`);
+      }
+    });
+  });
+
+  return { isValid: errors.length === 0, errors };
+};
+
+export const convertCSVToCategories = (csvData) => {
+  return csvData.map((row) => {
+    // Helper function to get field value with fallback
+    const getFieldValue = (fieldName, defaultValue = "") => {
+      return row[fieldName] || row[fieldName.toLowerCase()] || defaultValue;
+    };
+
+    return {
+      name: getFieldValue("Name", "").trim(),
+      description: getFieldValue("Description", "").trim(),
+    };
+  });
+};
+
+export const REQUIRED_CATEGORY_CSV_FIELDS = ["Name"];
+
 export const exportCustomersToCSV = (customers) => {
+  // Check if there's data to export
+  if (!customers || customers.length === 0) {
+    alert('No customers data to export. Please ensure you have customer records in the current view.');
+    return;
+  }
+  
   const headers = [
     { key: "name", label: "Name" },
     { key: "email", label: "Email" },
@@ -715,19 +830,34 @@ export const convertCSVToCustomers = (csvData) => {
 };
 
 export const exportPurchasesToCSV = (purchases) => {
+  // Check if there's data to export
+  if (!purchases || purchases.length === 0) {
+    alert('No purchase data to export. Please ensure you have purchase records in the current view.');
+    return;
+  }
+
   const headers = [
-    { key: "id", label: "Purchase Order" },
+    { key: "poNumber", label: "PO Number" },
+    { key: "id", label: "Purchase ID" },
     { key: "created_at", label: "Date & Time" },
     { key: "supplierName", label: "Supplier" },
     { key: "total_amount", label: "Total Amount" },
+    { key: "discount", label: "Discount" },
+    { key: "tax", label: "Tax" },
     { key: "status", label: "Status" },
+    { key: "notes", label: "Notes" },
   ];
+  
   const data = purchases.map((purchase) => ({
+    poNumber: purchase.poNumber || purchase.po_number || 'N/A',
     id: purchase.id,
-    created_at: purchase.created_at,
-    supplierName: purchase.supplier?.name || purchase.supplier_id,
-    total_amount: purchase.total_amount || purchase.totalCost,
-    status: purchase.status,
+    created_at: purchase.createdAt || purchase.created_at || new Date().toISOString(),
+    supplierName: purchase.supplier?.name || purchase.supplierName || 'N/A',
+    total_amount: purchase.totalCost || purchase.total_amount || purchase.total_cost || 0,
+    discount: purchase.discount || 0,
+    tax: purchase.tax || 0,
+    status: purchase.status || 'pending',
+    notes: purchase.notes || '',
   }));
   const csvContent = convertToCSV(data, headers);
   const filename = generateCSVFilename("purchases");
@@ -1008,14 +1138,34 @@ export const convertCSVToUsers = (csvData) => {
 
 // Export sales to CSV
 export const exportSalesToCSV = (sales) => {
+  // Check if there's data to export
+  if (!sales || sales.length === 0) {
+    alert('No sales data to export. Please ensure you have sales records in the current view.');
+    return;
+  }
+
   const headers = [
-    { key: "id", label: "Order Number" },
+    { key: "orderNumber", label: "Order Number" },
+    { key: "id", label: "Sale ID" },
     { key: "created_at", label: "Date & Time" },
-    { key: "customer.name", label: "Customer" },
+    { key: "customerName", label: "Customer" },
     { key: "total_amount", label: "Total Amount" },
+    { key: "paymentMethod", label: "Payment Method" },
     { key: "status", label: "Status" },
+    { key: "notes", label: "Notes" },
   ];
-  const csvContent = convertToCSV(sales, headers);
+  
+  const data = sales.map((sale) => ({
+    orderNumber: sale.orderNumber || sale.order_number || 'N/A',
+    id: sale.id,
+    created_at: sale.createdAt || sale.created_at || new Date().toISOString(),
+    customerName: sale.customer?.name || sale.customerName || 'N/A',
+    total_amount: sale.totalPrice || sale.total_amount || sale.total_price || 0,
+    paymentMethod: sale.paymentMethod || sale.payment_method || 'N/A',
+    status: sale.status || 'pending',
+    notes: sale.notes || '',
+  }));
+  const csvContent = convertToCSV(data, headers);
   const filename = generateCSVFilename("sales");
   downloadCSV(csvContent, filename);
 };
