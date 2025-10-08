@@ -1,9 +1,16 @@
+@import './styles/sidebar.css';
+
 :root {
   /* Light theme colors */
   --primary-color: #3f51b5;
   --text-color: #333;
   --background-color: #fff;
   --border-color: #e0e0e0;
+  
+  /* Tooltip colors for charts */
+  --tooltip-bg: #ffffff;
+  --tooltip-border: #e5e7eb;
+  --tooltip-text: #111827;
 }
 
 .dark {
@@ -12,6 +19,11 @@
   --text-color: #fff;
   --background-color: #121212;
   --border-color: #333;
+  
+  /* Tooltip colors for charts in dark mode */
+  --tooltip-bg: #1f2937;
+  --tooltip-border: #374151;
+  --tooltip-text: #f9fafb;
 }
 
 /* Custom properties for spinner */
@@ -37,4 +49,40 @@
 .text-primary {
   /* Spinner text uses spinner text color */
   color: var(--spinner-text-color);
+}
+
+/* Custom scrollbar styles for table horizontal scroll */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Dark mode scrollbar */
+.dark .scrollbar-thin::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
