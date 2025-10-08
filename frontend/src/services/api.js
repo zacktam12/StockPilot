@@ -1,7 +1,16 @@
 import axios from "axios";
 import { API_URL } from "../config";
+import { showError, showWarning } from "./notificationService";
 
 const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Create a separate API instance for public endpoints (no auth required)
+const publicApi = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
@@ -22,19 +31,60 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle auth errors
+// Response interceptor to handle auth errors and network issues
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
+    // Handle authentication errors (but skip for login endpoint)
     if (error.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("userRole");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("userEmail");
-      window.location.href = "/login";
+      const isLoginEndpoint = error.config?.url?.includes('/auth/login');
+      
+      // Only show session expired and redirect if NOT a login attempt
+      if (!isLoginEndpoint) {
+        showError(
+          'Session Expired',
+          'Your session has expired. Please log in again.',
+          5000
+        );
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userEmail");
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
+      }
     }
+    // Handle network errors (skip for login to let component handle it)
+    else if (!error.response) {
+      const isLoginEndpoint = error.config?.url?.includes('/auth/login');
+      if (!isLoginEndpoint) {
+        showError(
+          'Network Error',
+          'Unable to connect to the server. Please check your internet connection.',
+          5000
+        );
+      }
+    }
+    // Handle server errors
+    else if (error.response?.status >= 500) {
+      showError(
+        'Server Error',
+        'The server is experiencing issues. Please try again later.',
+        5000
+      );
+    }
+    // Handle rate limiting
+    else if (error.response?.status === 429) {
+      showWarning(
+        'Rate Limited',
+        'Too many requests. Please wait a moment before trying again.',
+        4000
+      );
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -154,6 +204,7 @@ export const customersAPI = {
   create: (data) => api.post("/customers", data),
   update: (id, data) => api.put(`/customers/${id}`, data),
   delete: (id) => api.delete(`/customers/${id}`),
+  bulkImport: (data) => api.post("/customers/bulk", { customers: data }),
 };
 
 export const suppliersAPI = {
@@ -244,16 +295,23 @@ export const settingsAPI = {
   getSettings: () => api.get("/settings"),
   updateSettings: (data) => api.put("/settings", data),
   uploadLogo: (formData) => {
-    const uploadApi = axios.create({
-      baseURL: API_URL,
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      uploadApi.defaults.headers.Authorization = `Bearer ${token}`;
-    }
-    return uploadApi.post("/settings/logo", formData);
+    console.log('settingsAPI.uploadLogo called with formData:', formData);
+    
+    // Use the main API instance but override headers for multipart
+    const config = {
+      headers: { 
+        "Content-Type": "multipart/form-data",
+        "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+      },
+      timeout: 30000 // 30 second timeout
+    };
+    
+    console.log('Making request to:', `${API_URL}/settings/logo`);
+    console.log('Request config:', config);
+    
+    return api.post("/settings/logo", formData, config);
   },
+  getPublicStats: () => publicApi.get("/settings/public-stats"),
 };
 
 export const integrationsAPI = {
