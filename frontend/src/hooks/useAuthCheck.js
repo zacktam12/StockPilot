@@ -1,44 +1,17 @@
 import { useEffect, useState } from "react";
 
 const useAuthCheck = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Check localStorage immediately to prevent blink
+  const initialToken = localStorage.getItem("authToken");
+  const [isLoading, setIsLoading] = useState(false); // Set to false for instant load
+  const [isAuthenticated, setIsAuthenticated] = useState(!!initialToken); // Start as true if token exists
 
   useEffect(() => {
-    const verifyAuth = async () => {
-      const token = localStorage.getItem("authToken");
-
-      if (!token) {
-        setIsAuthenticated(false);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const res = await fetch("http://localhost:5000/api/test-auth", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) {
-          // Token invalid or expired
-          localStorage.clear();
-          setIsAuthenticated(false);
-        } else {
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        localStorage.clear();
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    verifyAuth();
+    // Simple token existence check - no API call needed
+    // The API interceptors will handle actual auth failures (401)
+    const token = localStorage.getItem("authToken");
+    setIsAuthenticated(!!token);
+    setIsLoading(false);
   }, []);
 
   return { isLoading, isAuthenticated };
