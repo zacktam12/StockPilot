@@ -43,9 +43,12 @@ const NewSaleModal = ({
   const receiptRef = useRef();
 
   useEffect(() => {
-    dispatch(fetchProducts());
-    dispatch(fetchCustomers());
-  }, [dispatch]);
+    // Only fetch data when modal is open
+    if (isOpen) {
+      dispatch(fetchProducts());
+      dispatch(fetchCustomers());
+    }
+  }, [dispatch, isOpen]);
 
   useEffect(() => {
     if (isEdit && sale) {
