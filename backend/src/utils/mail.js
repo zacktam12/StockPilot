@@ -6,30 +6,41 @@ const adminEmail = process.env.ADMIN_EMAIL;
 const adminPass = process.env.ADMIN_EMAIL_PASS;
 
 if (!adminEmail || !adminPass) {
-  throw new Error(
-    "ADMIN_EMAIL and ADMIN_EMAIL_PASS must be set in environment variables. ADMIN_EMAIL_PASS must be a Gmail App Password."
-  );
+  console.warn("⚠️ Email configuration missing. Password reset emails will not be sent.");
+  console.warn("Set ADMIN_EMAIL and ADMIN_EMAIL_PASS environment variables to enable email features.");
 }
 
 // Transporter for user emails (password resets, etc.)
-const smtpTransporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: adminEmail,
-    pass: adminPass,
-  },
-});
+let smtpTransporter = null;
+let adminTransporter = null;
 
-// Transporter for admin notifications (could be configured differently if needed)
-const adminTransporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: adminEmail,
-    pass: adminPass,
-  },
-});
+// Only create transporters if credentials are available
+if (adminEmail && adminPass) {
+  smtpTransporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: adminEmail,
+      pass: adminPass,
+    },
+  });
+
+  // Transporter for admin notifications (could be configured differently if needed)
+  adminTransporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: adminEmail,
+      pass: adminPass,
+    },
+  });
+}
 
 async function sendAdminNotification(subject, text) {
+  // Check if email is configured
+  if (!adminEmail || !adminPass) {
+    console.warn(`⚠️ Email not configured. Would send admin notification: ${subject}`);
+    return { success: false, error: "Email service not configured" };
+  }
+
   const mailOptions = {
     from: adminEmail,
     to: adminEmail,
@@ -45,6 +56,12 @@ async function sendAdminNotification(subject, text) {
 }
 
 async function sendMail({ to, subject, html }) {
+  // Check if email is configured
+  if (!adminEmail || !adminPass) {
+    console.warn(`⚠️ Email not configured. Would send to ${to}: ${subject}`);
+    throw new Error("Email service not configured. Please contact administrator.");
+  }
+
   const mailOptions = {
     from: adminEmail,
     to,
