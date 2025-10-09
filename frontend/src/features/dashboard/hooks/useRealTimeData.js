@@ -30,66 +30,92 @@ const useRealTimeData = () => {
   const initializeSocket = useCallback(() => {
     if (socketRef.current?.connected) return;
 
-    console.log('🔌 Initializing real-time socket connection...');
-    socketRef.current = io(API_BASE_URL, {
-      transports: ['websocket', 'polling'],
-      timeout: 20000,
-      forceNew: true,
-    });
+    // Check if WebSocket is supported and available (optional feature)
+    console.log('🔌 Attempting real-time socket connection...');
+    
+    try {
+      socketRef.current = io(API_BASE_URL, {
+        transports: ['websocket', 'polling'],
+        timeout: 5000,
+        reconnection: true,
+        reconnectionAttempts: 3, // Only try 3 times
+        reconnectionDelay: 5000, // Wait 5 seconds between attempts
+        forceNew: true,
+      });
 
-    // Connection events
-    socketRef.current.on('connect', () => {
-      console.log('✅ Real-time connection established');
-    });
+      // Connection events
+      socketRef.current.on('connect', () => {
+        console.log('✅ Real-time connection established');
+      });
 
-    socketRef.current.on('disconnect', (reason) => {
-      console.log('❌ Real-time connection lost:', reason);
-    });
+      socketRef.current.on('disconnect', (reason) => {
+        // Only log if it was a manual disconnect
+        if (reason === 'io client disconnect') {
+          console.log('🔌 Real-time connection closed');
+        }
+      });
 
-    socketRef.current.on('connect_error', (error) => {
-      console.error('🚨 Real-time connection error:', error);
-    });
+      socketRef.current.on('connect_error', (error) => {
+        // Silently fail - WebSocket is optional
+        // Only log once to avoid spam
+        if (!socketRef.current?._connectErrorLogged) {
+          console.warn('ℹ️ Real-time features unavailable (WebSocket server not running)');
+          if (socketRef.current) {
+            socketRef.current._connectErrorLogged = true;
+          }
+        }
+        // Stop trying after first error
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+        }
+      });
+    } catch (error) {
+      console.warn('ℹ️ Real-time features unavailable');
+      return null;
+    }
 
-    // Dashboard update events
-    socketRef.current.on('dashboard-update', (data) => {
-      console.log('📊 Real-time dashboard update received:', data);
-      dispatch(setSocketUpdates(data));
-    });
+    // Dashboard update events (only add if socket was created successfully)
+    if (socketRef.current) {
+      socketRef.current.on('dashboard-update', (data) => {
+        console.log('📊 Real-time dashboard update received:', data);
+        dispatch(setSocketUpdates(data));
+      });
 
-    socketRef.current.on('stats-update', (statsData) => {
-      console.log('📈 Real-time stats update:', statsData);
-      dispatch(setSocketUpdates({ stats: statsData }));
-    });
+      socketRef.current.on('stats-update', (statsData) => {
+        console.log('📈 Real-time stats update:', statsData);
+        dispatch(setSocketUpdates({ stats: statsData }));
+      });
 
-    socketRef.current.on('activity-update', (activityData) => {
-      console.log('🔄 Real-time activity update:', activityData);
-      dispatch(setSocketUpdates({ activities: activityData }));
-    });
+      socketRef.current.on('activity-update', (activityData) => {
+        console.log('🔄 Real-time activity update:', activityData);
+        dispatch(setSocketUpdates({ activities: activityData }));
+      });
 
-    socketRef.current.on('stock-alert', (alertData) => {
-      console.log('⚠️ Real-time stock alert:', alertData);
-      dispatch(setSocketUpdates({ lowStockAlerts: alertData }));
-    });
+      socketRef.current.on('stock-alert', (alertData) => {
+        console.log('⚠️ Real-time stock alert:', alertData);
+        dispatch(setSocketUpdates({ lowStockAlerts: alertData }));
+      });
 
-    socketRef.current.on('sale-update', (saleData) => {
-      console.log('💰 Real-time sale update:', saleData);
-      // Only refresh revenue data if it's been more than 30 seconds since last update
-      const now = Date.now();
-      const lastRevenueUpdate = lastUpdated.revenue ? new Date(lastUpdated.revenue).getTime() : 0;
-      if (now - lastRevenueUpdate > 30000) { // 30 seconds
-        dispatch(fetchRevenueData());
-      }
-    });
+      socketRef.current.on('sale-update', (saleData) => {
+        console.log('💰 Real-time sale update:', saleData);
+        // Only refresh revenue data if it's been more than 30 seconds since last update
+        const now = Date.now();
+        const lastRevenueUpdate = lastUpdated.revenue ? new Date(lastUpdated.revenue).getTime() : 0;
+        if (now - lastRevenueUpdate > 30000) { // 30 seconds
+          dispatch(fetchRevenueData());
+        }
+      });
 
-    socketRef.current.on('product-update', (productData) => {
-      console.log('📦 Real-time product update:', productData);
-      // Only refresh product distribution if it's been more than 30 seconds since last update
-      const now = Date.now();
-      const lastDistributionUpdate = lastUpdated.distribution ? new Date(lastUpdated.distribution).getTime() : 0;
-      if (now - lastDistributionUpdate > 30000) { // 30 seconds
-        dispatch(fetchProductDistribution());
-      }
-    });
+      socketRef.current.on('product-update', (productData) => {
+        console.log('📦 Real-time product update:', productData);
+        // Only refresh product distribution if it's been more than 30 seconds since last update
+        const now = Date.now();
+        const lastDistributionUpdate = lastUpdated.distribution ? new Date(lastUpdated.distribution).getTime() : 0;
+        if (now - lastDistributionUpdate > 30000) { // 30 seconds
+          dispatch(fetchProductDistribution());
+        }
+      });
+    }
 
     return socketRef.current;
   }, [dispatch]);
