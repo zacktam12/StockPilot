@@ -20,11 +20,11 @@ const upload = multer({
   },
 });
 
-// Get settings (Admin-only)
+// Get settings (All authenticated users can read)
 router.get(
   "/",
   authenticate,
-  authorize("admin"),
+  // Removed authorize("admin") - all authenticated users can read settings
   settingsController.getSettings
 );
 
