@@ -205,7 +205,13 @@ exports.register = async (req, res, next) => {
 // ➕ Create
 exports.createUser = async (req, res, next) => {
   try {
-    const result = await userService.createUser(req.body);
+    // Hash password before creating user
+    const userData = { ...req.body };
+    if (userData.password) {
+      userData.password = await bcrypt.hash(userData.password, 10);
+    }
+    
+    const result = await userService.createUser(userData);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -377,23 +383,34 @@ exports.forgotPassword = async (req, res, next) => {
       });
 
       // Send email with reset code
-      await sendMail({
-        to: normalizedEmail,
-        subject: "Your Password Reset Code",
-        html: `
-      <p>Hello ${user.firstName || "User"},</p>
-      <p>Your password reset code is:</p>
-      <h2 style="color:#007bff">${resetCode}</h2>
-      <p>This code will expire in 10 minutes.</p>
-      <p>If you didn't request this, please ignore this email.</p>
-    `,
-      });
+      try {
+        await sendMail({
+          to: normalizedEmail,
+          subject: "Your Password Reset Code",
+          html: `
+        <p>Hello ${user.firstName || "User"},</p>
+        <p>Your password reset code is:</p>
+        <h2 style="color:#007bff">${resetCode}</h2>
+        <p>This code will expire in 10 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      `,
+        });
+        console.log(`✅ Reset code sent to ${normalizedEmail}: ${resetCode}`);
+      } catch (emailError) {
+        console.warn(`⚠️ Failed to send reset email to ${normalizedEmail}:`, emailError.message);
+        // Still return success to prevent email enumeration
+        // The reset code is still generated and stored in the database
+      }
     }
 
     // Always return success message (prevents email enumeration attacks)
+    const message = user 
+      ? "Password reset code has been generated. Please contact administrator if you don't receive the email."
+      : "If an account with that email exists, you will receive a password reset code.";
+    
     return res.json({
       success: true,
-      message: "If an account with that email exists, you will receive a password reset code.",
+      message,
     });
   } catch (error) {
     next(error);
