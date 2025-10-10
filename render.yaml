@@ -1,4 +1,20 @@
 services:
+  # Landing Page (Next.js)
+  - type: web
+    name: stockpilot-landing
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: cd stockLandingPage && npm install && npm run build
+    startCommand: cd stockLandingPage && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://stockpilot-frontend.onrender.com
+      - key: NEXT_PUBLIC_API_URL
+        value: https://stockpilot-backend.onrender.com/api
+
   # Backend API Service
   - type: web
     name: stockpilot-backend
@@ -21,12 +37,12 @@ services:
       - key: ADMIN_EMAIL_PASS
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://stockpilot-frontend.onrender.com
+        value: https://stockpilot-frontend.onrender.com,https://stockpilot-landing.onrender.com
       - key: REDIS_ENABLED
         value: false
     healthCheckPath: /api/health
 
-  # Frontend Static Site
+  # Frontend App (Static Site)
   - type: web
     name: stockpilot-frontend
     runtime: static
