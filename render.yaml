@@ -13,7 +13,7 @@ services:
       - key: NEXT_PUBLIC_APP_URL
         value: https://stockpilot-frontend.onrender.com
       - key: NEXT_PUBLIC_API_URL
-        value: https://stockpilot-backend.onrender.com/api
+        value: https://stockpilot-backend.onrender.com
 
   # Backend API Service
   - type: web
@@ -52,7 +52,7 @@ services:
     staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_URL
-        value: https://stockpilot-backend.onrender.com/api
+        value: https://stockpilot-backend.onrender.com
     routes:
       - type: rewrite
         source: /*
