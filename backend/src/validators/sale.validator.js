@@ -254,7 +254,6 @@ const validateCreateSale = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Sale validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -293,7 +292,6 @@ const validateUpdateSale = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Sale validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -340,7 +338,6 @@ const validateSaleItems = (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Sale items validation error:', error);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",

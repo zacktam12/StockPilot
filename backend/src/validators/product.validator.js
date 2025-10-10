@@ -277,7 +277,6 @@ const validateCreateProduct = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Product validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -316,7 +315,6 @@ const validateUpdateProduct = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Product validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -365,7 +363,6 @@ const validateSKUUniqueness = async (req, res, next) => {
     await prisma.$disconnect();
     next();
   } catch (error) {
-    console.error('SKU validation error:', error);
     next();
   }
 };

@@ -71,7 +71,6 @@ app.get("/health", async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Health check failed:", error);
     res.status(500).json({
       status: "unhealthy",
       message: "Database connection failed",

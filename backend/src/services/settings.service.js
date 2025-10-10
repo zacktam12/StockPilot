@@ -31,7 +31,6 @@ const getSettings = async () => {
 
     return settings;
   } catch (error) {
-    console.error("Error getting settings:", error);
     throw error;
   }
 };
@@ -52,7 +51,6 @@ const updateSettings = async (data) => {
       return await prisma.settings.create({ data });
     }
   } catch (error) {
-    console.error("Error updating settings:", error);
     throw error;
   }
 };

@@ -7,10 +7,6 @@ const getLowStockThreshold = async () => {
     const settings = await prisma.settings.findFirst();
     return settings?.lowStockThreshold || 10; // Default to 10 if not set
   } catch (error) {
-    console.warn(
-      "Failed to get low stock threshold from settings, using default:",
-      error.message
-    );
     return 10; // Default fallback
   }
 };

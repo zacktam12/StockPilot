@@ -75,7 +75,6 @@ class CustomerService {
       const result = await customerRepository.findById(id);
       return result;
     } catch (error) {
-      console.error('CustomerService.getCustomerById - Error:', error);
       throw error;
     }
   }

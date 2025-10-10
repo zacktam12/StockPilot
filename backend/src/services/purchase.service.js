@@ -34,7 +34,6 @@ const calculatePurchaseSummary = async (where) => {
       statusBreakdown
     };
   } catch (error) {
-    console.error('Error calculating purchase summary:', error);
     return {
       totalPurchases: 0,
       totalCost: 0,
@@ -281,7 +280,6 @@ const getPurchaseById = async (id) => {
 
     return purchase;
   } catch (error) {
-    console.error('Error fetching purchase by ID:', error);
     throw error;
   }
 };

@@ -5,11 +5,6 @@ const nodemailer = require("nodemailer");
 const adminEmail = process.env.ADMIN_EMAIL;
 const adminPass = process.env.ADMIN_EMAIL_PASS;
 
-if (!adminEmail || !adminPass) {
-  console.warn("⚠️ Email configuration missing. Password reset emails will not be sent.");
-  console.warn("Set ADMIN_EMAIL and ADMIN_EMAIL_PASS environment variables to enable email features.");
-}
-
 // Transporter for user emails (password resets, etc.)
 let smtpTransporter = null;
 let adminTransporter = null;
@@ -37,7 +32,6 @@ if (adminEmail && adminPass) {
 async function sendAdminNotification(subject, text) {
   // Check if email is configured
   if (!adminEmail || !adminPass) {
-    console.warn(`⚠️ Email not configured. Would send admin notification: ${subject}`);
     return { success: false, error: "Email service not configured" };
   }
 
@@ -58,7 +52,6 @@ async function sendAdminNotification(subject, text) {
 async function sendMail({ to, subject, html }) {
   // Check if email is configured
   if (!adminEmail || !adminPass) {
-    console.warn(`⚠️ Email not configured. Would send to ${to}: ${subject}`);
     throw new Error("Email service not configured. Please contact administrator.");
   }
 

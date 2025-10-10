@@ -156,7 +156,6 @@ const validateUpdateCustomer = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Customer validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",

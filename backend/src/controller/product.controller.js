@@ -3,8 +3,6 @@ const NotificationService = require("../services/notification.service");
 
 // Enhanced error handling function
 const handleProductError = (error, res) => {
-  console.error('Product Controller Error:', error);
-  
   // Handle specific Prisma errors
   if (error.code === 'P2002') {
     return res.status(409).json({
@@ -182,10 +180,7 @@ exports.updateStock = async (req, res, next) => {
       try {
         await NotificationService.createLowStockNotification(result.data);
       } catch (notificationError) {
-        console.warn(
-          "Failed to create low stock notification:",
-          notificationError
-        );
+        // Failed to create notification - continue without blocking
       }
     }
 
@@ -217,10 +212,7 @@ exports.decrementStock = async (req, res, next) => {
       try {
         await NotificationService.createLowStockNotification(result.data);
       } catch (notificationError) {
-        console.warn(
-          "Failed to create low stock notification:",
-          notificationError
-        );
+        // Failed to create notification - continue without blocking
       }
     }
 
@@ -315,13 +307,6 @@ exports.uploadProductImage = async (req, res, next) => {
       imageUrl: imageUrl
     });
   } catch (error) {
-    console.error("Upload error details:", {
-      message: error.message,
-      stack: error.stack,
-      code: error.code,
-      meta: error.meta
-    });
-    
     // Return more specific error information
     return res.status(500).json({
       success: false,

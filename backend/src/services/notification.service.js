@@ -31,7 +31,6 @@ class NotificationService {
         );
       }
     } catch (error) {
-      console.error("Error creating low stock notification:", error);
     }
   }
 
@@ -49,7 +48,6 @@ class NotificationService {
         customerName: customer?.name,
       });
     } catch (error) {
-      console.error("Error creating sale notification:", error);
     }
   }
 
@@ -73,7 +71,6 @@ class NotificationService {
         }
       );
     } catch (error) {
-      console.error("Error creating purchase notification:", error);
     }
   }
 
@@ -94,7 +91,6 @@ class NotificationService {
         }
       );
     } catch (error) {
-      console.error("Error creating customer notification:", error);
     }
   }
 
@@ -115,7 +111,6 @@ class NotificationService {
         }
       );
     } catch (error) {
-      console.error("Error creating supplier notification:", error);
     }
   }
 
@@ -130,7 +125,6 @@ class NotificationService {
         userEmail: user.email,
       });
     } catch (error) {
-      console.error("Error creating user notification:", error);
     }
   }
 
@@ -150,7 +144,6 @@ class NotificationService {
         }
       );
     } catch (error) {
-      console.error("Error creating category notification:", error);
     }
   }
 
@@ -159,7 +152,6 @@ class NotificationService {
     try {
       await createNotification(userId, "SYSTEM", title, message, data);
     } catch (error) {
-      console.error("Error creating system notification:", error);
     }
   }
 
@@ -177,7 +169,6 @@ class NotificationService {
         await createNotification(user.id, "SYSTEM", title, message, data);
       }
     } catch (error) {
-      console.error("Error creating admin notification:", error);
     }
   }
 }

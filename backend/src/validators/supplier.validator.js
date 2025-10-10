@@ -98,7 +98,6 @@ const validateCreateSupplier = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -132,7 +131,6 @@ const validateUpdateSupplier = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",

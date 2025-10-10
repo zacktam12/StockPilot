@@ -2,8 +2,6 @@ const categoryService = require("../services/category.service");
 
 // Enhanced error handling function
 const handleCategoryError = (error, res) => {
-  console.error('Category Controller Error:', error);
-  
   // Handle specific Prisma errors
   if (error.code === 'P2002') {
     return res.status(409).json({

@@ -235,7 +235,6 @@ const validateRegister = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('User validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -268,7 +267,6 @@ const validateLogin = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Login validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -308,8 +306,6 @@ const validateUpdateUser = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('🔴 VALIDATOR - Exception:', err);
-    console.error('Error stack:', err.stack);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -338,7 +334,6 @@ const validatePasswordReset = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Password reset validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -367,7 +362,6 @@ const validatePasswordUpdate = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Password update validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -410,7 +404,6 @@ const validateEmailUniqueness = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Email uniqueness validation error:', error);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -439,7 +432,6 @@ const validateEmployeeIdUniqueness = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Employee ID uniqueness validation error:', error);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",

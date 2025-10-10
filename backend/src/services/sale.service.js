@@ -34,7 +34,6 @@ const calculateSalesSummary = async (where) => {
       statusBreakdown
     };
   } catch (error) {
-    console.error('Error calculating sales summary:', error);
     return {
       totalSales: 0,
       totalRevenue: 0,
@@ -105,7 +104,6 @@ const createSale = async (data) => {
   try {
     orderNumber = await generateOrderNumber();
   } catch (error) {
-    console.error("Error generating order number:", error);
     // Fallback: use timestamp-based order number
     const timestamp = Date.now();
     orderNumber = `SO-${timestamp}`;

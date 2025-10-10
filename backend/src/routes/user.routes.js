@@ -490,8 +490,6 @@ router.post(
         imageUrl: imageUrl,
       });
     } catch (error) {
-      console.error("Error updating profile picture:", error);
-      console.error("Error stack:", error.stack);
       res.status(500).json({
         success: false,
         message: "Failed to update profile picture",

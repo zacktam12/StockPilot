@@ -33,10 +33,6 @@ const getLowStockThreshold = async () => {
     const settings = await prisma.settings.findFirst();
     return settings?.lowStockThreshold || 10; // Default to 10 if not set
   } catch (error) {
-    console.warn(
-      "Failed to get low stock threshold from settings, using default:",
-      error.message
-    );
     return 10; // Default fallback
   }
 };
@@ -595,7 +591,6 @@ exports.getProductDistribution = async () => {
 
     return distribution;
   } catch (error) {
-    console.error("Error fetching product distribution:", error);
     return {};
   }
 };
@@ -741,7 +736,6 @@ exports.getSalesAnalytics = async (params = {}) => {
 
     return result;
   } catch (error) {
-    console.error("Error fetching sales analytics:", error);
     return {};
   }
 };
@@ -856,7 +850,6 @@ exports.getCustomerAnalytics = async (params = {}) => {
 
     return result;
   } catch (error) {
-    console.error("Error fetching customer analytics:", error);
     return {};
   }
 };
@@ -965,7 +958,6 @@ exports.getInventoryAnalytics = async (params = {}) => {
 
     return result;
   } catch (error) {
-    console.error("Error fetching inventory analytics:", error);
     return {};
   }
 };
@@ -1095,7 +1087,6 @@ exports.getPerformanceMetrics = async (params = {}) => {
 
     return result;
   } catch (error) {
-    console.error("Error fetching performance metrics:", error);
     return {};
   }
 };

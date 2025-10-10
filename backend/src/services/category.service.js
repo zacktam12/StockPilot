@@ -19,7 +19,6 @@ const calculateCategorySummary = async (where) => {
       parentCategories
     };
   } catch (error) {
-    console.error('Error calculating category summary:', error);
     return {
       totalCategories: 0,
       activeCategories: 0,
@@ -144,7 +143,6 @@ const deleteCategory = async (id) => {
     
     return result;
   } catch (error) {
-    console.error("Error deleting category:", error);
     throw error;
   }
 };
@@ -180,7 +178,6 @@ const bulkImportCategories = async (categories) => {
         const createdCategory = await createCategory(mappedCategory);
         results.push(createdCategory);
       } catch (error) {
-        console.error(`Error importing category at row ${i + 1}:`, error);
         errors.push({
           row: i + 1,
           error: error.message,

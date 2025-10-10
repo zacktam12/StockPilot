@@ -30,7 +30,6 @@ const calculateUserSummary = async (where) => {
       }, {})
     };
   } catch (error) {
-    console.error('Error calculating user summary:', error);
     return {
       totalUsers: 0,
       activeUsers: 0,
@@ -102,7 +101,6 @@ const getUserByEmail = async (email) => {
   try {
     return await userRepository.findByEmail(email);
   } catch (error) {
-    console.error("Error fetching user by email:", error);
     throw error;
   }
 };
@@ -517,7 +515,6 @@ const getRoleIdByName = async (roleName) => {
     const role = await userRepository.findRoleByName(roleName);
     return role ? role.id : null;
   } catch (error) {
-    console.error("Error finding role:", error);
     return null;
   }
 };

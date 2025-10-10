@@ -3,8 +3,6 @@ const NotificationService = require("../services/notification.service");
 
 // Enhanced error handling function
 const handlePurchaseError = (error, res) => {
-  console.error('Purchase Controller Error:', error);
-  
   // Handle specific Prisma errors
   if (error.code === 'P2002') {
     return res.status(409).json({
@@ -76,10 +74,7 @@ exports.createPurchase = async (req, res, next) => {
       const supplier = purchase.supplier;
       await NotificationService.createPurchaseNotification(purchase, supplier);
     } catch (notificationError) {
-      console.warn(
-        "Failed to create purchase notification:",
-        notificationError
-      );
+      // Failed to create notification - continue without blocking
     }
 
     res.status(201).json({
@@ -156,7 +151,6 @@ exports.getPurchaseById = async (req, res, next) => {
       data: result
     });
   } catch (error) {
-    console.error('getPurchaseById - Error:', error);
     handlePurchaseError(error, res);
   }
 };

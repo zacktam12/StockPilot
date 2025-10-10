@@ -187,7 +187,6 @@ const validateCreateCategory = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Category validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -226,7 +225,6 @@ const validateUpdateCategory = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Category validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -269,7 +267,6 @@ const validateCategoryNameUniqueness = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Category name uniqueness validation error:', error);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -298,7 +295,6 @@ const validateSlugUniqueness = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Category slug uniqueness validation error:', error);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -340,7 +336,6 @@ const validateParentCategory = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Parent category validation error:', error);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",

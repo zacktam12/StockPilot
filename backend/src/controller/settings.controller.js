@@ -154,14 +154,12 @@ exports.uploadLogo = async (req, res, next) => {
       data: { logoUrl, settings },
     });
   } catch (error) {
-    console.error('Logo upload error:', error);
     
     // Clean up temp file if it exists
     if (req.file && req.file.path) {
       try {
         fs.unlinkSync(req.file.path);
       } catch (unlinkError) {
-        console.error('Error cleaning up temp file:', unlinkError);
       }
     }
     
@@ -218,7 +216,6 @@ exports.changePassword = async (req, res, next) => {
       message: 'Password changed successfully'
     });
   } catch (error) {
-    console.error('Password change error:', error);
     next(error);
   }
 };
@@ -316,7 +313,6 @@ exports.getPublicStats = async (req, res, next) => {
         select: { id: true, email: true, status: true, createdAt: true }
       });
     } catch (dbError) {
-      console.error('Database error:', dbError);
     }
     
     // Get user statistics
@@ -343,7 +339,6 @@ exports.getPublicStats = async (req, res, next) => {
       data: publicStats,
     });
   } catch (error) {
-    console.error('Error getting public stats:', error);
     // Return fallback stats if there's an error
     res.json({
       success: true,

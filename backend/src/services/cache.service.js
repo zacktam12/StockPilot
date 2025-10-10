@@ -25,7 +25,6 @@ class CacheService {
         });
 
         this.client.on('error', (err) => {
-          console.error('Redis Client Error:', err);
           this.isConnected = false;
         });
 
@@ -39,7 +38,6 @@ class CacheService {
         this.memoryCacheExpiry = new Map();
       }
     } catch (error) {
-      console.error('Failed to initialize Redis:', error);
       this.memoryCache = new Map();
       this.memoryCacheExpiry = new Map();
     }
@@ -67,7 +65,6 @@ class CacheService {
       }
       return null;
     } catch (error) {
-      console.error('Cache get error:', error);
       return null;
     }
   }
@@ -82,7 +79,6 @@ class CacheService {
         this.memoryCacheExpiry.set(key, Date.now() + (ttl * 1000));
       }
     } catch (error) {
-      console.error('Cache set error:', error);
     }
   }
 
@@ -96,7 +92,6 @@ class CacheService {
         this.memoryCacheExpiry.delete(key);
       }
     } catch (error) {
-      console.error('Cache delete error:', error);
     }
   }
 
@@ -118,7 +113,6 @@ class CacheService {
         }
       }
     } catch (error) {
-      console.error('Cache delete pattern error:', error);
     }
   }
 
@@ -132,7 +126,6 @@ class CacheService {
         this.memoryCacheExpiry.clear();
       }
     } catch (error) {
-      console.error('Cache clear error:', error);
     }
   }
 
@@ -161,7 +154,6 @@ class CacheService {
 
         next();
       } catch (error) {
-        console.error('Cache middleware error:', error);
         next();
       }
     };

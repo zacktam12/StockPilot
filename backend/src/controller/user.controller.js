@@ -8,8 +8,6 @@ const { sendMail } = require("../utils/mail.js");
 
 // Enhanced error handling function
 const handleUserError = (error, res) => {
-  console.error('User Controller Error:', error);
-  
   // Handle specific Prisma errors
   if (error.code === 'P2002') {
     return res.status(409).json({
@@ -395,9 +393,7 @@ exports.forgotPassword = async (req, res, next) => {
         <p>If you didn't request this, please ignore this email.</p>
       `,
         });
-        console.log(`✅ Reset code sent to ${normalizedEmail}: ${resetCode}`);
       } catch (emailError) {
-        console.warn(`⚠️ Failed to send reset email to ${normalizedEmail}:`, emailError.message);
         // Still return success to prevent email enumeration
         // The reset code is still generated and stored in the database
       }
@@ -641,7 +637,6 @@ Timestamp: ${new Date().toLocaleString()}
       });
     }
   } catch (error) {
-    console.error("Contact admin error:", error);
     next(error);
   }
 };
@@ -856,7 +851,6 @@ exports.updateProfile = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Update profile error:', error);
     next(error);
   }
 };

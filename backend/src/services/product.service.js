@@ -9,10 +9,6 @@ const getLowStockThreshold = async () => {
     const settings = await prisma.settings.findFirst();
     return settings?.lowStockThreshold || 10; // Default to 10 if not set
   } catch (error) {
-    console.warn(
-      "Failed to get low stock threshold from settings, using default:",
-      error.message
-    );
     return 10; // Default fallback
   }
 };
@@ -184,7 +180,6 @@ const getAllProducts = async (query = {}) => {
       try {
         parsedPriceRange = JSON.parse(priceRange);
       } catch (e) {
-        console.warn("Failed to parse priceRange:", e);
         parsedPriceRange = null;
       }
     }
@@ -193,7 +188,6 @@ const getAllProducts = async (query = {}) => {
       try {
         parsedStockRange = JSON.parse(stockRange);
       } catch (e) {
-        console.warn("Failed to parse stockRange:", e);
         parsedStockRange = null;
       }
     }
@@ -392,7 +386,6 @@ const updateProduct = async (id, data) => {
     
     return { success: true, data: transformedProduct };
   } catch (error) {
-    console.error("Error updating product:", error);
     throw new Error(`Failed to update product: ${error.message}`);
   }
 };
@@ -496,7 +489,7 @@ const bulkImportProducts = async (products) => {
               mappedProduct.categoryId = category.id;
             }
           } catch (categoryError) {
-            console.warn(`Could not find category: ${product.Category}`);
+            // Category not found - continue without categoryId
           }
         }
 

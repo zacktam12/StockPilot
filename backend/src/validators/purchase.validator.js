@@ -196,7 +196,6 @@ const validateCreatePurchase = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Purchase validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -235,7 +234,6 @@ const validateUpdatePurchase = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
-    console.error('Purchase validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",
@@ -282,7 +280,6 @@ const validatePurchaseItems = (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Purchase items validation error:', error);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",

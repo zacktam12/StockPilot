@@ -2,8 +2,6 @@ const customerService = require("../services/customer.service");
 
 // Enhanced error handling function
 const handleCustomerError = (error, res) => {
-  console.error('Customer Controller Error:', error);
-  
   // Handle specific Prisma errors
   if (error.code === 'P2002') {
     return res.status(409).json({

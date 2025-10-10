@@ -43,7 +43,6 @@ const reportService = {
         user_name: sale.user ? `${sale.user.firstName || ''} ${sale.user.lastName || ''}`.trim() || sale.user.name : "Unknown"
       }));
     } catch (error) {
-      console.error("Error in dailySales report:", error);
       return [];
     }
   },
@@ -268,7 +267,6 @@ const reportService = {
 
       return result;
     } catch (error) {
-      console.error("Error in topProducts report:", error);
       return [];
     }
   },
@@ -849,7 +847,6 @@ const reportService = {
       const finalResult = result.sort((a, b) => b.total_cost - a.total_cost);
       return finalResult;
     } catch (error) {
-      console.error("Error in costAnalysis report:", error);
       return [];
     }
   },

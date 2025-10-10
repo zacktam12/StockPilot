@@ -2,7 +2,6 @@ const supplierService = require("../services/supplier.service");
 
 // Enhanced error handling function
 const handleSupplierError = (error, res) => {
-  console.error('Supplier Controller Error:', error);
   
   // Handle specific Prisma errors
   if (error.code === 'P2002') {

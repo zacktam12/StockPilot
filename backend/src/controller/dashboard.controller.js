@@ -2,8 +2,6 @@ const dashboardService = require("../services/dashboard.service");
 
 // Enhanced error handling function
 const handleDashboardError = (error, res) => {
-  console.error('Dashboard Controller Error:', error);
-  
   // Handle specific Prisma errors
   if (error.code === 'P2025') {
     return res.status(404).json({

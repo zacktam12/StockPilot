@@ -163,7 +163,6 @@ class SaleRepository extends BaseRepository {
         .sort((a, b) => b.totalQuantitySold - a.totalQuantitySold)
         .slice(0, limit);
     } catch (error) {
-      console.error("Error in getTopSellingProducts:", error);
       return [];
     }
   }

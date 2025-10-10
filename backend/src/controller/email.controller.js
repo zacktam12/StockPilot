@@ -35,7 +35,6 @@ class EmailController {
       });
 
     } catch (error) {
-      console.error('Email sending error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to send email',
@@ -61,7 +60,6 @@ class EmailController {
         });
       }
     } catch (error) {
-      console.error('Email test error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to test email service',

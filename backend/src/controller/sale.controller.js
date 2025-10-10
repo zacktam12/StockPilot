@@ -3,8 +3,6 @@ const NotificationService = require("../services/notification.service");
 
 // Enhanced error handling function
 const handleSaleError = (error, res) => {
-  console.error('Sale Controller Error:', error);
-  
   // Handle specific Prisma errors
   if (error.code === 'P2002') {
     return res.status(409).json({
@@ -67,7 +65,7 @@ exports.createSale = async (req, res, next) => {
       const customer = sale.customer;
       await NotificationService.createSaleNotification(sale, customer);
     } catch (notificationError) {
-      console.warn("Failed to create sale notification:", notificationError);
+      // Failed to create notification - continue without blocking
     }
 
     res.status(201).json({
@@ -189,7 +187,6 @@ exports.deleteSale = async (req, res, next) => {
       message: "Sale deleted successfully",
     });
   } catch (error) {
-    console.error("Delete sale error:", error);
     if (error.message.includes("not found")) {
       return res.status(404).json({
         success: false,
@@ -240,7 +237,6 @@ exports.bulkDeleteSales = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("Bulk delete sales error:", error);
     next(error);
   }
 };
