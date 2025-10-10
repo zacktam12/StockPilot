@@ -18,6 +18,7 @@ import {
   validateName,
   sanitizeEmail
 } from "../../../utils/authValidation";
+import { useForm, ValidationError } from '@formspree/react';
 
 export default function AccountRecoveryModal({
   onClose,
@@ -28,6 +29,9 @@ export default function AccountRecoveryModal({
   const [isSuccess, setIsSuccess] = useState(false);
   const { theme } = useTheme();
   const [errors, setErrors] = useState({});
+  
+  // Formspree hook for admin contact form
+  const [state, handleSubmit] = useForm("mqayyqyl"); // Using the same Formspree ID as landing page
 
   // Add outside click functionality
   const modalRef = useRef(null);
@@ -235,35 +239,39 @@ export default function AccountRecoveryModal({
       return;
     }
     
-    setIsLoading(true);
-    setErrors({});
+    // Use Formspree to submit the form
     try {
-      // Call backend API to send admin contact request
-      const response = await authAPI.contactAdmin(contactForm);
-      if (response && response.data && response.data.success) {
+      // Prepare the data for Formspree
+      const formData = {
+        firstName: contactForm.firstName,
+        lastName: contactForm.lastName,
+        employeeId: contactForm.employeeId || 'Not provided',
+        phone: contactForm.phone,
+        email: contactForm.lastKnownEmail || 'Not provided',
+        reason: contactForm.reason,
+        additionalInfo: contactForm.additionalInfo || 'Not provided',
+        message: `Account Recovery Request from ${contactForm.firstName} ${contactForm.lastName}`,
+        _subject: `StockPilot Account Recovery Request - ${contactForm.reason}`,
+        _replyto: contactForm.lastKnownEmail || contactForm.phone
+      };
+
+      // Submit to Formspree
+      await handleSubmit(formData);
+      
+      if (state.succeeded) {
         setIsSuccess(true);
         showSuccess(
           "Request Submitted!",
           "An administrator will contact you within 24 hours.",
           4000
         );
-      } else {
-        const errorMessage = response?.data?.message || "Failed to send request.";
-        showError(
-          "Request Failed",
-          errorMessage,
-          5000
-        );
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || "Failed to send request. Please try again.";
       showError(
         "Request Failed",
-        errorMessage,
+        "Failed to send request. Please try again.",
         5000
       );
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -565,6 +573,7 @@ export default function AccountRecoveryModal({
                                 {errors.firstName}
                               </p>
                             )}
+                            <ValidationError prefix="First Name" field="firstName" errors={state.errors} />
                           </div>
                           <div className="space-y-2">
                             <label
@@ -603,6 +612,7 @@ export default function AccountRecoveryModal({
                                 {errors.lastName}
                               </p>
                             )}
+                            <ValidationError prefix="Last Name" field="lastName" errors={state.errors} />
                           </div>
                         </div>
 
@@ -643,6 +653,7 @@ export default function AccountRecoveryModal({
                                 {errors.employeeId}
                               </p>
                             )}
+                            <ValidationError prefix="Employee ID" field="employeeId" errors={state.errors} />
                           </div>
                           <div className="space-y-2">
                             <label
@@ -681,6 +692,7 @@ export default function AccountRecoveryModal({
                                 {errors.phone}
                               </p>
                             )}
+                            <ValidationError prefix="Phone" field="phone" errors={state.errors} />
                           </div>
                         </div>
 
@@ -721,6 +733,7 @@ export default function AccountRecoveryModal({
                               {errors.lastKnownEmail}
                             </p>
                           )}
+                          <ValidationError prefix="Email" field="lastKnownEmail" errors={state.errors} />
                         </div>
 
                         <div className="space-y-2">
@@ -761,6 +774,7 @@ export default function AccountRecoveryModal({
                             </option>
                             <option value="other">Other</option>
                           </select>
+                          <ValidationError prefix="Reason" field="reason" errors={state.errors} />
                         </div>
 
                         <div className="space-y-2">
@@ -791,6 +805,7 @@ export default function AccountRecoveryModal({
                             } focus:outline-none`}
                             disabled={isLoading}
                           />
+                          <ValidationError prefix="Additional Info" field="additionalInfo" errors={state.errors} />
                         </div>
 
 
@@ -800,14 +815,14 @@ export default function AccountRecoveryModal({
                           size="md"
                           className="w-full"
                           disabled={
-                            isLoading ||
+                            state.submitting ||
                             !contactForm.firstName ||
                             !contactForm.lastName ||
                             !contactForm.phone ||
                             !contactForm.reason
                           }
                         >
-                          {isLoading ? (
+                          {state.submitting ? (
                             <div className="flex items-center justify-center gap-2">
                               <Spinner size="sm" />
                               Sending Request...
@@ -816,6 +831,34 @@ export default function AccountRecoveryModal({
                             "Send Recovery Request"
                           )}
                         </Button>
+
+                        {/* Formspree Success Message */}
+                        {state.succeeded && (
+                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+                            <div className="flex items-center gap-2">
+                              <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                                Recovery request sent successfully! An administrator will contact you within 24 hours.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Formspree Error Message */}
+                        {state.errors && state.errors.length > 0 && (
+                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                            <div className="flex items-center gap-2">
+                              <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                                Failed to send request. Please try again.
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </form>
                     </div>
                   )}
