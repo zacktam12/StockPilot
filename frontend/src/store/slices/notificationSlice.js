@@ -8,19 +8,11 @@ export const fetchNotifications = createAsyncThunk(
       const response = await notificationsAPI.getAll(params);
       // Validate response structure
       if (!response.data) {
-        console.error("🔔 Invalid response structure - no data property");
         throw new Error("Invalid response structure");
       }
 
       return response.data;
     } catch (error) {
-      console.error("🔔 Failed to fetch notifications:", error);
-      console.error("🔔 Error details:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
-
       return rejectWithValue({
         data: [],
         currentPage: 1,

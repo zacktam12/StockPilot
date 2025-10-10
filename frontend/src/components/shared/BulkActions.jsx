@@ -27,8 +27,7 @@ const BulkActions = ({
     try {
       await onExport(selectedItems);
     } catch (error) {
-      console.error("Export failed:", error);
-    } finally {
+          } finally {
       setIsExporting(false);
     }
   };

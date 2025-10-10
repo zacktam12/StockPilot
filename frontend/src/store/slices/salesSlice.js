@@ -127,7 +127,6 @@ export const fetchProducts = createAsyncThunk(
       const response = await api.get("/products?limit=1000");
       return response.data;
     } catch (error) {
-      console.error("Failed to fetch products:", error);
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch products"
       );
@@ -143,7 +142,6 @@ export const fetchCustomers = createAsyncThunk(
       const response = await api.get("/customers?limit=1000");
       return response.data;
     } catch (error) {
-      console.error("Failed to fetch customers:", error);
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch customers"
       );
@@ -159,7 +157,6 @@ export const bulkDeleteSales = createAsyncThunk(
       await api.delete("/sales/bulk", { data: { ids } });
       return ids;
     } catch (error) {
-      console.error("Error bulk deleting sales:", error);
       return rejectWithValue(
         error.response?.data?.message || "Failed to delete sales"
       );
@@ -216,7 +213,6 @@ export const deleteSale = createAsyncThunk(
       await api.delete(`/sales/${id}`);
       return id;
     } catch (error) {
-      console.error("Error deleting sale:", error);
       return rejectWithValue(
         error.response?.data?.message || "Failed to delete sale"
       );

@@ -233,12 +233,7 @@ const ProductDetail = () => {
         throw new Error(result.message || "Failed to upload image");
       }
     } catch (err) {
-      console.error("Error details:", {
-        message: err.message,
-        stack: err.stack,
-        response: err.response?.data
-      });
-      
+            
       let errorMessage = "Failed to upload image";
       if (err.message) {
         errorMessage = err.message;
@@ -300,8 +295,7 @@ const ProductDetail = () => {
       await dispatch(deleteProduct(id));
       navigate("/products");
     } catch (error) {
-      console.error("Failed to delete product:", error);
-    } finally {
+          } finally {
       setIsSubmitting(false);
     }
   };

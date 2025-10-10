@@ -158,8 +158,7 @@ const ReportsPage = () => {
         const data = await response.json();
         return true;
       } else {
-        console.error("Backend test failed:", response.status, response.statusText);
-        return false;
+                return false;
       }
     } catch (error) {
       return false;
@@ -175,8 +174,7 @@ const ReportsPage = () => {
     // Test backend connection first
     const isBackendConnected = await testBackendConnection();
     if (!isBackendConnected) {
-      console.warn("Backend not accessible");
-      showError("Backend Not Accessible", "Backend server not accessible. Please check your connection.", 5000);
+            showError("Backend Not Accessible", "Backend server not accessible. Please check your connection.", 5000);
       setLoading(null);
       setIsLoading(false);
       return;
@@ -217,8 +215,7 @@ const ReportsPage = () => {
         });
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("API Error Response:", errorText);
-          throw new Error(`HTTP error ${response.status}: ${response.statusText} - ${errorText}`);
+                    throw new Error(`HTTP error ${response.status}: ${response.statusText} - ${errorText}`);
         }
 
         const responseData = await response.json();
@@ -231,8 +228,7 @@ const ReportsPage = () => {
           data = responseData;
         }
       } catch (apiError) {
-        console.warn("API call failed:", apiError.message);
-        showError("Data Fetch Failed", `Failed to fetch data: ${apiError.message}`, 5000);
+                showError("Data Fetch Failed", `Failed to fetch data: ${apiError.message}`, 5000);
         setLoading(null);
         setIsLoading(false);
         return;
@@ -262,8 +258,7 @@ const ReportsPage = () => {
         showSuccess("Report Generated", `${title} has been generated successfully!`, 4000);
       }
     } catch (error) {
-      console.error("Error generating report:", error.message);
-      showError("Report Generation Failed", `Failed to generate report: ${error.message}`, 5000);
+            showError("Report Generation Failed", `Failed to generate report: ${error.message}`, 5000);
     } finally {
       setLoading(null);
       setIsLoading(false);

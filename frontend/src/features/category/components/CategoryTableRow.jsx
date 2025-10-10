@@ -5,6 +5,7 @@ import { TableCell, TableRow } from "../../../components/shared/table";
 import Button from "../../../components/shared/Button";
 import { openCategoryModal, deleteCategory } from "../../../store/slices/categorySlice";
 import { useOutsideClick } from "../../../hooks/useOutsideClick";
+import ConfirmationModal from "../../../components/shared/ConfirmationModal";
 
 const CategoryTableRow = ({
   category,
@@ -13,6 +14,7 @@ const CategoryTableRow = ({
 }) => {
   const dispatch = useDispatch();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -25,9 +27,12 @@ const CategoryTableRow = ({
   const handleDelete = (categoryId, e) => {
     e.stopPropagation(); // Prevent any parent event handling
     setIsDropdownOpen(false); // Close dropdown
-    if (window.confirm("Are you sure you want to delete this category?")) {
-      dispatch(deleteCategory(categoryId));
-    }
+    setShowDeleteModal(true); // Open custom confirmation modal
+  };
+
+  const confirmDelete = () => {
+    dispatch(deleteCategory(category.id));
+    setShowDeleteModal(false);
   };
 
   const handleEdit = (category, e) => {
@@ -48,6 +53,7 @@ const CategoryTableRow = ({
 
 
   return (
+    <>
     <TableRow 
       className="border-b border-gray-200 hover:bg-gray-50 bg-white even:bg-gray-50"
     >
@@ -138,6 +144,19 @@ const CategoryTableRow = ({
         </div>
       </TableCell>
     </TableRow>
+    
+    {/* Delete Confirmation Modal */}
+    <ConfirmationModal
+      isOpen={showDeleteModal}
+      onClose={() => setShowDeleteModal(false)}
+      onConfirm={confirmDelete}
+      title="Delete Category"
+      message={`Are you sure you want to delete "${category.name}"? This action cannot be undone.`}
+      confirmText="Delete"
+      cancelText="Cancel"
+      variant="danger"
+    />
+  </>
   );
 };
 

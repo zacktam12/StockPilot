@@ -137,8 +137,7 @@ const NewSaleModal = ({
       setShowReceipt(true);
       onSuccess();
     } catch (error) {
-      console.error("Error creating sale:", error);
-      alert(`Error: ${error.message}`);
+            alert(`Error: ${error.message}`);
     }
   };
 

@@ -420,8 +420,7 @@ const SaleDetail = () => {
     const date = new Date(dateString);
     // Check if the date is valid
     if (isNaN(date.getTime())) {
-      console.warn('Invalid date received:', dateString);
-      return 'Invalid date';
+            return 'Invalid date';
     }
     return date.toLocaleString();
   };

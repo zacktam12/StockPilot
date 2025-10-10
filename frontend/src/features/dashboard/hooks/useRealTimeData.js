@@ -31,8 +31,7 @@ const useRealTimeData = () => {
     if (socketRef.current?.connected) return;
 
     // Check if WebSocket is supported and available (optional feature)
-    console.log('🔌 Attempting real-time socket connection...');
-    
+        
     try {
       socketRef.current = io(API_BASE_URL, {
         transports: ['websocket', 'polling'],
@@ -45,21 +44,18 @@ const useRealTimeData = () => {
 
       // Connection events
       socketRef.current.on('connect', () => {
-        console.log('✅ Real-time connection established');
-      });
+              });
 
       socketRef.current.on('disconnect', (reason) => {
         // Only log if it was a manual disconnect
         if (reason === 'io client disconnect') {
-          console.log('🔌 Real-time connection closed');
-        }
+                  }
       });
 
       socketRef.current.on('connect_error', (error) => {
         // Silently fail - WebSocket is optional
         // Only log once to avoid spam
         if (!socketRef.current?._connectErrorLogged) {
-          console.warn('ℹ️ Real-time features unavailable (WebSocket server not running)');
           if (socketRef.current) {
             socketRef.current._connectErrorLogged = true;
           }
@@ -70,35 +66,29 @@ const useRealTimeData = () => {
         }
       });
     } catch (error) {
-      console.warn('ℹ️ Real-time features unavailable');
-      return null;
+            return null;
     }
 
     // Dashboard update events (only add if socket was created successfully)
     if (socketRef.current) {
       socketRef.current.on('dashboard-update', (data) => {
-        console.log('📊 Real-time dashboard update received:', data);
-        dispatch(setSocketUpdates(data));
+                dispatch(setSocketUpdates(data));
       });
 
       socketRef.current.on('stats-update', (statsData) => {
-        console.log('📈 Real-time stats update:', statsData);
-        dispatch(setSocketUpdates({ stats: statsData }));
+                dispatch(setSocketUpdates({ stats: statsData }));
       });
 
       socketRef.current.on('activity-update', (activityData) => {
-        console.log('🔄 Real-time activity update:', activityData);
-        dispatch(setSocketUpdates({ activities: activityData }));
+                dispatch(setSocketUpdates({ activities: activityData }));
       });
 
       socketRef.current.on('stock-alert', (alertData) => {
-        console.log('⚠️ Real-time stock alert:', alertData);
-        dispatch(setSocketUpdates({ lowStockAlerts: alertData }));
+                dispatch(setSocketUpdates({ lowStockAlerts: alertData }));
       });
 
       socketRef.current.on('sale-update', (saleData) => {
-        console.log('💰 Real-time sale update:', saleData);
-        // Only refresh revenue data if it's been more than 30 seconds since last update
+                // Only refresh revenue data if it's been more than 30 seconds since last update
         const now = Date.now();
         const lastRevenueUpdate = lastUpdated.revenue ? new Date(lastUpdated.revenue).getTime() : 0;
         if (now - lastRevenueUpdate > 30000) { // 30 seconds
@@ -107,8 +97,7 @@ const useRealTimeData = () => {
       });
 
       socketRef.current.on('product-update', (productData) => {
-        console.log('📦 Real-time product update:', productData);
-        // Only refresh product distribution if it's been more than 30 seconds since last update
+                // Only refresh product distribution if it's been more than 30 seconds since last update
         const now = Date.now();
         const lastDistributionUpdate = lastUpdated.distribution ? new Date(lastUpdated.distribution).getTime() : 0;
         if (now - lastDistributionUpdate > 30000) { // 30 seconds
@@ -123,8 +112,7 @@ const useRealTimeData = () => {
   // Cleanup socket connection
   const disconnectSocket = useCallback(() => {
     if (socketRef.current) {
-      console.log('🔌 Disconnecting real-time socket...');
-      socketRef.current.disconnect();
+            socketRef.current.disconnect();
       socketRef.current = null;
     }
   }, []);
@@ -133,10 +121,8 @@ const useRealTimeData = () => {
   const setupPeriodicRefresh = useCallback(() => {
     if (intervalRef.current) return;
 
-    console.log('⏰ Setting up periodic data refresh...');
-    intervalRef.current = setInterval(() => {
-      console.log('🔄 Periodic data refresh...');
-      
+        intervalRef.current = setInterval(() => {
+            
       // Only refresh if data is older than 5 minutes
       const now = Date.now();
       const lastUpdate = Math.max(...Object.values(lastUpdated).map(time => time ? new Date(time).getTime() : 0));
@@ -145,8 +131,6 @@ const useRealTimeData = () => {
         dispatch(fetchDashboardStats());
         dispatch(fetchActivities({ page: 1, limit: 10 }));
         dispatch(fetchLowStockAlerts({ page: 1, limit: 10 }));
-      } else {
-        console.log('⏳ Skipping periodic refresh (data is fresh)');
       }
     }, 10 * 60 * 1000); // Check every 10 minutes
   }, [dispatch, lastUpdated]);
@@ -154,8 +138,7 @@ const useRealTimeData = () => {
   // Cleanup periodic refresh
   const clearPeriodicRefresh = useCallback(() => {
     if (intervalRef.current) {
-      console.log('⏰ Clearing periodic refresh...');
-      clearInterval(intervalRef.current);
+            clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
   }, []);
@@ -167,13 +150,11 @@ const useRealTimeData = () => {
     
     // Throttle refreshes to prevent too frequent calls
     if (now - lastRefresh < 30000) { // 30 seconds minimum between refreshes
-      console.log('⏳ Throttling dashboard refresh (too soon)');
       return;
     }
     
     window.lastDashboardRefresh = now;
-    console.log('🔄 Manual refresh of all dashboard data...');
-    
+        
     try {
       await Promise.all([
         dispatch(fetchDashboardStats()),
@@ -182,16 +163,13 @@ const useRealTimeData = () => {
         dispatch(fetchRevenueData()),
         dispatch(fetchProductDistribution()),
       ]);
-      console.log('✅ All dashboard data refreshed successfully');
-    } catch (error) {
-      console.error('❌ Error refreshing dashboard data:', error);
-    }
+          } catch (error) {
+          }
   }, [dispatch]);
 
   // Initialize real-time data on mount
   useEffect(() => {
-    console.log('🚀 Initializing real-time dashboard data...');
-    
+        
     // Setup real-time connection
     initializeSocket();
     
@@ -200,8 +178,7 @@ const useRealTimeData = () => {
 
     // Cleanup on unmount
     return () => {
-      console.log('🧹 Cleaning up real-time dashboard data...');
-      disconnectSocket();
+            disconnectSocket();
       clearPeriodicRefresh();
     };
   }, []); // Remove all dependencies to prevent re-initialization
@@ -210,12 +187,10 @@ const useRealTimeData = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        console.log('👁️ Page hidden, pausing real-time updates');
-        disconnectSocket();
+                disconnectSocket();
         clearPeriodicRefresh();
       } else {
-        console.log('👁️ Page visible, resuming real-time updates');
-        initializeSocket();
+                initializeSocket();
         setupPeriodicRefresh();
         // Only refresh data if it's been more than 1 minute since last update
         const now = Date.now();

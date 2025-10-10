@@ -116,8 +116,7 @@ const NewCategoryDrawer = ({ category, isOpen, onClose }) => {
       // Close drawer after successful submission
       onClose();
     } catch (error) {
-      console.error("Error saving category:", error);
-      setErrors({
+            setErrors({
         submit: error.message || "Failed to save category. Please try again."
       });
     } finally {

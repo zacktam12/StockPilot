@@ -120,8 +120,7 @@ const UsersPage = () => {
       };
       dispatch(fetchUsers(params));
     } catch (error) {
-      console.error("Failed to deactivate user:", error);
-    } finally {
+          } finally {
       setDeleteConfirmation({
         isOpen: false,
         userId: null,

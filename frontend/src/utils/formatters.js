@@ -10,7 +10,6 @@
 export const formatCurrency = (amount, currency = "USD", locale = "en-US") => {
   try {
     if (isNaN(amount)) {
-      console.warn("Invalid amount provided to formatCurrency");
       return "$0.00";
     }
     
@@ -47,7 +46,6 @@ export const formatDate = (date, locale = "en-US", options = {}) => {
   try {
     const dateObj = date instanceof Date ? date : new Date(date);
     if (isNaN(dateObj.getTime())) {
-      console.warn("Invalid date provided to formatDate");
       return "Invalid Date";
     }
     return new Intl.DateTimeFormat(locale, {
@@ -68,7 +66,6 @@ export const formatDate = (date, locale = "en-US", options = {}) => {
 export const formatNumber = (number, locale = "en-US") => {
   try {
     if (isNaN(number)) {
-      console.warn("Invalid number provided to formatNumber");
       return "0";
     }
     return new Intl.NumberFormat(locale).format(number);
@@ -88,7 +85,6 @@ export const formatPercentage = (value, isDecimal = true, locale = "en-US") => {
   try {
     const numValue = isDecimal ? value * 100 : value;
     if (isNaN(numValue)) {
-      console.warn("Invalid percentage value provided");
       return "0%";
     }
     return new Intl.NumberFormat(locale, {
@@ -108,7 +104,6 @@ export const formatPercentage = (value, isDecimal = true, locale = "en-US") => {
 export const formatFileSize = (bytes) => {
   try {
     if (isNaN(bytes)) {
-      console.warn("Invalid bytes value provided");
       return "0 Bytes";
     }
     if (bytes === 0) return "0 Bytes";

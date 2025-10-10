@@ -1,0 +1,54 @@
+services:
+  # Backend API Service
+  - type: web
+    name: stockpilot-backend
+    runtime: node
+    region: oregon
+    plan: free  # Change to 'starter' or higher for production
+    buildCommand: cd backend && npm install && npx prisma generate
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        sync: false  # You'll add this manually in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true  # Render will auto-generate a secure secret
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_EMAIL_PASS
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://stockpilot-frontend.onrender.com
+      - key: REDIS_ENABLED
+        value: false
+    healthCheckPath: /api/health
+
+  # Frontend Static Site
+  - type: web
+    name: stockpilot-frontend
+    runtime: static
+    region: oregon
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://stockpilot-backend.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # Database (Optional - if you want Render to host your DB)
+  # Uncomment if you don't have an external database
+  # - type: pserv
+  #   name: stockpilot-db
+  #   runtime: postgresql
+  #   plan: free
+  #   region: oregon
+  #   databaseName: stockpilot
+  #   databaseUser: stockpilot_user
+

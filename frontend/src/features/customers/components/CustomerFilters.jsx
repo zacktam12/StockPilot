@@ -42,8 +42,7 @@ const CustomerFilters = () => {
         setIsSaving(false);
       }, 500);
     } catch (error) {
-      console.error("Error applying filters:", error);
-      setIsSaving(false);
+            setIsSaving(false);
     }
   };
 

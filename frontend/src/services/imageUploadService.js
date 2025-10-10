@@ -13,7 +13,6 @@ export const uploadImage = async (file) => {
 
     return response.data;
   } catch (error) {
-    console.error('Error uploading image:', error);
     throw new Error(error.response?.data?.message || 'Failed to upload image');
   }
 };
@@ -31,7 +30,6 @@ export const uploadProductImage = async (productId, file) => {
 
     return response.data;
   } catch (error) {
-    console.error('Error uploading product image:', error);
     throw new Error(error.response?.data?.message || 'Failed to upload product image');
   }
 };

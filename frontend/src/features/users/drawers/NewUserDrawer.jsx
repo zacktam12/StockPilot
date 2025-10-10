@@ -191,8 +191,7 @@ const NewUserDrawer = ({ user, isOpen, onClose, onSuccess }) => {
       }
       onClose();
     } catch (error) {
-      console.error("Error saving user:", error);
-      setErrors({ submit: error.message || "Failed to save user. Please try again." });
+            setErrors({ submit: error.message || "Failed to save user. Please try again." });
     } finally {
       setIsSubmitting(false);
     }

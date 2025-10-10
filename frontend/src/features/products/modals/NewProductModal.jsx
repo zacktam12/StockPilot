@@ -304,8 +304,7 @@ const NewProductModal = ({ product, onClose }) => {
         err.response?.data?.error ||
         "Failed to save product";
       setError(errorMessage);
-      console.error("Error saving product:", err);
-    } finally {
+          } finally {
       setLoading(false);
     }
   };

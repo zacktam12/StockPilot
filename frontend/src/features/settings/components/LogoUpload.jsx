@@ -82,13 +82,7 @@ const LogoUpload = ({
         throw new Error('Invalid response format');
       }
     } catch (error) {
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: error.config
-      });
-      
+            
       let errorMessage = 'Failed to upload logo';
       
       if (error.response?.status === 401) {
@@ -127,8 +121,7 @@ const LogoUpload = ({
       
       showSuccess('Logo Removed', 'Company logo has been removed successfully', 4000);
     } catch (error) {
-      console.error('Error removing logo:', error);
-      showError('Remove Failed', 'Failed to remove logo. Please try again.', 5000);
+            showError('Remove Failed', 'Failed to remove logo. Please try again.', 5000);
     }
   };
 
@@ -198,8 +191,7 @@ const LogoUpload = ({
                 alt="Company Logo"
                 className="w-full h-full object-cover rounded-full"
                 onError={(e) => {
-                  console.error('Logo image failed to load:', displayLogo);
-                  e.target.style.display = 'none';
+                                    e.target.style.display = 'none';
                   // Show fallback content
                   e.target.nextElementSibling.style.display = 'flex';
                 }}

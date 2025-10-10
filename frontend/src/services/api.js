@@ -114,8 +114,6 @@ export const usersAPI = {
   updateProfile: (userId, data) => api.put(`/users/${userId}`, data),
   // TODO: Implement updateProfile with the correct endpoint when backend supports it (e.g., /users/me or /users/:id)
   uploadProfilePicture: (formData) => {
-    console.log("API_URL:", API_URL);
-    console.log("Token:", localStorage.getItem("authToken"));
 
     const uploadApi = axios.create({
       baseURL: API_URL,
@@ -128,8 +126,6 @@ export const usersAPI = {
       uploadApi.defaults.headers.Authorization = `Bearer ${token}`;
     }
 
-    console.log("Making request to:", `${API_URL}/users/me/profile-picture`);
-    console.log("Headers:", uploadApi.defaults.headers);
 
     return uploadApi.post("/users/me/profile-picture", formData);
   },
@@ -295,7 +291,6 @@ export const settingsAPI = {
   getSettings: () => api.get("/settings"),
   updateSettings: (data) => api.put("/settings", data),
   uploadLogo: (formData) => {
-    console.log('settingsAPI.uploadLogo called with formData:', formData);
     
     // Use the main API instance but override headers for multipart
     const config = {
@@ -306,8 +301,6 @@ export const settingsAPI = {
       timeout: 30000 // 30 second timeout
     };
     
-    console.log('Making request to:', `${API_URL}/settings/logo`);
-    console.log('Request config:', config);
     
     return api.post("/settings/logo", formData, config);
   },

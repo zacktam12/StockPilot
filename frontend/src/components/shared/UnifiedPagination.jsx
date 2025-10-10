@@ -130,22 +130,7 @@ const UnifiedPagination = ({
   }
 
   // Debug logging
-  console.log('UnifiedPagination Debug:', {
-    sliceName,
-    sliceState: {
-      currentPage: sliceState.currentPage,
-      totalPages: sliceState.totalPages,
-      totalItems: sliceState.totalItems,
-      itemsPerPage: sliceState.itemsPerPage,
-      items: sliceState.items?.length,
-      filteredItems: sliceState.filteredItems?.length
-    },
-    currentPage,
-    totalPages,
-    totalItems,
-    itemsPerPage
-  });
-
+  
   const handlePageChange = (page) => {
     dispatch(setCurrentPage(page));
   };
@@ -160,16 +145,7 @@ const UnifiedPagination = ({
     (sliceState.users && sliceState.users.length > 0); // For user slice
   
   // Debug logging for pagination visibility
-  console.log('UnifiedPagination Debug:', {
-    sliceName,
-    totalItems,
-    hasItems,
-    sliceStateItems: sliceState.items?.length,
-    sliceStateUsers: sliceState.users?.length,
-    currentPage,
-    totalPages
-  });
-  
+    
   if (!hasItems) return null;
 
   // Use mobile pagination for small screens

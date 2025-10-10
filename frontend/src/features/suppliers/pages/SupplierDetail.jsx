@@ -129,8 +129,7 @@ const SupplierDetail = () => {
       await dispatch(deleteSupplier(id));
       navigate("/suppliers");
     } catch (error) {
-      console.error("Failed to delete supplier:", error);
-    } finally {
+          } finally {
       setIsSubmitting(false);
     }
   };

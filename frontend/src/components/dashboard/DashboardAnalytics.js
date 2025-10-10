@@ -334,8 +334,7 @@ export const validateDashboardData = (data) => {
   const missing = required.filter(field => !data[field]);
   
   if (missing.length > 0) {
-    console.warn('Dashboard data missing required fields:', missing);
-    return false;
+        return false;
   }
   
   return true;
@@ -351,8 +350,7 @@ export const measurePerformance = (name, fn) => {
 
 // Error handling utilities
 export const handleDashboardError = (error, context = 'Dashboard') => {
-  console.error(`${context} Error:`, error);
-  
+    
   const errorTypes = {
     'NETWORK_ERROR': 'Network connection failed',
     'TIMEOUT': 'Request timed out',

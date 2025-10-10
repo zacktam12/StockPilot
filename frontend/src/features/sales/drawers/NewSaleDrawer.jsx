@@ -217,8 +217,7 @@ const NewSaleDrawer = ({ sale, isOpen, onClose, onSuccess }) => {
       }
       onClose();
     } catch (error) {
-      console.error("Error creating sale:", error);
-      setErrors({ submit: "Failed to create sale. Please try again." });
+            setErrors({ submit: "Failed to create sale. Please try again." });
     } finally {
       setIsSubmitting(false);
     }

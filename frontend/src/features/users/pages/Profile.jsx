@@ -110,8 +110,7 @@ const ProfilePage = () => {
         // Clear the file input so the same file can be selected again
         event.target.value = '';
       } catch (error) {
-        console.error("Avatar upload failed:", error);
-        setAvatarPreview(null);
+                setAvatarPreview(null);
         showError("Upload Failed", error.message || "Failed to upload profile picture. Please try again.", 5000);
         
         // Clear the file input on error
@@ -130,8 +129,7 @@ const ProfilePage = () => {
         setIsEditing(false);
       }
     } catch (error) {
-      console.error("Profile save failed:", error);
-    } finally {
+          } finally {
       setIsLoading(false);
     }
   };

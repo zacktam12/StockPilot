@@ -95,8 +95,7 @@ const SuppliersPage = () => {
       await dispatch(importSuppliers(data)).unwrap();
       dispatch(fetchSuppliers()); // Refresh the list
     } catch (error) {
-      console.error("Import failed:", error);
-    }
+          }
   };
 
   const handleSelectAll = () => {

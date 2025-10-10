@@ -162,8 +162,7 @@ const ExportButton = ({ reportType, reportData, reportTitle, isLoading }) => {
       showSuccess("PDF Exported", "PDF has been exported successfully!", 4000);
       toast.success("PDF exported successfully!", { id: "pdf-generation" });
     } catch (error) {
-      console.error("PDF export failed:", error);
-      showError("Export Failed", `PDF export failed: ${error.message}`, 5000);
+            showError("Export Failed", `PDF export failed: ${error.message}`, 5000);
       toast.error(`PDF export failed: ${error.message}`, {
         id: "pdf-generation",
       });

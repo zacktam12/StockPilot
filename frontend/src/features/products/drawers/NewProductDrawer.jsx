@@ -239,8 +239,7 @@ const NewProductDrawer = ({ product, isOpen, onClose }) => {
             productData.image_url = imageResponse.data.imageUrl;
           }
         } catch (imageError) {
-          console.error('Image upload failed:', imageError);
-          // Continue without image rather than failing the entire operation
+                    // Continue without image rather than failing the entire operation
           setErrors({ image: 'Failed to upload image, but product will be created without image' });
         }
       }
@@ -249,8 +248,7 @@ const NewProductDrawer = ({ product, isOpen, onClose }) => {
       await dispatch(createProduct(productData)).unwrap();
       onClose();
     } catch (error) {
-      console.error("Error creating product:", error);
-      setErrors({ submit: error.message || "Failed to create product. Please try again." });
+            setErrors({ submit: error.message || "Failed to create product. Please try again." });
     } finally {
       setIsSubmitting(false);
     }

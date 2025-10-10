@@ -237,8 +237,7 @@ const NewSupplierDrawer = ({ supplier, isOpen, onClose }) => {
 
       onClose();
     } catch (error) {
-      console.error("Error creating/updating supplier:", error);
-      setErrors({ 
+            setErrors({ 
         general: error.message || "Failed to save supplier. Please try again." 
       });
     } finally {

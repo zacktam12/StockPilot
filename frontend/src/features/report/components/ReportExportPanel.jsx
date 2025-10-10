@@ -55,8 +55,7 @@ const ReportExportPanel = ({ report, data }) => {
       
       doc.save(`${title.replace(/\s+/g, '_')}.pdf`);
     } catch (error) {
-      console.error("Error generating PDF:", error);
-    } finally {
+          } finally {
       setIsExporting(false);
     }
   };
@@ -81,8 +80,7 @@ const ReportExportPanel = ({ report, data }) => {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
       XLSX.writeFile(workbook, `${report.title.replace(/\s+/g, '_')}.xlsx`);
     } catch (error) {
-      console.error("Error generating Excel:", error);
-    } finally {
+          } finally {
       setIsExporting(false);
     }
   };
@@ -109,8 +107,7 @@ const ReportExportPanel = ({ report, data }) => {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error generating CSV:", error);
-    } finally {
+          } finally {
       setIsExporting(false);
     }
   };

@@ -69,8 +69,7 @@ export default function Login() {
         const response = await settingsAPI.getPublicStats();
         setPublicStats(response.data.data);
       } catch (error) {
-        console.error('Failed to fetch public stats:', error);
-        // Keep default values if API fails - don't show error to user
+                // Keep default values if API fails - don't show error to user
         // This prevents the login page from blinking or showing errors
         setPublicStats({
           totalUsers: 0,

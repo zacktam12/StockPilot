@@ -80,8 +80,7 @@ const SalesPage = () => {
         const response = await fetch(`${API_BASE_URL}/health`);
         const data = await response.json();
       } catch (error) {
-        console.error("Backend health check failed:", error);
-      }
+              }
     };
 
     checkBackendHealth();
@@ -131,8 +130,7 @@ const SalesPage = () => {
         })
       );
     } catch (error) {
-      console.error("Error updating sale status:", error);
-    }
+          }
   };
 
   const handleViewReceipt = (sale) => {

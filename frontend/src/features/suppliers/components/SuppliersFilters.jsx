@@ -85,8 +85,7 @@ const SuppliersFilters = () => {
         setIsSaving(false);
       }, 500);
     } catch (error) {
-      console.error("Error saving filters:", error);
-      setIsSaving(false);
+            setIsSaving(false);
     }
   };
 

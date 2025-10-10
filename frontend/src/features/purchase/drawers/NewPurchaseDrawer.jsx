@@ -265,8 +265,7 @@ const NewPurchaseDrawer = ({ purchase, isOpen, onClose }) => {
       await dispatch(createPurchase(purchaseData)).unwrap();
       onClose();
     } catch (error) {
-      console.error("Error creating purchase:", error);
-      setErrors({
+            setErrors({
         submit: error.message || "Failed to create purchase. Please try again.",
       });
     } finally {

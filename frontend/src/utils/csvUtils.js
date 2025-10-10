@@ -335,7 +335,6 @@ export const CSV_FIELD_MAPPING = {
 
 export const exportToCSV = (data, filename = "export.csv", headers = null) => {
   if (!data || data.length === 0) {
-    console.warn("No data to export");
     return;
   }
 

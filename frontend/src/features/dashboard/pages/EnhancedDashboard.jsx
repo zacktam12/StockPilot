@@ -109,16 +109,7 @@ const EnhancedDashboard = () => {
   // Debug logging for data flow (only when needed)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('📊 Dashboard Data Status:', {
-        stats: !!stats,
-        activities: activities?.data?.length || 0,
-        lowStockAlerts: lowStockAlerts?.data?.length || 0,
-        revenue: revenue?.data?.length || 0,
-        distribution: Object.keys(distribution?.data || {}).length,
-        hasRevenueData,
-        isConnected,
-        hasRealTimeData
-      });
+      // Data flow tracking removed
     }
   }, [stats, activities, lowStockAlerts, revenue, distribution, hasRevenueData, isConnected, hasRealTimeData]);
 
@@ -146,7 +137,7 @@ const EnhancedDashboard = () => {
 
   // Use real stock alerts data or fallback to empty array
   const realStockAlerts = lowStockAlerts?.data?.length > 0 ? lowStockAlerts.data.map(alert => {
-    console.log('🔍 Processing alert:', alert); // Debug each alert
+     // Debug each alert
     return {
       id: alert.id,
       productId: alert.id, // Use the same ID for now
@@ -165,10 +156,8 @@ const EnhancedDashboard = () => {
   // Debug the final transformed alerts
   useEffect(() => {
     if (realStockAlerts.length > 0) {
-      console.log('✅ Final transformed alerts:', realStockAlerts);
-    } else {
-      console.log('❌ No alerts transformed, raw data:', lowStockAlerts);
-    }
+          } else {
+          }
   }, [realStockAlerts, lowStockAlerts]);
 
   // Enhanced stats with trends - using only real calculated data
@@ -265,8 +254,7 @@ const EnhancedDashboard = () => {
 
   // Handle alert dismissal
   const handleDismissAlert = useCallback((alertId) => {
-    console.log("Dismissing alert:", alertId);
-    // Implement alert dismissal logic
+        // Implement alert dismissal logic
   }, []);
 
   // Chart data formatters

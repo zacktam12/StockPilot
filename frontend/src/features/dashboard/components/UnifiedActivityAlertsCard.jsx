@@ -307,8 +307,7 @@ const UnifiedActivityAlertsCard = ({
         return formatDateTime(date, dateFormat, timeFormat);
       }
     } catch (error) {
-      console.warn("Error formatting time:", error, "Timestamp:", timestamp);
-      return "Invalid date";
+            return "Invalid date";
     }
   };
 

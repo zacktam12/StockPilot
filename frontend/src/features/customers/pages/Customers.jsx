@@ -90,8 +90,7 @@ const CustomersPage = () => {
         })
       ).unwrap();
     } catch (error) {
-      console.error('💥 [IMPORT] Import failed:', error);
-    }
+          }
   };
 
   const handleOpenImportModal = () => setIsImportModalOpen(true);

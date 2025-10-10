@@ -211,7 +211,6 @@ export const createProduct = createAsyncThunk(
       const response = await api.post("/products", productData);
       return response.data;
     } catch (err) {
-      console.error("Error response:", err.response?.data);
       return rejectWithValue(
         err.response?.data?.error || "Failed to create product"
       );
@@ -234,7 +233,6 @@ export const saveProduct = createAsyncThunk(
       const response = await api[method](url, productData);
       return response.data;
     } catch (err) {
-      console.error("Error response:", err.response?.data);
       return rejectWithValue(
         err.response?.data?.error || "Failed to save product"
       );
@@ -358,12 +356,6 @@ export const uploadProductImage = createAsyncThunk(
 
       return response.data;
     } catch (err) {
-      console.error('Upload error details:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
-      });
-      
       const errorMessage = err.response?.data?.message || 
                           err.response?.data?.error || 
                           err.message || 

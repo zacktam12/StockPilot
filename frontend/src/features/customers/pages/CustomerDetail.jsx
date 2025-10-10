@@ -127,8 +127,7 @@ const CustomerDetail = () => {
       await dispatch(deleteCustomer(id));
       navigate("/customers");
     } catch (error) {
-      console.error("Failed to delete customer:", error);
-    } finally {
+          } finally {
       setIsSubmitting(false);
     }
   };

@@ -203,8 +203,7 @@ const NewPurchaseModal = ({ isOpen, onClose, onSuccess }) => {
       onClose();
     } catch (err) {
       setError(err.message || "Failed to create purchase order");
-      console.error("Error creating purchase:", err);
-    }
+          }
   };
 
   if (!isOpen) return null;

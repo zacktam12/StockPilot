@@ -153,8 +153,7 @@ const NewCustomerDrawer = ({ customer, isOpen, onClose }) => {
 
       onClose();
     } catch (error) {
-      console.error("Error creating/updating customer:", error);
-      setErrors({ 
+            setErrors({ 
         general: error.message || "Failed to save customer. Please try again." 
       });
     } finally {

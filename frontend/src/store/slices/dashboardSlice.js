@@ -8,12 +8,9 @@ export const refreshProductDistribution = createAsyncThunk(
   "dashboard/refreshProductDistribution",
   async () => {
     try {
-      console.log("🔄 Refreshing product distribution...");
       const response = await api.get("/dashboard/product-distribution");
-      console.log("📊 Product distribution refreshed:", response.data);
       return response.data;
     } catch (error) {
-      console.warn("Failed to refresh product distribution:", error);
       return {};
     }
   }
@@ -24,20 +21,12 @@ export const fetchDashboardStats = createAsyncThunk(
   async (timeRange = "monthly") => {
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log("🔍 Fetching dashboard stats with range:", timeRange);
       }
       const response = await api.get("/dashboard/stats", {
         params: { range: timeRange },
       });
-      console.log("📊 Dashboard stats response:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Failed to load dashboard stats:", error);
-      console.error("Error details:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
       // Return default stats structure
       return {
         stats: {
@@ -69,12 +58,9 @@ export const fetchActivities = createAsyncThunk(
   "dashboard/fetchActivities",
   async (params = { page: 1, limit: 10 }) => {
     try {
-      console.log("🔍 Fetching activities with params:", params);
       const response = await api.get("/dashboard/activities", { params });
-      console.log("📊 Activities response:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Failed to load recent activities:", error);
       // Return default paginated structure
       return {
         data: [],
@@ -97,12 +83,9 @@ export const fetchLowStockAlerts = createAsyncThunk(
   "dashboard/fetchLowStockAlerts",
   async (params = { page: 1, limit: 10 }) => {
     try {
-      console.log("🔍 Fetching low stock alerts with params:", params);
       const response = await api.get("/dashboard/low-stock-alerts", { params });
-      console.log("📊 Low stock alerts response:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Failed to load low stock alerts:", error);
       // Return default paginated structure
       return {
         data: [],
@@ -126,20 +109,12 @@ export const fetchRevenueData = createAsyncThunk(
   async (timeRange = "monthly") => {
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 Fetching revenue data with range:', timeRange);
       }
       const response = await api.get("/dashboard/revenue-data", {
         params: { range: timeRange },
       });
-      console.log('💰 Revenue API response:', response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Failed to load revenue data:", error);
-      console.error("❌ Error details:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data
-      });
       // Return default revenue data structure
       return [];
     }
@@ -159,7 +134,6 @@ export const fetchProductDistribution = createAsyncThunk(
       const response = await api.get("/dashboard/product-distribution");
       return response.data;
     } catch (error) {
-      console.warn("Failed to load product distribution:", error);
       // Return empty object to prevent reduce errors
       return {};
     }
@@ -256,12 +230,10 @@ const dashboardSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchDashboardStats.pending, (state) => {
-        console.log("🔄 Dashboard stats loading...");
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchDashboardStats.fulfilled, (state, action) => {
-        console.log("✅ Dashboard stats loaded:", action.payload);
         state.loading = false;
         
         // Handle both backend response formats
@@ -274,10 +246,8 @@ const dashboardSlice = createSlice({
         };
         state.lowStockProducts = responseData.lowStockItems || [];
         state.lastUpdated.stats = new Date().toISOString();
-        console.log("📊 Updated stats state:", state.stats);
       })
       .addCase(fetchDashboardStats.rejected, (state, action) => {
-        console.error("❌ Dashboard stats failed:", action.payload);
         state.loading = false;
         state.error = action.payload;
         showError(
@@ -315,7 +285,6 @@ const dashboardSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchLowStockAlerts.fulfilled, (state, action) => {
-        console.log('✅ Low stock alerts fulfilled:', action.payload);
         state.lowStockLoading = false;
         state.lowStockAlerts = {
           data: action.payload.data || [],
@@ -325,7 +294,6 @@ const dashboardSlice = createSlice({
           limit: action.payload.limit || 10,
         };
         state.lastUpdated.lowStockAlerts = new Date().toISOString();
-        console.log('📊 Updated lowStockAlerts state:', state.lowStockAlerts);
       })
       .addCase(fetchLowStockAlerts.rejected, (state, action) => {
         state.lowStockLoading = false;
@@ -346,13 +314,6 @@ const dashboardSlice = createSlice({
         const responseData = action.payload.data || action.payload;
         state.revenue = { data: responseData };
         state.lastUpdated.revenue = new Date().toISOString();
-        if (process.env.NODE_ENV === 'development') {
-          console.log('💰 Revenue data loaded in Redux:', {
-            payload: action.payload,
-            responseData,
-            dataLength: responseData?.length || 0
-          });
-        }
       })
       .addCase(fetchRevenueData.rejected, (state, action) => {
         state.revenueLoading = false;
@@ -402,10 +363,6 @@ const dashboardSlice = createSlice({
       .addCase(refreshProductDistribution.rejected, (state, action) => {
         state.distributionLoading = false;
         state.error = action.payload;
-        console.error(
-          "❌ Failed to refresh product distribution:",
-          action.payload
-        );
         showWarning(
           'Refresh Failed',
           'Unable to refresh product distribution data. Please try again later.',
@@ -427,7 +384,6 @@ export const {
 
 // Add middleware to listen for category changes and refresh product distribution
 export const dashboardMiddleware = (store) => (next) => (action) => {
-  console.log("🔍 Dashboard middleware received action:", action.type);
 
   const result = next(action);
 
@@ -437,12 +393,9 @@ export const dashboardMiddleware = (store) => (next) => (action) => {
     action.type === "category/createCategory/fulfilled" ||
     action.type === "category/updateCategory/fulfilled"
   ) {
-    console.log("🔄 Category changed, refreshing product distribution...");
-    console.log("Action details:", action);
 
     // Dispatch refresh action after a short delay to ensure backend is updated
     setTimeout(() => {
-      console.log("⏰ Dispatching refreshProductDistribution...");
       store.dispatch(refreshProductDistribution());
     }, 1000); // Increased delay to 1 second
   }

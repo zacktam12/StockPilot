@@ -150,8 +150,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
       dispatch(clearAllNotifications())
         .unwrap()
         .catch((error) => {
-          console.error("Failed to clear notifications:", error);
-        });
+                  });
     }
   };
 
