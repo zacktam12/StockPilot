@@ -139,6 +139,11 @@ const updatePurchaseSchema = createPurchaseSchema.fork(
 
 // Input sanitization function
 const sanitizeInput = (data) => {
+  // Handle null or undefined data
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+  
   const sanitized = {};
   for (const [key, value] of Object.entries(data)) {
     if (typeof value === 'string') {
@@ -173,6 +178,14 @@ const sanitizeInput = (data) => {
 
 const validateCreatePurchase = (req, res, next) => {
   try {
+    // Ensure req.body exists and is an object
+    if (!req.body || typeof req.body !== 'object') {
+      return res.status(400).json({
+        success: false,
+        message: "Request body is required",
+      });
+    }
+    
     // Sanitize input first
     req.body = sanitizeInput(req.body);
     
@@ -205,12 +218,29 @@ const validateCreatePurchase = (req, res, next) => {
 
 const validateUpdatePurchase = (req, res, next) => {
   try {
+    // Ensure req.body exists and is an object
+    if (!req.body || typeof req.body !== 'object') {
+      req.body = {};
+    }
+    
     // Sanitize input first
     req.body = sanitizeInput(req.body);
     
     // Remove id from body if present to avoid Joi validation error
-    if ("id" in req.body) {
+    if (req.body && "id" in req.body) {
       delete req.body.id;
+    }
+    
+    // Map editableProducts to items for validation
+    if (req.body.editableProducts) {
+      // Transform field names from frontend format to backend format
+      req.body.items = req.body.editableProducts.map(item => ({
+        productId: item.productId,
+        purchase_price: item.price || item.purchase_price,
+        purchase_quantity: item.quantity || item.purchase_quantity
+      }));
+      
+      delete req.body.editableProducts;
     }
     
     const { error, value } = updatePurchaseSchema.validate(req.body, { 
@@ -234,6 +264,7 @@ const validateUpdatePurchase = (req, res, next) => {
     req.body = value;
     next();
   } catch (err) {
+    console.error('Validation error:', err);
     return res.status(500).json({
       success: false,
       message: "Internal validation error",

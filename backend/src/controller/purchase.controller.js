@@ -158,12 +158,14 @@ exports.getPurchaseById = async (req, res, next) => {
 exports.updatePurchase = async (req, res, next) => {
   try {
     const result = await purchaseService.updatePurchase(req.params.id, req.body);
+    
     if (!result) {
       return res.status(404).json({
         success: false,
         message: "Purchase not found"
       });
     }
+    
     res.json({
       success: true,
       message: 'Purchase updated successfully',

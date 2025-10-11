@@ -285,26 +285,72 @@ const getPurchaseById = async (id) => {
 };
 
 const updatePurchase = async (id, data) => {
-  const result = await prisma.purchase.update({
-    where: { id: String(id) },
-    data,
-    include: {
-      user: true,
-      supplier: true,
-      productPurchases: {
-        include: {
-          product: {
-            select: { name: true, sku: true, barcode: true, image: true },
+  const { items, ...purchaseData } = data;
+
+  return await prisma.$transaction(async (tx) => {
+    // Update the purchase
+    const result = await tx.purchase.update({
+      where: { id: String(id) },
+      data: purchaseData,
+      include: {
+        user: true,
+        supplier: true,
+        productPurchases: {
+          include: {
+            product: {
+              select: { name: true, sku: true, barcode: true, image: true },
+            },
           },
         },
       },
-    },
+    });
+
+    // Handle product purchases update if provided
+    if (items && Array.isArray(items)) {
+      // Delete existing product purchases
+      await tx.productPurchase.deleteMany({
+        where: { purchaseId: String(id) }
+      });
+
+      // Create new product purchases
+      if (items.length > 0) {
+        await Promise.all(
+          items.map((item) =>
+            tx.productPurchase.create({
+              data: {
+                productId: item.productId,
+                purchaseId: String(id),
+                purchase_price: item.price || item.purchase_price,
+                purchase_quantity: item.quantity || item.purchase_quantity,
+              },
+            })
+          )
+        );
+      }
+    }
+
+    // Return updated purchase with fresh product purchases
+    const updatedResult = await tx.purchase.findUnique({
+      where: { id: String(id) },
+      include: {
+        user: true,
+        supplier: true,
+        productPurchases: {
+          include: {
+            product: {
+              select: { name: true, sku: true, barcode: true, image: true },
+            },
+          },
+        },
+      },
+    });
+
+    // Invalidate cache
+    await cacheService.deletePattern('purchases:*');
+    await cacheService.deletePattern('products:*'); // Invalidate product cache due to quantity changes
+
+    return updatedResult;
   });
-
-  // Invalidate cache
-  await cacheService.deletePattern('purchases:*');
-
-  return result;
 };
 
 const deletePurchase = async (id) => {

@@ -256,7 +256,7 @@ const { generalLimiter, strictLimiter, searchLimiter } = require("../middlewares
 /**
  * @swagger
  * /api/purchases/{id}/status:
- *   patch:
+ *   put:
  *     summary: Update purchase order status
  *     tags: [Purchases]
  *     security:
@@ -379,7 +379,7 @@ router.put(
 );
 
 // Update purchase status (Admin and Staff)
-router.patch(
+router.put(
   "/:id/status",
   validatePurchaseId,
   authorize("admin", "staff"),
