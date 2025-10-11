@@ -190,8 +190,11 @@ export const purchasesAPI = {
   getAll: (params) => api.get("/purchases", { params }),
   getById: (id) => api.get(`/purchases/${id}`),
   create: (data) => api.post("/purchases", data),
+  update: (id, data) => api.put(`/purchases/${id}`, data),
   updateStatus: (id, status) => api.put(`/purchases/${id}/status`, { status }),
   delete: (id) => api.delete(`/purchases/${id}`),
+  generateReceipt: (id) => api.get(`/purchases/${id}/receipt`),
+  import: (data) => api.post("/purchases/import", data),
 };
 
 export const customersAPI = {

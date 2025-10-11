@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import api from "../../services/api";
+import api, { purchasesAPI } from "../../services/api";
 import { showSuccess, showError, showWarning } from "../../services/notificationService";
 
 // Async Thunks
@@ -7,7 +7,7 @@ export const fetchPurchases = createAsyncThunk(
   "purchases/fetchPurchases",
   async (params = {}, { rejectWithValue }) => {
     try {
-      const response = await api.get("/purchases", { params });
+      const response = await purchasesAPI.getAll(params);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -21,7 +21,7 @@ export const fetchPurchaseById = createAsyncThunk(
   "purchases/fetchPurchaseById",
   async (purchaseId, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/purchases/${purchaseId}`);
+      const response = await purchasesAPI.getById(purchaseId);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -45,7 +45,7 @@ export const createPurchase = createAsyncThunk(
         notes: purchaseData.notes || "",
         items: purchaseData.items || [],
       };
-      const response = await api.post("/purchases", payload);
+      const response = await purchasesAPI.create(payload);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -61,9 +61,7 @@ export const updatePurchaseStatus = createAsyncThunk(
     try {
       // Map 'completed' to 'received' for backend
       const mappedStatus = status === "completed" ? "received" : status;
-      const response = await api.patch(`/purchases/${id}/status`, {
-        status: mappedStatus,
-      });
+      const response = await purchasesAPI.updateStatus(id, mappedStatus);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -77,7 +75,7 @@ export const deletePurchase = createAsyncThunk(
   "purchases/deletePurchase",
   async (purchaseId, { rejectWithValue }) => {
     try {
-      await api.delete(`/purchases/${purchaseId}`);
+      await purchasesAPI.delete(purchaseId);
       return purchaseId;
     } catch (error) {
       return rejectWithValue(
@@ -91,7 +89,7 @@ export const updatePurchase = createAsyncThunk(
   "purchases/updatePurchase",
   async ({ id, purchaseData }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/purchases/${id}`, purchaseData);
+      const response = await purchasesAPI.update(id, purchaseData);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -105,7 +103,7 @@ export const generateReceipt = createAsyncThunk(
   "purchases/generateReceipt",
   async (purchaseId, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/purchases/${purchaseId}/receipt`);
+      const response = await purchasesAPI.generateReceipt(purchaseId);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -119,7 +117,7 @@ export const importPurchases = createAsyncThunk(
   "purchases/importPurchases",
   async (purchases, { rejectWithValue }) => {
     try {
-      const response = await api.post("/purchases/import", { purchases });
+      const response = await purchasesAPI.import({ purchases });
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -405,20 +403,23 @@ const purchaseSlice = createSlice({
       })
       .addCase(updatePurchase.fulfilled, (state, action) => {
         state.loading = false;
+        // Extract the actual purchase data from the response
+        const updatedPurchase = action.payload.data || action.payload;
+        
         // Update the current purchase if it's the one being updated
-        if (state.currentPurchase && state.currentPurchase.id === action.payload.id) {
-          state.currentPurchase = { ...state.currentPurchase, ...action.payload };
+        if (state.currentPurchase && state.currentPurchase.id === updatedPurchase.id) {
+          state.currentPurchase = updatedPurchase;
         }
         // Update in items list if it exists
-        const index = state.items.findIndex(item => item.id === action.payload.id);
+        const index = state.items.findIndex(item => item.id === updatedPurchase.id);
         if (index !== -1) {
-          state.items[index] = { ...state.items[index], ...action.payload };
+          state.items[index] = updatedPurchase;
         }
         
         // Show success notification
         showSuccess(
           'Purchase Updated Successfully',
-          `Purchase order ${action.payload.poNumber || 'PO-' + action.payload.id?.slice(0, 8) || 'N/A'} has been updated.`,
+          `Purchase order ${updatedPurchase.poNumber || 'PO-' + updatedPurchase.id?.slice(0, 8) || 'N/A'} has been updated.`,
           4000
         );
       })

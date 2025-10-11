@@ -161,9 +161,11 @@ const PurchaseDetail = () => {
     setIsSubmitting(true);
     try {
       await dispatch(updatePurchase({ 
-        id: currentPurchase.id, 
-        supplierId: formData.supplierId,
-        notes: formData.notes
+        id: currentPurchase.id,
+        purchaseData: {
+          supplierId: formData.supplierId,
+          notes: formData.notes
+        }
       })).unwrap();
       
       await dispatch(updatePurchaseStatus({ 
@@ -171,11 +173,14 @@ const PurchaseDetail = () => {
         status: formData.status 
       })).unwrap();
       
+      // Refetch the purchase to ensure we have the latest data
+      await dispatch(fetchPurchaseById(currentPurchase.id));
+      
       dispatch(showToast({
         type: 'success',
         message: 'Purchase information updated successfully'
       }));
-      
+
       setIsEditingPurchaseInfo(false);
     } catch (error) {
       dispatch(showToast({
@@ -208,13 +213,20 @@ const PurchaseDetail = () => {
       
       const totalCost = subtotal - (parseFloat(formData.discount) || 0) + (parseFloat(formData.tax) || 0);
       
-      await dispatch(updatePurchase({ 
-        id: currentPurchase.id, 
-        totalCost,
-        discount: formData.discount || 0,
-        tax: formData.tax || 0,
-        editableProducts: formData.editableProducts
-      })).unwrap();
+      const updateData = {
+        id: currentPurchase.id,
+        purchaseData: {
+          totalCost,
+          discount: formData.discount || 0,
+          tax: formData.tax || 0,
+          editableProducts: formData.editableProducts
+        }
+      };
+      
+      await dispatch(updatePurchase(updateData)).unwrap();
+      
+      // Refetch the purchase to ensure we have the latest data
+      await dispatch(fetchPurchaseById(currentPurchase.id));
       
       dispatch(showToast({
         type: 'success',
