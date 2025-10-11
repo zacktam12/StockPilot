@@ -14,7 +14,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../../components/shared/Table";
+} from "../../../components/shared/table";
 import Button from "../../../components/shared/Button";
 import ActionMenu from "../../../components/shared/ActionMenu";
 import { BarsSpinner } from "../../../components/shared/Spinner";

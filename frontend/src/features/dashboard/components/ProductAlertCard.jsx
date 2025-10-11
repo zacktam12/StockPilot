@@ -14,7 +14,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../../components/shared/Table";
+} from "../../../components/shared/table";
 import Badge from "../../../components/shared/Badge";
 import CardLoaderOverlay from "../../../components/shared/CardLoaderOverlay";
 import { SimplePagination } from "../../../components/shared/Pagination";
