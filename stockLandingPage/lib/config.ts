@@ -16,8 +16,8 @@ export const config = {
   appDescription: 'Modern Inventory Management',
 };
 
-// Helper function to get login URL
-export const getLoginUrl = () => `${config.frontendUrl}/login`;
+// Helper function to get app URL (main frontend)
+export const getLoginUrl = () => `${config.frontendUrl}`;
 
 // Helper function to get dashboard URL
 export const getDashboardUrl = () => `${config.frontendUrl}/dashboard`; 
