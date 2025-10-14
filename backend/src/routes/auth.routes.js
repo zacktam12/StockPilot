@@ -160,5 +160,4 @@ router.get("/verify-employee-id/:id", userController.verifyEmployeeId);
 router.post("/contact-admin", contactAdmin);
 
 module.exports = router;
-//multer
-// windsurf
+

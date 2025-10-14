@@ -8,6 +8,7 @@ import CategoryErrorState from "../components/CategoryErrorState";
 import CategoryActions from "../components/CategoryActions";
 import LoadingOverlay from "../../../components/shared/LoadingOverlay";
 import UnifiedPagination from "../../../components/shared/UnifiedPagination";
+import { exportCategoriesToCSV } from "../../../utils/csvUtils";
 
 const CategoryPage = () => {
   const dispatch = useDispatch();
@@ -50,34 +51,8 @@ const CategoryPage = () => {
   };
 
   // Handle CSV export
-  const handleExportCSV = (categoriesToExport) => {
-    if (!categoriesToExport || categoriesToExport.length === 0) {
-      return;
-    }
-
-    // Create CSV content
-    const headers = ['ID', 'Name', 'Description', 'Created At', 'Updated At'];
-    const csvContent = [
-      headers.join(','),
-      ...categoriesToExport.map(category => [
-        category.id,
-        `"${category.name || ''}"`,
-        `"${category.description || ''}"`,
-        `"${new Date(category.createdAt).toLocaleDateString()}"`,
-        `"${new Date(category.updatedAt).toLocaleDateString()}"`
-      ].join(','))
-    ].join('\n');
-
-    // Create and download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `categories_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportCSV = (categories = filteredItems) => {
+    exportCategoriesToCSV(categories);
   };
 
   if (loading && (!filteredItems || filteredItems.length === 0) && !error) {

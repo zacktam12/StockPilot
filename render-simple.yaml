@@ -1,0 +1,67 @@
+# Render Blueprint for StockPilot
+# This file deploys all three services automatically
+
+services:
+  # 1. Backend API
+  - type: web
+    name: stockpilot-backend
+    runtime: node
+    region: oregon
+    plan: free  # Change to 'starter' for production ($7/mo)
+    buildCommand: cd backend && npm install && npx prisma generate
+    startCommand: cd backend && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        sync: false  # You'll add this manually
+      - key: JWT_SECRET
+        generateValue: true  # Auto-generated secure secret
+      - key: ALLOWED_ORIGINS
+        value: "*"  # Update this after deployment
+      - key: REDIS_ENABLED
+        value: false
+
+  # 2. Frontend App (Static Site)
+  - type: web
+    name: stockpilot-frontend
+    runtime: static
+    region: oregon
+    plan: free  # Static sites are FREE forever!
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false  # Add your backend URL manually
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # 3. Landing Page
+  - type: web
+    name: stockpilot-landing
+    runtime: node
+    region: oregon
+    plan: free  # Change to 'starter' for production ($7/mo)
+    buildCommand: cd stockLandingPage && npm install && npm run build
+    startCommand: cd stockLandingPage && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false  # Add your frontend URL manually
+      - key: NEXT_PUBLIC_API_URL
+        sync: false  # Add your backend URL manually
+
+# Note: After deployment, you need to:
+# 1. Add DATABASE_URL to backend service
+# 2. Add VITE_API_URL to frontend service (your backend URL)
+# 3. Add NEXT_PUBLIC_APP_URL to landing service (your frontend URL)
+# 4. Add NEXT_PUBLIC_API_URL to landing service (your backend URL)
+# 5. Update ALLOWED_ORIGINS in backend to include frontend and landing URLs
+# 6. Run migrations: In backend Shell, run "npx prisma migrate deploy"
+
