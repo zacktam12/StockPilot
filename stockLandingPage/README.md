@@ -1,88 +1,194 @@
 # StockPilot Landing Page
 
-A modern, responsive landing page for the StockPilot inventory management system built with Next.js, TypeScript, and Tailwind CSS.
+<div align="center">
 
-## Features
+**Modern Next.js Landing Page with TypeScript**
 
-- 🎨 Modern, responsive design
-- 🌙 Dark/Light theme support
-- 📱 Mobile-friendly interface
-- ⚡ Fast performance with Next.js
-- 🎯 SEO optimized
-- 🔧 TypeScript for type safety
+[![Next.js](https://img.shields.io/badge/Next.js-v15.2-black.svg)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-v5-blue.svg)](https://www.typescriptlang.org/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-v3.4-cyan.svg)](https://tailwindcss.com/)
+[![Radix UI](https://img.shields.io/badge/Radix%20UI-latest-purple.svg)](https://www.radix-ui.com/)
 
-## Tech Stack
+</div>
 
-- **Framework**: Next.js 15
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **UI Components**: Radix UI + shadcn/ui
-- **Icons**: Lucide React
-- **Theme**: next-themes
+---
 
-## Getting Started
+## 📋 Overview
+
+The StockPilot landing page is a modern, responsive website built with Next.js 15, TypeScript, and Tailwind CSS. It showcases the features and benefits of the StockPilot inventory management system with beautiful animations, dark/light theme support, and mobile-first design.
+
+## ✨ Key Features
+
+- **Modern Design**: Clean, professional UI with smooth animations
+- **Responsive Layout**: Optimized for all screen sizes
+- **Dark/Light Theme**: Automatic theme detection with manual toggle
+- **TypeScript**: Type-safe code for better maintainability
+- **SEO Optimized**: Meta tags, structured data, and sitemap
+- **Fast Performance**: Next.js App Router with server components
+- **Framer Motion**: Smooth, engaging animations
+- **shadcn/ui Components**: Beautiful, accessible UI components
+- **Contact Form**: Integrated contact form with Formspree
+- **Video Demo**: Product demonstration video section
+
+## 🛠️ Tech Stack
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **Next.js** | 15.2.4 | React Framework |
+| **React** | 18.2.0 | UI Library |
+| **TypeScript** | 5+ | Type Safety |
+| **Tailwind CSS** | 3.4.17 | Styling |
+| **Radix UI** | Latest | Headless Components |
+| **shadcn/ui** | Latest | UI Components |
+| **Framer Motion** | 11.0.0 | Animations |
+| **Lucide React** | Latest | Icons |
+| **Next Themes** | Latest | Theme Management |
+| **Formspree** | 2.5.1 | Form Handling |
+| **Zod** | 3.24.1 | Validation |
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js v18 or higher
 - npm or yarn
 
 ### Installation
 
-1. Clone the repository
-2. Navigate to the project directory:
-   ```bash
-   cd LandingPage
-   ```
-
-3. Install dependencies:
+1. **Install dependencies**
    ```bash
    npm install
    ```
 
-4. Run the development server:
+2. **Start Development Server**
    ```bash
    npm run dev
    ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+The site will be available at `http://localhost:3000`
 
-## Available Scripts
+### Build for Production
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-
-## Project Structure
-
-```
-LandingPage/
-├── app/                 # Next.js app directory
-│   ├── globals.css     # Global styles
-│   ├── layout.tsx      # Root layout
-│   └── page.tsx        # Home page
-├── components/          # React components
-│   ├── ui/            # shadcn/ui components
-│   └── *.tsx          # Custom components
-├── lib/                # Utility functions
-├── public/             # Static assets
-└── styles/             # Additional styles
+```bash
+npm run build
 ```
 
-## Customization
+### Start Production Server
 
-The landing page is fully customizable. You can modify:
+```bash
+npm start
+```
 
-- Colors and themes in `tailwind.config.ts`
-- Components in the `components/` directory
-- Content in `app/page.tsx`
-- Global styles in `app/globals.css`
+## 📁 Project Structure
 
-## Deployment
+```
+stockLandingPage/
+├── app/
+│   ├── page.tsx              # Home page
+│   ├── layout.tsx            # Root layout
+│   └── globals.css           # Global styles
+│
+├── components/
+│   ├── layout/
+│   │   ├── Navbar.tsx        # Navigation bar
+│   │   └── Footer.tsx        # Footer
+│   │
+│   ├── sections/             # Page sections
+│   │   ├── HeroSection.tsx   # Hero banner
+│   │   ├── FeaturesSection.tsx
+│   │   ├── DemoSection.tsx
+│   │   ├── UseCasesSection.tsx
+│   │   ├── TrustSection.tsx
+│   │   ├── CTASection.tsx
+│   │   └── ContactSection.tsx
+│   │
+│   ├── ui/                   # shadcn/ui components
+│   │
+│   ├── theme-provider.tsx    # Theme provider
+│   └── theme-toggle.tsx      # Theme toggle button
+│
+├── lib/
+│   ├── utils.ts              # Utility functions
+│   └── config.ts             # Configuration
+│
+├── hooks/
+│   ├── use-mobile.tsx        # Mobile detection hook
+│   └── use-toast.ts          # Toast notification hook
+│
+├── public/                   # Static assets
+│   ├── logo.png
+│   ├── Inventory-Management.jpg
+│   └── stockpilot-demo.mp4
+│
+├── next.config.mjs
+├── tailwind.config.ts
+├── tsconfig.json
+├── components.json
+└── package.json
+```
 
-The project can be deployed to Vercel, Netlify, or any other hosting platform that supports Next.js.
+## 🎨 Page Sections
 
-## License
+- **Hero Section**: Engaging hero banner with CTA
+- **Features Section**: Key product features
+- **Demo Section**: Product demonstration video
+- **Use Cases**: Target audience examples
+- **Trust Section**: Customer testimonials
+- **CTA Section**: Call-to-action
+- **Contact Section**: Contact form
 
-MIT License
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Deploy
+vercel
+```
+
+### Manual Deployment
+
+```bash
+# Build
+npm run build
+
+# Output is in .next folder
+```
+
+## 🎨 Customization
+
+### Change Colors
+
+Edit `tailwind.config.ts`:
+
+```typescript
+colors: {
+  primary: {
+    DEFAULT: '#your-color',
+    foreground: '#text-color',
+  },
+}
+```
+
+### Update Content
+
+Edit section components in `components/sections/`
+
+## 🤝 Contributing
+
+See the main [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
+
+## 📄 License
+
+MIT License - see [LICENSE](../LICENSE) for details.
+
+---
+
+<div align="center">
+
+**Built with ❤️ using Next.js and TypeScript**
+
+</div>
