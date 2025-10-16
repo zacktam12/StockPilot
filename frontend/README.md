@@ -265,18 +265,23 @@ npm run build
 - **AWS Amplify**
 - **Cloudflare Pages**
 
-## 🤝 Contributing
+## 👨‍💻 Author
 
-See the main [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
+**Zekarias Tamiru**
 
-## 📄 License
+- GitHub: [@zacktam12](https://github.com/zacktam12)
+- LinkedIn: [Zekarias Tamiru](https://www.linkedin.com/in/zekariastamiru)
+- Email: stockpilotsales@gmail.com
 
-MIT License - see [LICENSE](../LICENSE) for details.
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/zacktam12/StockPilot/issues)
+- **Documentation**: [Wiki](https://github.com/zacktam12/StockPilot/wiki)
 
 ---
 
 <div align="center">
 
-**Built with ❤️ using React and Vite**
+**Built with ❤️ using React and Vite by Zekarias Tamiru**
 
 </div>

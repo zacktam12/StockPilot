@@ -6,12 +6,11 @@
 
 **A modern, full-featured inventory management system built with React, Node.js, and PostgreSQL**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-v19.1-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-v5-blue.svg)](https://www.typescriptlang.org/)
 
-[Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Documentation](#-documentation) • [Contributing](#-contributing)
+[Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Documentation](#-documentation) • [Contact](#-contact)
 
 </div>
 
@@ -30,8 +29,8 @@
   - [Running the Application](#running-the-application)
 - [API Documentation](#-api-documentation)
 - [Features Deep Dive](#-features-deep-dive)
-- [Contributing](#-contributing)
-- [License](#-license)
+- [Deployment](#-deployment)
+- [Author](#-author)
 
 ---
 
@@ -258,7 +257,7 @@ Optional but recommended:
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/StockPilot.git
+git clone https://github.com/zacktam12/StockPilot.git
 cd StockPilot
 ```
 
@@ -808,127 +807,13 @@ docker-compose up -d
 
 ---
 
-## 🤝 Contributing
+## 👨‍💻 Author
 
-We welcome contributions to StockPilot! Here's how you can help:
+**Zekarias Tamiru**
 
-### How to Contribute
-
-1. **Fork the Repository**
-   ```bash
-   git clone https://github.com/yourusername/StockPilot.git
-   ```
-
-2. **Create a Feature Branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-
-3. **Make Your Changes**
-   - Write clean, maintainable code
-   - Follow the existing code style
-   - Add comments where necessary
-   - Update documentation
-
-4. **Test Your Changes**
-   ```bash
-   npm test
-   ```
-
-5. **Commit Your Changes**
-   ```bash
-   git commit -m "Add amazing feature"
-   ```
-
-6. **Push to Your Fork**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-
-7. **Open a Pull Request**
-   - Provide a clear description of changes
-   - Reference any related issues
-   - Wait for code review
-
-### Development Guidelines
-
-#### Code Style
-- Use ESLint for JavaScript/TypeScript linting
-- Follow React best practices
-- Use meaningful variable and function names
-- Keep functions small and focused
-- Write self-documenting code
-
-#### Git Commit Messages
-Follow the conventional commits specification:
-
-```
-feat: add new feature
-fix: bug fix
-docs: documentation changes
-style: code formatting
-refactor: code refactoring
-test: add tests
-chore: maintenance tasks
-```
-
-#### Pull Request Guidelines
-- One feature/fix per PR
-- Include tests if applicable
-- Update documentation
-- Ensure CI/CD passes
-- Request review from maintainers
-
-### Reporting Issues
-
-When reporting issues, please include:
-
-1. **Description**: Clear description of the issue
-2. **Steps to Reproduce**: How to recreate the issue
-3. **Expected Behavior**: What should happen
-4. **Actual Behavior**: What actually happens
-5. **Environment**: OS, Node version, browser, etc.
-6. **Screenshots**: If applicable
-7. **Error Messages**: Full error logs
-
-### Feature Requests
-
-We love feature requests! Please provide:
-
-1. **Use Case**: Why is this feature needed?
-2. **Description**: Detailed description of the feature
-3. **Mockups**: UI mockups if applicable
-4. **Alternatives**: Alternative solutions considered
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-```
-MIT License
-
-Copyright (c) 2025 StockPilot
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+- GitHub: [@zacktam12](https://github.com/zacktam12)
+- LinkedIn: [Zekarias Tamiru](https://www.linkedin.com/in/zekariastamiru)
+- Email: stockpilotsales@gmail.com
 
 ---
 
@@ -948,10 +833,10 @@ SOFTWARE.
 
 ## 📞 Support & Contact
 
-- **Documentation**: [Wiki](https://github.com/yourusername/StockPilot/wiki)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/StockPilot/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/StockPilot/discussions)
-- **Email**: support@stockpilot.com
+- **Documentation**: [Wiki](https://github.com/zacktam12/StockPilot/wiki)
+- **Issues**: [GitHub Issues](https://github.com/zacktam12/StockPilot/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/zacktam12/StockPilot/discussions)
+- **Email**: stockpilotsales@gmail.com
 
 ---
 
@@ -983,11 +868,11 @@ SOFTWARE.
 
 <div align="center">
 
-**Made with ❤️ by the StockPilot Team**
+**Made with ❤️ by Zekarias Tamiru**
 
 ⭐ Star us on GitHub if you find this project useful!
 
-[Report Bug](https://github.com/yourusername/StockPilot/issues) · [Request Feature](https://github.com/yourusername/StockPilot/issues) · [Documentation](https://github.com/yourusername/StockPilot/wiki)
+[Report Bug](https://github.com/zacktam12/StockPilot/issues) · [Request Feature](https://github.com/zacktam12/StockPilot/issues) · [Documentation](https://github.com/zacktam12/StockPilot/wiki)
 
 </div>
 

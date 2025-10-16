@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial project documentation
 - Comprehensive README files for all components
 - Contributing guidelines
-- MIT License
 
 ---
 
@@ -194,15 +193,25 @@ This is the first stable release. If you were using a pre-release version:
 ## Support
 
 For support, please:
-- Check the [documentation](https://github.com/yourusername/StockPilot/wiki)
-- Open an [issue](https://github.com/yourusername/StockPilot/issues)
-- Start a [discussion](https://github.com/yourusername/StockPilot/discussions)
+- Check the [documentation](https://github.com/zacktam12/StockPilot/wiki)
+- Open an [issue](https://github.com/zacktam12/StockPilot/issues)
+- Start a [discussion](https://github.com/zacktam12/StockPilot/discussions)
+- Email: stockpilotsales@gmail.com
+
+## 👨‍💻 Project Maintainer
+
+**Zekarias Tamiru**
+
+- GitHub: [@zacktam12](https://github.com/zacktam12)
+- LinkedIn: [Zekarias Tamiru](https://www.linkedin.com/in/zekariastamiru)
+- Email: stockpilotsales@gmail.com
 
 ---
 
 <div align="center">
 
-**[Back to README](README.md)** | **[View Releases](https://github.com/yourusername/StockPilot/releases)**
+**[Back to README](README.md)** | **[View Releases](https://github.com/zacktam12/StockPilot/releases)**
 
 </div>
+
 

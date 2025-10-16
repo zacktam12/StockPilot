@@ -100,7 +100,7 @@ We actively welcome your pull requests:
 
 1. **Fork the Repository**
    ```bash
-   git clone https://github.com/yourusername/StockPilot.git
+   git clone https://github.com/zacktam12/StockPilot.git
    cd StockPilot
    ```
 
@@ -523,7 +523,7 @@ If you have questions, feel free to:
 
 - Open an issue with the `question` label
 - Start a discussion in GitHub Discussions
-- Contact the maintainers directly
+- Contact: stockpilotsales@gmail.com
 
 ---
 
@@ -539,6 +539,14 @@ Contributors will be recognized in:
 
 Thank you for contributing to StockPilot! 🎉
 
+## 👨‍💻 Project Maintainer
+
+**Zekarias Tamiru**
+
+- GitHub: [@zacktam12](https://github.com/zacktam12)
+- LinkedIn: [Zekarias Tamiru](https://www.linkedin.com/in/zekariastamiru)
+- Email: stockpilotsales@gmail.com
+
 ---
 
 <div align="center">
@@ -546,4 +554,5 @@ Thank you for contributing to StockPilot! 🎉
 **Happy Coding!** 💻
 
 </div>
+
 
